@@ -31,10 +31,7 @@ class AccountInfo(BaseModel):
         if not self.account_alias:
             return False
         _accountAliasList = self.account_alias.split("#")
-        for alias in _accountAliasList:
-            if ocr_account.startswith(alias):
-                return True
-        return False
+        return any(ocr_account.startswith(alias) for alias in _accountAliasList)
 
     @staticmethod
     def preprocessAccount(account: str):

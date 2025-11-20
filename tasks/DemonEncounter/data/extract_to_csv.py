@@ -90,13 +90,13 @@ class Extracter:
         self.df.to_csv(self.data_file, index=False, encoding="utf-8-sig")
 
     def appear_in_df(self, question: str, answer: str) -> bool:
-        for index, row in self.df.iterrows():
+        for _index, row in self.df.iterrows():
             if row["question"] == question and row["answer"] == answer:
                 return True
         return False
 
     def clear_symbols(self):
-        for index, row in self.df.iterrows():
+        for _index, row in self.df.iterrows():
             row["question"] = remove_symbols(row["question"])
             row["answer"] = remove_symbols(row["answer"])
         self.df.to_csv(self.data_file, index=False, encoding="utf-8-sig")

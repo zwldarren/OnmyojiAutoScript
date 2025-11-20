@@ -159,10 +159,9 @@ class ScriptTask(
             if self.appear_then_click(self.I_PET_PRESENT, action=self.C_WIN_3, interval=1):
                 continue
 
-            if self.current_count >= self.limit_count:
-                if self.is_in_room():
-                    logger.info("Orochi count limit out")
-                    break
+            if self.current_count >= self.limit_count and self.is_in_room():
+                logger.info("Orochi count limit out")
+                break
 
             if datetime.now() - self.start_time >= self.limit_time:
                 if self.is_in_room():
@@ -208,9 +207,7 @@ class ScriptTask(
         self.ui_get_current_page()
         self.ui_goto(page_main)
 
-        if not success:
-            return False
-        return True
+        return success
 
     def run_member(self):
         logger.info("Start run member")
@@ -353,10 +350,9 @@ class ScriptTask(
             if self.appear_then_click(self.I_PET_PRESENT, action=self.C_WIN_3, interval=1):
                 continue
 
-            if self.current_count >= self.limit_count:
-                if self.is_in_room():
-                    logger.info("Orochi count limit out")
-                    break
+            if self.current_count >= self.limit_count and self.is_in_room():
+                logger.info("Orochi count limit out")
+                break
 
             if datetime.now() - self.start_time >= self.limit_time:
                 if self.is_in_room():
@@ -401,9 +397,7 @@ class ScriptTask(
         self.ui_get_current_page()
         self.ui_goto(page_main)
 
-        if not success:
-            return False
-        return True
+        return success
 
     def is_room_dead(self) -> bool:
         # 如果在探索界面或者是出现在组队界面，那就是可能房间死了
@@ -456,7 +450,7 @@ class ScriptTask(
             if self.appear(self.I_REWARD):
                 # 魂
                 logger.info("Win battle")
-                appear_greed_ghost = self.appear(self.I_GREED_GHOST)
+                self.appear(self.I_GREED_GHOST)
                 while 1:
                     self.screenshot()
                     action_click = random.choice(

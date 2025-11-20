@@ -132,9 +132,7 @@ class BaseCor:
         # after proces
         result = self.after_process(result)
         # logger.info("ocr result score: %s%s" % (result,score))
-        logger.attr(
-            name="%s %ss" % (self.name, float2str(time.time() - start_time)), text=f"[{result}]"
-        )
+        logger.attr(name=f"{self.name} {float2str(time.time() - start_time)}s", text=f"[{result}]")
         return result
 
     def ocr_single_line(self, image):
@@ -168,9 +166,7 @@ class BaseCor:
         # after proces
         result = self.after_process(result)
         # logger.info("ocr result score: %s" % score)
-        logger.attr(
-            name="%s %ss" % (self.name, float2str(time.time() - start_time)), text=f"[{result}]"
-        )
+        logger.attr(name=f"{self.name} {float2str(time.time() - start_time)}s", text=f"[{result}]")
         return result
 
     def detect_and_ocr(self, image, logDisplay: bool = True) -> list[BoxedResult]:
@@ -197,7 +193,7 @@ class BaseCor:
             results.append(result)
         if logDisplay:
             logger.attr(
-                name="%s %ss" % (self.name, float2str(time.time() - start_time)),
+                name=f"{self.name} {float2str(time.time() - start_time)}s",
                 text=str([result.ocr_text for result in results]),
             )
         return results
@@ -241,7 +237,7 @@ class BaseCor:
         # 对于keyword中的每一个字符，都要在strings中进行匹配
         # 如果这个字符在strings中的某一个string中，那么就记录这个string的index
         max_index = len(strings) - 1
-        for index, char in enumerate(keyword):
+        for _index, char in enumerate(keyword):
             for i, string in enumerate(strings):
                 if char not in string:
                     continue
@@ -276,9 +272,7 @@ class BaseCor:
                 continue
             results += result.ocr_text
         # logger.info("ocr result score: %s" % score)
-        logger.attr(
-            name="%s %ss" % (self.name, float2str(time.time() - start_time)), text=f"[{results}]"
-        )
+        logger.attr(name=f"{self.name} {float2str(time.time() - start_time)}s", text=f"[{results}]")
         return results
 
 

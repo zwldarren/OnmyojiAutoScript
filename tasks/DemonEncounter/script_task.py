@@ -348,11 +348,12 @@ class ScriptTask(GameUi, GeneralBattle, DemonEncounterAssets, SwitchSoul):
                 continue
         while 1:
             self.screenshot()
-            if not self.appear(self.I_MYSTERY_AMULET) and not (
-                box_buy_config.box_buy_sushi and self.appear(self.I_SUSHI)
+            if (
+                not self.appear(self.I_MYSTERY_AMULET)
+                and not (box_buy_config.box_buy_sushi and self.appear(self.I_SUSHI))
+                and self.appear_then_click(self.I_DE_FIND, interval=2.5)
             ):
-                if self.appear_then_click(self.I_DE_FIND, interval=2.5):
-                    break
+                break
             # 默认购买蓝票
             if self.appear(self.I_MYSTERY_AMULET):
                 logger.info("Buy a mystery amulet for 50 jade")

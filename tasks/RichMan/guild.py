@@ -121,7 +121,7 @@ class Guild(Buy, GameUi, RichManAssets):
             result = int(result)
         except:
             result = 0
-        logger.info("Remain: %s" % result)
+        logger.info(f"Remain: {result}")
         return int(result)
 
 

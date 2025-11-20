@@ -429,7 +429,7 @@ class ScriptTask(GameUi, BaseActivity, SwitchSoul, ActivityShikigamiAssets):
         :return: 限制次数
         """
         limit = getattr(self.conf.general_climb, f"{self.climb_type}_limit", 0)
-        return 0 if not limit else limit
+        return limit if limit else 0
 
     def switch_next(self):
         """

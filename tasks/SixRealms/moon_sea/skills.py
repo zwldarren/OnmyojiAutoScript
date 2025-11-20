@@ -17,9 +17,7 @@ class MoonSeaSkills(BaseTask, SixRealmsAssets):
             return True
         if self.appear(self.I_M_STORE_ACTIVITY):
             return True
-        if self.appear(self.I_BOSS_FIRE):
-            return True
-        return False
+        return bool(self.appear(self.I_BOSS_FIRE))
 
     def battle_lock_team(self):
         self.ui_click(self.I_BATTLE_TEAM_UNLOCK, self.I_BATTLE_TEAM_LOCK)
@@ -84,7 +82,7 @@ class MoonSeaSkills(BaseTask, SixRealmsAssets):
     def select_skill(self, refresh: bool = False):
         def check_coin_skill() -> bool:
             coin = self.O_COIN_NUM.ocr(self.device.image)
-            return False if coin < 50 else True
+            return not coin < 50
 
         def check_refresh() -> bool:
             # 检测是否有钱刷新技能

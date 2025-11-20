@@ -178,10 +178,8 @@ class AtomicWriter:
             success = True
         finally:
             if not success:
-                try:
+                with contextlib.suppress(Exception):
                     self.rollback(f)
-                except Exception:
-                    pass
 
     def get_fileobject(self, suffix="", prefix=tempfile.gettempprefix(), dir=None, **kwargs):
         """Return the temporary file to use."""

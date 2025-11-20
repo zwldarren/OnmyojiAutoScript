@@ -239,9 +239,7 @@ class ScriptTask(GameUi, GeneralBattle, SwitchSoul, DuelAssets):
         :return:
         """
         current, remain, total = self.O_D_HONOR.ocr(self.device.image)
-        if current == total and remain == 0:
-            return True
-        return False
+        return bool(current == total and remain == 0)
 
     def check_score(self) -> int or None:
         """

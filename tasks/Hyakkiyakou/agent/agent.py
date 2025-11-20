@@ -36,10 +36,7 @@ def embed_patch_in_canvas(canvas, patch, position=(0, 0), patch_size=(300, 300))
     if embed_w <= 0 or embed_h <= 0:
         logger.warning(f"Cannot embed patch in canvas: ({position})")
         return canvas
-    if embed_w < patch_width or embed_h < patch_height:
-        _patch = patch[:embed_h, :embed_w]
-    else:
-        _patch = patch
+    _patch = patch[:embed_h, :embed_w] if embed_w < patch_width or embed_h < patch_height else patch
     # Embed the patch in the canvas
     canvas[y1:y2, x1:x2] += _patch
     return canvas
@@ -76,7 +73,7 @@ class Agent:
 
     @classmethod
     def gamma(
-        cls, tracks: list[tuple], weights: list[float], priorities: list[int] = []
+        cls, tracks: list[tuple], weights: list[float], priorities: list[int] = None
     ) -> np.ndarray:
         """
         @param tracks:
@@ -84,6 +81,8 @@ class Agent:
         @param priorities:
         @return:
         """
+        if priorities is None:
+            priorities = []
         z = np.zeros((720, 1280), dtype=np.float32)
         for _id, _class, _conf, _cx, _cy, _w, _h, _v in tracks:
             weight = 1.0

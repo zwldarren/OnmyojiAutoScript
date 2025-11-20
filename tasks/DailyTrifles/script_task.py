@@ -251,7 +251,6 @@ class ScriptTask(GameUi, Summon, DailyTriflesAssets):
         def detect_buy_count(base_element) -> (int, int):
             # 返回count,price
             MAX_PRICE = 9999
-            MAX_COUNT = 9999
             roi = copy.deepcopy(base_element.roi_front)
             roi[0] = roi[0] + roi[2]
             roi[1] = roi[1] + roi[3] - 30
@@ -270,7 +269,6 @@ class ScriptTask(GameUi, Summon, DailyTriflesAssets):
             _count = (_price - 60) / 20
             return _count, _price
 
-        roi = None
         # 购买体力
         while 1:
             self.screenshot()

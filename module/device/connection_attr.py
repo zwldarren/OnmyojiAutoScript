@@ -96,22 +96,26 @@ class ConnectionAttr:
                 with self.config.multi_set():
                     self.config.script.device.screenshot_method = "uiautomator2"
                     self.config.script.device.control_method = "uiautomator2"
-        if self.is_over_http:
-            if self.config.script.device.screenshot_method not in [
+        if self.is_over_http and (
+            self.config.script.device.screenshot_method
+            not in [
                 "ADB",
                 "uiautomator2",
                 "aScreenCap",
-            ] or self.config.script.device.control_method not in [
+            ]
+            or self.config.script.device.control_method
+            not in [
                 "ADB",
                 "uiautomator2",
                 "minitouch",
-            ]:
-                logger.warning(
-                    f"When connecting to a device over http: {self.serial} "
-                    f'ScreenshotMethod can only use ["ADB", "uiautomator2", "aScreenCap"], '
-                    f'ControlMethod can only use ["ADB", "uiautomator2", "minitouch"]'
-                )
-                raise RequestHumanTakeover
+            ]
+        ):
+            logger.warning(
+                f"When connecting to a device over http: {self.serial} "
+                f'ScreenshotMethod can only use ["ADB", "uiautomator2", "aScreenCap"], '
+                f'ControlMethod can only use ["ADB", "uiautomator2", "minitouch"]'
+            )
+            raise RequestHumanTakeover
 
     @cached_property
     def is_bluestacks4_hyperv(self):
@@ -167,10 +171,7 @@ class ConnectionAttr:
         logger.info("Use BlueStacks4 Hyper-V Beta")
         logger.info("Reading Realtime adb port")
 
-        if serial == "bluestacks4-hyperv":
-            folder_name = "Android"
-        else:
-            folder_name = f"Android_{serial[19:]}"
+        folder_name = "Android" if serial == "bluestacks4-hyperv" else f"Android_{serial[19:]}"
 
         try:
             with OpenKey(

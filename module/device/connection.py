@@ -269,9 +269,7 @@ class Connection(ConnectionAttr):
             return False
         if "ranchu" in self.adb_shell(["getprop", "ro.hardware"]):
             return True
-        if "goldfish" in self.adb_shell(["getprop", "ro.hardware.audio.primary"]):
-            return True
-        return False
+        return "goldfish" in self.adb_shell(["getprop", "ro.hardware.audio.primary"])
 
     @cached_property
     def nemud_app_keep_alive(self) -> str:
@@ -499,7 +497,7 @@ class Connection(ConnectionAttr):
         Args:
             local (str): Such as 'tcp:2437'
         """
-        with self.adb_client._connect() as c:
+        with self.adb_client.make_connection() as c:
             list_cmd = f"host-serial:{self.serial}:killforward:{local}"
             c.send_command(list_cmd)
             c.check_okay()
@@ -511,7 +509,7 @@ class Connection(ConnectionAttr):
         Args:
             local (str): Such as 'tcp:2437'
         """
-        with self.adb_client._connect() as c:
+        with self.adb_client.make_connection() as c:
             c.send_command(f"host:transport:{self.serial}")
             c.check_okay()
             list_cmd = f"reverse:killforward:{local}"

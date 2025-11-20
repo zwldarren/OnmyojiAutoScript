@@ -105,7 +105,7 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, RealmRaidAssets):
             self.run_general_battle_back(config.general_battle_config)
 
         # 打九次
-        for i in range(9):
+        for _i in range(9):
             if not self.is_ticket():
                 return False
             self.medal_fire()
@@ -271,9 +271,7 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, RealmRaidAssets):
         """
         if screenshot:
             self.screenshot()
-        if self.appear(self.I_FROG_MEDAL):
-            return True
-        return False
+        return bool(self.appear(self.I_FROG_MEDAL))
 
     def check_ticket(self, base: int = 0) -> bool:
         """
@@ -421,17 +419,14 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, RealmRaidAssets):
         self.wait_until_appear(self.I_BACK_RED)
         text = self.O_TEXT.ocr(self.device.image)
         # 识别突破卷区域，如果识别到了且其中含有文字，即有聊天框遮挡则进入循环，等待三胜奖励出现并点击，循环退出条件为识别到票（即*/*的形式）
-        if text != "":
-            if re.search(r"[\u4e00-\u9fff]", text):
-                while 1:
-                    self.screenshot()
-                    result = self.O_TEXT.ocr(self.device.image)
-                    if not re.search(r"[\u4e00-\u9fff]", result) and re.search(
-                        r"(\d+)/(\d+)", result
-                    ):
-                        return True
-                    if self.appear_then_click(self.I_SOUL_RAID, interval=1.5):
-                        continue
+        if text != "" and re.search(r"[\u4e00-\u9fff]", text):
+            while 1:
+                self.screenshot()
+                result = self.O_TEXT.ocr(self.device.image)
+                if not re.search(r"[\u4e00-\u9fff]", result) and re.search(r"(\d+)/(\d+)", result):
+                    return True
+                if self.appear_then_click(self.I_SOUL_RAID, interval=1.5):
+                    continue
 
         # if self.appear(self.I_SOUL_RAID):
         #     self.screenshot()

@@ -155,13 +155,11 @@ class ScriptTask(FriendshipPoints, MysteryShopAssets, GeneralInvite):
         def select(name: str) -> bool:
             selected = False
             sleep(1)
-            if not selected:
-                if self.detect_select(name):
-                    selected = True
+            if not selected and self.detect_select(name):
+                selected = True
             sleep(1)
-            if not selected:
-                if self.detect_select(name):
-                    selected = True
+            if not selected and self.detect_select(name):
+                selected = True
             return selected
 
         selected = False

@@ -45,7 +45,7 @@ class ScriptTask(GameUi, ActivityShikigamiAssets, KittyShopAssets):
 
     def _run(self):
         logger.hr("Kitty Shop", level=1)
-        for trial in range(3):
+        for _trial in range(3):
             try:
                 self._select_kitty()
                 break

@@ -23,7 +23,7 @@ class I18n(Addition):
     @classmethod
     def trans_zh_cn(cls, text) -> str:
         cn_zh_data = cls.load_zh_cn()
-        return cn_zh_data[text] if text in cn_zh_data else text
+        return cn_zh_data.get(text, text)
 
     @classmethod
     def save_zh_cn(cls, data) -> None:

@@ -376,7 +376,7 @@ class Window(Handle):
         PostMessage(handle_num, WM_MOUSEMOVE, 0, lparam)
         self.click_window_message(x, y)
 
-        for i in range(5):
+        for _i in range(5):
             PostMessage(handle_num, WM_SETCURSOR, handle_num, lparam)
             PostMessage(handle_num, WM_MOUSEMOVE, 0, lparam)
             PostMessage(handle_num, WM_MOUSEWHEEL, wparam, lparam)

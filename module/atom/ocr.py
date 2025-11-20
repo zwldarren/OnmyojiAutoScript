@@ -51,11 +51,6 @@ class RuleOcr(Digit, DigitCounter, Duration, Single, Full, Quantity):
         获取一个区域，随机返回一个坐标
         :return:
         """
-        area = None
-        if self.mode == OcrMode.FULL:
-            area = self.area
-        else:
-            area = self.roi
 
         x, y, w, h = self.area
         x = np.random.randint(x, x + w)

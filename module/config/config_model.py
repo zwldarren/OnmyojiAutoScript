@@ -1,6 +1,7 @@
 # @author runhey
 # github https://github.com/runhey
 
+import contextlib
 import re
 from pathlib import Path
 
@@ -206,14 +207,13 @@ class ConfigModel(ConfigBase):
 
         schema2 = task_gui.schema()
         # https://github.com/pydantic/pydantic/discussions/5687
-        if "definitions" in schema2:
-            if "Scheduler" in schema2["definitions"]:
-                if "properties" in schema2["definitions"]["Scheduler"]:
-                    properties = schema2["definitions"]["Scheduler"]["properties"]
-                    if "success_interval" in properties:
-                        properties["success_interval"]["type"] = "string"
-                    if "failure_interval" in properties:
-                        properties["failure_interval"]["type"] = "string"
+        if "definitions" in schema2 and "Scheduler" in schema2["definitions"]:
+            if "properties" in schema2["definitions"]["Scheduler"]:
+                properties = schema2["definitions"]["Scheduler"]["properties"]
+                if "success_interval" in properties:
+                    properties["success_interval"]["type"] = "string"
+                if "failure_interval" in properties:
+                    properties["failure_interval"]["type"] = "string"
         return json.dumps(schema2)
 
     def gui_task(self, task: str) -> str:
@@ -327,7 +327,7 @@ class ConfigModel(ConfigBase):
                     item["description"] = value["description"]
                 item["default"] = value["default"]
                 item["value"] = jsons[key] if key in jsons else value["default"]
-                item["type"] = value["type"] if "type" in value else "enum"
+                item["type"] = value.get("type", "enum")
                 if "$ref" in value:  # list
                     enum_key = re.search(r"/([^/]+)$", value["$ref"]).group(1)
                     item["enumEnum"] = definitions[enum_key]["enum"]
@@ -344,7 +344,7 @@ class ConfigModel(ConfigBase):
         result: dict[str, list] = {}
         for key, value in task.model_dump(context={"hide": True}).items():
             if key not in groups:
-                for group_name in groups.keys():
+                for group_name in groups:
                     if group_name in key:
                         groups_value[key] = groups[group_name]
             result[key] = merge_value(groups_value[key], value, schema["$defs"])
@@ -359,10 +359,8 @@ class ConfigModel(ConfigBase):
 
         # pandtic验证
         if isinstance(value, str) and len(value) == 8:
-            try:
+            with contextlib.suppress(ValueError):
                 value = datetime.strptime(value, "%H:%M:%S").time()
-            except ValueError:
-                pass
         if isinstance(value, str) and len(value) == 11:
             try:
                 date_time = datetime.strptime(value, "%d %H:%M:%S")
@@ -375,10 +373,8 @@ class ConfigModel(ConfigBase):
             except ValueError:
                 pass
         if isinstance(value, str) and len(value) == 19:
-            try:
+            with contextlib.suppress(ValueError):
                 value = datetime.strptime(value, "%Y-%m-%d %H:%M:%S")
-            except ValueError:
-                pass
         if isinstance(value, str) and value == "true":
             value = True
         if isinstance(value, str) and value == "false":
@@ -389,7 +385,7 @@ class ConfigModel(ConfigBase):
         if group_object is None:  # deal list
             matchs = re.findall(r"\d+", group)
             index = int(matchs[-1]) - 1 if matchs else None
-            task_object_list = list(dict(task_object))
+            list(dict(task_object))
             for k, v in dict(task_object).items():
                 if k not in group:
                     continue
@@ -405,7 +401,7 @@ class ConfigModel(ConfigBase):
             task == "restart"
             and group == "task_config"
             and argument == "reset_task_datetime_enable"
-            and value == True
+            and value
         ):
             date_time = self.restart.task_config.reset_task_datetime
             logger.info(f"reset_task_datetime={date_time}")

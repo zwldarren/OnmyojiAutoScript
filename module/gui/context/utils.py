@@ -9,7 +9,7 @@ from module.logger import logger
 
 class Utils(QObject):
     def __init__(self) -> None:
-        super(Utils, self).__init__()
+        super().__init__()
 
     @Slot(result="QString")
     def current_datetime(self) -> str:

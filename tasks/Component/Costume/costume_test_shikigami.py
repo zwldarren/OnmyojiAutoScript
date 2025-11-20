@@ -74,8 +74,7 @@ class ScriptTask(GameUi, SwitchSoul, SwitchSoulAssets, SoulsTidyAssets):
         self.config.model.global_game.costume_config.costume_shikigami_type = costume
         self.check_costume()
         logger.info(
-            "Set shikigami costume to %s"
-            % self.config.model.global_game.costume_config.costume_shikigami_type
+            f"Set shikigami costume to {self.config.model.global_game.costume_config.costume_shikigami_type}"
         )
 
     def test_switch_soul_all_groups(self):

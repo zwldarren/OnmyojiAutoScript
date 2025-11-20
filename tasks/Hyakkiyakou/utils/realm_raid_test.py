@@ -26,7 +26,7 @@ class RealmRaidTest(ScriptTask):
                 self.screenshot()
                 if self.appear(self.I_TOPPA_RECORD, threshold=0.85):
                     continue
-                logger.info("Start attach area [%s]" % str(index + 1))
+                logger.info(f"Start attach area [{str(index + 1)}]")
                 return self.run_general_battle_back(
                     config=self.config.ryou_toppa.general_battle_config
                 )

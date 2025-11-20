@@ -243,7 +243,6 @@ class ScriptTask(
         wait_time = self.config.bondling_fairyland.invite_config.wait_time
         wait_timer = Timer(wait_time.minute * 60)
         wait_timer.start()
-        success = True
 
         # 进入战斗流程
         self.device.stuck_record_add("BATTLE_STATUS_S")
@@ -400,7 +399,7 @@ class ScriptTask(
                 self.screenshot()
                 if not self.appear(self.I_STONE_SURE):
                     return True
-                for i in range(3):
+                for _i in range(3):
                     if self.appear_then_click(self.I_BUY_PLUS, interval=1):
                         sleep(0.5)
                 if self.appear_then_click(self.I_GI_SURE, interval=1):

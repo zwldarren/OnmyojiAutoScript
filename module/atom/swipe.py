@@ -66,7 +66,7 @@ class RuleSwipe:
             # 表示每秒移动1.5个像素点， 总的时间除以每个点10ms就得到总的点的个数
             number_list: int = int(dist(start_pos, end_pos) / (1.5 * self.interval))
             le = random.randint(2, 4)  #
-            deviation = random.randint(20, 40)  # 幅度
+            random.randint(20, 40)  # 幅度
             b_type = 3
             obbs_type = (
                 random.random()

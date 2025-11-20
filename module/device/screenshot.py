@@ -125,7 +125,7 @@ class Screenshot(Adb, DroidCast, Scrcpy, Window, NemuIpc):
 
         if now - self._last_save_time.get(genre, 0) > interval:
             fmt = "png"
-            file: str = "%s.%s" % (int(now * 1000), fmt)
+            file: str = f"{int(now * 1000)}.{fmt}"
 
             folder = Path("./log/screenshots")
             folder.mkdir(parents=True, exist_ok=True)

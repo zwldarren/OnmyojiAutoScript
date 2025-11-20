@@ -86,9 +86,7 @@ class ScriptTask(GameUi, TalismanPassAssets):
         :return:
         """
         self.screenshot()
-        if self.appear(self.I_TP_GOTO) or self.appear(self.I_TP_EXP):
-            return True
-        return False
+        return bool(self.appear(self.I_TP_GOTO) or self.appear(self.I_TP_EXP))
 
     def harvest_soul(self):
         """

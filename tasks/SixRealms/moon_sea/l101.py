@@ -47,7 +47,6 @@ class MoonSeaL101(MoonSeaSkills):
             if refresh_time <= 0:
                 logger.warning("Refresh time is 0")
                 return False
-        cnt_refresh = 0
         # while 1:
         #     self.screenshot()
         #     if self.appear(self.I_UI_CONFIRM):

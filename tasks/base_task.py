@@ -63,7 +63,6 @@ class BaseTask(GlobalGameAssets, CostumeBase):
         游戏界面突发异常检测
         :return: 没有出现返回False, 其他True
         """
-        image = self.device.image
         appear_invitation = self.appear(self.I_G_ACCEPT)
         if not appear_invitation:
             return False
@@ -80,10 +79,7 @@ class BaseTask(GlobalGameAssets, CostumeBase):
             case FriendInvitation.ONLY_JADE:
                 # 勾协
                 logger.info("Only accept jade invitation")
-                if self.appear(self.I_G_JADE):
-                    click_button = self.I_G_ACCEPT
-                else:
-                    click_button = self.I_G_IGNORE
+                click_button = self.I_G_ACCEPT if self.appear(self.I_G_JADE) else self.I_G_IGNORE
             case FriendInvitation.JADE_AND_FOOD:
                 # 如果是接受勾协和粮协
                 logger.info("Accept jade and food invitation")
@@ -463,11 +459,7 @@ class BaseTask(GlobalGameAssets, CostumeBase):
             self.device.long_click(
                 x=x, y=y, duration=click.duration / 1000, control_name=click.name
             )
-        elif (
-            isinstance(click, RuleClick)
-            or isinstance(click, RuleImage)
-            or isinstance(click, RuleOcr)
-        ):
+        elif isinstance(click, (RuleClick, RuleImage, RuleOcr)):
             self.device.click(x=x, y=y, control_name=click.name)
 
         # 执行后，如果有限制时间，则重置限制时间
@@ -629,10 +621,7 @@ class BaseTask(GlobalGameAssets, CostumeBase):
         :param finish: 是完成任务后的时间为基准还是开始任务的时间为基准
         :return:
         """
-        if finish:
-            start_time = datetime.now().replace(microsecond=0)
-        else:
-            start_time = self.start_time
+        start_time = datetime.now().replace(microsecond=0) if finish else self.start_time
         self.config.task_delay(
             task, start_time=start_time, success=success, server=server, target=target
         )
@@ -753,7 +742,7 @@ class BaseTask(GlobalGameAssets, CostumeBase):
             self.screenshot()
             if not self.appear(stop):
                 break
-            if isinstance(click, RuleImage) or isinstance(click, RuleGif):
+            if isinstance(click, (RuleImage, RuleGif)):
                 self.appear_then_click(click, interval=interval)
                 continue
             if isinstance(click, RuleClick):

@@ -71,10 +71,10 @@ def window_scale_rate() -> float:
     hDC = GetDC(0)
     # 物理上（真实的）的 横纵向分辨率
     wReal = GetDeviceCaps(hDC, DESKTOPHORZRES)
-    hReal = GetDeviceCaps(hDC, DESKTOPVERTRES)
+    GetDeviceCaps(hDC, DESKTOPVERTRES)
     # 缩放后的 分辨率
     wAfter = GetSystemMetrics(0)
-    hAfter = GetSystemMetrics(1)
+    GetSystemMetrics(1)
     # print(wReal, wAfter)
     return round(wReal / wAfter, 2)
 
@@ -214,10 +214,10 @@ class Handle:
         self.root_node = WindowNode(name=self.root_handle_title, num=self.root_handle_num)
         Handle.handle_tree(self.root_handle_num, self.root_node)
         logger.info("Emulator handle structure:")
-        for pre, fill, node in RenderTree(self.root_node):
-            logger.info("%s%s" % (pre, node.name))
-        for pre, fill, node in RenderTree(self.root_node):
-            logger.info("%s%s" % (pre, node.num))
+        for pre, _fill, node in RenderTree(self.root_node):
+            logger.info(f"{pre}{node.name}")
+        for pre, _fill, node in RenderTree(self.root_node):
+            logger.info(f"{pre}{node.num}")
 
         # 判断是哪一个模拟器 通过句柄树结构
         logger.info(f"Emulator family: {self.emulator_family}")
@@ -413,10 +413,10 @@ class Handle:
         hDC = GetDC(0)
         # 物理上（真实的）的 横纵向分辨率
         wReal = GetDeviceCaps(hDC, DESKTOPHORZRES)
-        hReal = GetDeviceCaps(hDC, DESKTOPVERTRES)
+        GetDeviceCaps(hDC, DESKTOPVERTRES)
         # 缩放后的 分辨率
         wAfter = GetSystemMetrics(0)
-        hAfter = GetSystemMetrics(1)
+        GetSystemMetrics(1)
         # print(wReal, wAfter)
         return round(wReal / wAfter, 2)
 

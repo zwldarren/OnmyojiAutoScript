@@ -13,7 +13,7 @@ from module.logger import logger
 # 后面的都是github copilot写的
 class Add(QObject):
     def __init__(self) -> None:
-        super(Add, self).__init__()
+        super().__init__()
 
     @Slot(result="QVariantList")
     def all_script_files(self) -> list:

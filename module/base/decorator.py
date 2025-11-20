@@ -1,6 +1,7 @@
+import contextlib
 from collections.abc import Callable
 from functools import wraps
-from typing import Generic, TypeVar
+from typing import TypeVar
 
 T = TypeVar("T")
 
@@ -87,7 +88,7 @@ class Config:
         return decorate
 
 
-class cached_property(Generic[T]):
+class cached_property[T]:
     """
     cached-property from https://github.com/pydanny/cached-property
     Add typing support
@@ -116,10 +117,8 @@ def del_cached_property(obj, name):
         obj:
         name (str):
     """
-    try:
+    with contextlib.suppress(KeyError):
         del obj.__dict__[name]
-    except KeyError:
-        pass
 
 
 def has_cached_property(obj, name):

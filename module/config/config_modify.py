@@ -47,7 +47,6 @@ class ConfigModify(Config):
         group = convert_to_underscore(group)
         argument = convert_to_underscore(argument)
 
-        path = f"{task}.{group}.{argument}"
         task_object = getattr(self.model, task, None)
         group_object = getattr(task_object, group, None)
         argument_object = getattr(group_object, argument, None)

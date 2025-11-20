@@ -113,10 +113,9 @@ class ScriptTask(GameUi, BaseActivity, HeroTestAssets, SwitchSoul):
                 self.wait_until_appear(self.I_BCMJ_BATTLE)
 
             # 如果是兵藏秘境 看看是否有兵道帖
-            if is_skill:
-                if not self.check_art_war_card():
-                    logger.info("Art war card is not enough")
-                    break
+            if is_skill and not self.check_art_war_card():
+                logger.info("Art war card is not enough")
+                break
             # 点击战斗
             logger.info("Click battle")
             while 1:
@@ -244,10 +243,7 @@ class ScriptTask(GameUi, BaseActivity, HeroTestAssets, SwitchSoul):
             return True
         cu = self.O_ART_WAR_CARD_PLUS.ocr(image=self.device.image)
         # 转换为int
-        if cu != "":
-            cu = int(cu)
-        else:
-            cu = 0
+        cu = int(cu) if cu != "" else 0
         if cu >= 1:
             logger.info("Art war card is not enough, but plus card is enough")
             return True
@@ -263,20 +259,16 @@ class ScriptTask(GameUi, BaseActivity, HeroTestAssets, SwitchSoul):
         global is_skill
         while 1:
             self.screenshot()
-            if is_update:
-                if self.appear(self.I_BATTLE):
-                    break
-            if is_skill:
-                if self.appear(self.I_BCMJ_BATTLE):
-                    break
+            if is_update and self.appear(self.I_BATTLE):
+                break
+            if is_skill and self.appear(self.I_BCMJ_BATTLE):
+                break
             if self.appear_then_click(self.I_TWO, interval=1):
                 continue
-            if is_update:
-                if self.appear_then_click(self.I_GBB, interval=1):
-                    continue
-            if is_skill:
-                if self.appear_then_click(self.I_BCMJ, interval=1):
-                    continue
+            if is_update and self.appear_then_click(self.I_GBB, interval=1):
+                continue
+            if is_skill and self.appear_then_click(self.I_BCMJ, interval=1):
+                continue
 
     def main_home(self) -> bool:
         """

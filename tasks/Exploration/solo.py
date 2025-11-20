@@ -318,8 +318,6 @@ class SoloExploration(BaseExploration):
                 continue
 
         friend_class = []
-        class_ocr = [self.O_F_LIST_1, self.O_F_LIST_2, self.O_F_LIST_3, self.O_F_LIST_4]
-        class_index = 0
         list_1 = self.O_F_LIST_1.ocr(self.device.image)
         list_2 = self.O_F_LIST_2.ocr(self.device.image)
         list_3 = self.O_F_LIST_3.ocr(self.device.image)
@@ -363,13 +361,11 @@ class SoloExploration(BaseExploration):
 
             logger.info("Now find friend in ”最近“")
             sleep(1)
-            if not is_select:
-                if self.detect_select(name):
-                    is_select = True
+            if not is_select and self.detect_select(name):
+                is_select = True
             sleep(1)
-            if not is_select:
-                if self.detect_select(name):
-                    is_select = True
+            if not is_select and self.detect_select(name):
+                is_select = True
 
         for index in range(len(friend_class)):
             # 如果不是自动寻找，就跳过
@@ -408,13 +404,11 @@ class SoloExploration(BaseExploration):
             # 所以这里就直接等待一段时间
             logger.info(f"Now find friend in {friend_class[index]}")
             sleep(1)
-            if not is_select:
-                if self.detect_select(name):
-                    is_select = True
+            if not is_select and self.detect_select(name):
+                is_select = True
             sleep(1)
-            if not is_select:
-                if self.detect_select(name):
-                    is_select = True
+            if not is_select and self.detect_select(name):
+                is_select = True
 
         # 点击确定
         logger.info("Click invite ensure")

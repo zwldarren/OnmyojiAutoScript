@@ -51,7 +51,7 @@ class ScriptTask(KekkaiActivationScriptTask):
         self.config.model.global_game.costume_config.costume_realm_type = costume
         self.check_costume()
         logger.info(
-            "Set costume to %s" % self.config.model.global_game.costume_config.costume_realm_type
+            f"Set costume to {self.config.model.global_game.costume_config.costume_realm_type}"
         )
 
 

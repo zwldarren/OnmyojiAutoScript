@@ -14,7 +14,7 @@ def timer(function):
 
         result = function(*args, **kwargs)
         t1 = time.time()
-        print("%s: %s s" % (function.__name__, str(round(t1 - t0, 10))))
+        print(f"{function.__name__}: {str(round(t1 - t0, 10))} s")
         return result
 
     return function_timer

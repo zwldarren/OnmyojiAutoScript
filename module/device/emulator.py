@@ -53,7 +53,7 @@ class EmulatorInstance(VirtualBoxEmulator):
             list[str, str]: List of multi_id and serial.
         """
         vbox = []
-        for path, folders, files in os.walk(os.path.join(self.root, self.vbox_path)):
+        for path, _folders, files in os.walk(os.path.join(self.root, self.vbox_path)):
             for file in files:
                 if re.match(self.vbox_name, file):
                     file = os.path.join(path, file)
@@ -228,7 +228,7 @@ class EmulatorManager(Connection):
 
     def adb_connect(self, serial):
         try:
-            return super(EmulatorManager, self).adb_connect(serial)
+            return super().adb_connect(serial)
         except EmulatorNotRunningError:
             raise RequestHumanTakeover
 

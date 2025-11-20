@@ -72,7 +72,7 @@ class Control(Minitouch, Adb, Scrcpy, Window):
         if control_check:
             self.handle_control_check(control_name)
         x, y = ensure_int(x, y)
-        logger.info("Click %s @ %s" % (point2str(x, y), control_name))
+        logger.info(f"Click {point2str(x, y)} @ {control_name}")
         method = self.click_methods.get(self.config.script.device.control_method, self.click_adb)
         method(x, y)
 
@@ -136,7 +136,7 @@ class Control(Minitouch, Adb, Scrcpy, Window):
         if duration is None:
             duration = 0.8
         duration = ensure_time(duration)
-        logger.info("Click %s @ %s %s" % (point2str(x, y), control_name, duration))
+        logger.info(f"Click {point2str(x, y)} @ {control_name} {duration}")
         method = self.long_click_methods.get(
             self.config.script.device.control_method, self.long_click_adb
         )
@@ -148,17 +148,17 @@ class Control(Minitouch, Adb, Scrcpy, Window):
         duration = ensure_time(duration)
         method = self.config.script.device.control_method
         if method == "minitouch" or method == "window_message":
-            logger.info("Swipe %s -> %s" % (point2str(*p1), point2str(*p2)))
+            logger.info(f"Swipe {point2str(*p1)} -> {point2str(*p2)}")
         elif method == "uiautomator2":
-            logger.info("Swipe %s -> %s, %s" % (point2str(*p1), point2str(*p2), duration))
+            logger.info(f"Swipe {point2str(*p1)} -> {point2str(*p2)}, {duration}")
         elif method == "scrcpy":
-            logger.info("Swipe %s -> %s" % (point2str(*p1), point2str(*p2)))
+            logger.info(f"Swipe {point2str(*p1)} -> {point2str(*p2)}")
         # elif method == 'MaaTouch':
         #     logger.info('Swipe %s -> %s' % (point2str(*p1), point2str(*p2)))
         else:
             # ADB needs to be slow, or swipe doesn't work
             duration *= 2.5
-            logger.info("Swipe %s -> %s, %s " % (point2str(*p1), point2str(*p2), duration))
+            logger.info(f"Swipe {point2str(*p1)} -> {point2str(*p2)}, {duration} ")
 
         if distance_check:
             if p1[0] == p2[0]:
@@ -239,7 +239,7 @@ class Control(Minitouch, Adb, Scrcpy, Window):
     ):
         self.handle_control_check(name)
         p1, p2 = ensure_int(p1, p2)
-        logger.info("Drag %s -> %s" % (point2str(*p1), point2str(*p2)))
+        logger.info(f"Drag {point2str(*p1)} -> {point2str(*p2)}")
         method = self.config.script.emulator.control_method
         if method == "minitouch":
             self.drag_minitouch(p1, p2, point_random=point_random)

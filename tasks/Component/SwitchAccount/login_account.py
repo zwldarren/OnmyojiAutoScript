@@ -174,7 +174,7 @@ class LoginAccount(BaseTask, SwitchAccountAssets):
         self.O_SA_ACCOUNT_ACCOUNT_LIST.keyword = accountInfo.account
         self.O_SA_ACCOUNT_ACCOUNT_SELECTED.keyword = accountInfo.account
         # 正常情况一次就行,但防不住OCR搞幺蛾子 保险起见 多来几次吧 反正挂机不差这点
-        for i in range(3):
+        for _i in range(3):
             while 1:
                 self.screenshot()
                 if self.appear(self.I_SA_ACCOUNT_DROP_DOWN_CLOSED):
@@ -378,13 +378,13 @@ class LoginAccount(BaseTask, SwitchAccountAssets):
         @type stop:
         @return:
         """
-        if (isinstance(click, RuleImage) or isinstance(click, RuleGif)) and (stop is None):
+        if (isinstance(click, (RuleImage, RuleGif))) and (stop is None):
             stop = click
         while 1:
             self.screenshot()
             if not self.appear(stop):
                 break
-            if isinstance(click, RuleImage) or isinstance(click, RuleGif):
+            if isinstance(click, (RuleImage, RuleGif)):
                 self.appear_then_click(click, interval=interval)
                 continue
             elif isinstance(click, RuleClick):

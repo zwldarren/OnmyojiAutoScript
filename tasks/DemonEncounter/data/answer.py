@@ -71,7 +71,7 @@ class Answer:
             # 瞎猫当死耗子
             matches = {}
             for index, option in enumerate(ops):
-                if option not in self.data_options.keys():
+                if option not in self.data_options:
                     continue
                 for ques in self.data_options[option]:
                     ques_match_ratio = difflib.SequenceMatcher(None, ques, question).ratio()

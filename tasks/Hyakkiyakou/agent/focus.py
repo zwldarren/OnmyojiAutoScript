@@ -69,16 +69,14 @@ velocity: {self._v}"""
             tracks, strategy["invite_friend"]
         )
         if self._omega > buff_omega:
-            buffed = False
             target_x = self._cx + self._v * 100 - (self._w // 2)
             target_y = self._cy - 40
         else:
-            buffed = True
             target_x = buff_cx + buff_v * 100
             target_y = buff_cy - 40  # top left corner
 
         _r = self.r(vector=state, omega=self._omega, omega_buff=self._omega_buff)
-        throw = True if _r > 0 else False
+        throw = _r > 0
         # x, y, throw, number
         return [target_x, target_y, throw, 10]
 

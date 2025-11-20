@@ -130,9 +130,7 @@ class ScriptTask(GameUi, GeneralBattle, GeneralRoom, GeneralInvite, SwitchSoul, 
         self.ui_get_current_page()
         self.ui_goto(page_main)
 
-        if not success:
-            return False
-        return True
+        return success
 
     def run_member(self):
         logger.info("Start run member")
@@ -187,7 +185,7 @@ class ScriptTask(GameUi, GeneralBattle, GeneralRoom, GeneralInvite, SwitchSoul, 
         self._navigate_to_soul_zones()
         self._enter_eternity_sea()
 
-        if self._task_config.general_battle_config.lock_team_enable == False:
+        if not self._task_config.general_battle_config.lock_team_enable:
             logger.critical("Only supports lock team mode")
             raise RequestHumanTakeover
 

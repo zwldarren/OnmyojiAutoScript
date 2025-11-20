@@ -221,10 +221,7 @@ class ScriptTask(GameUi, GeneralBattle, SwitchSoul, DemonRetreatAssets, AbyssSha
             self.green_mark(config.green_enable, config.green_mark)
 
         win = self.battle_wait(config.random_click_swipt_enable)
-        if win:
-            return True
-        else:
-            return False
+        return bool(win)
 
     def battle_wait(self, random_click_swipt_enable: bool) -> bool:
         """

@@ -6,7 +6,7 @@ import multiprocessing
 import threading
 from collections.abc import Callable
 from multiprocessing.managers import SyncManager
-from typing import TYPE_CHECKING, Generic, TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 if TYPE_CHECKING:
     from module.config.config_updater import ConfigUpdater
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 
 
-class cached_class_property(Generic[T]):
+class cached_class_property[T]:
     """
     Code from https://github.com/dssg/dickens
     Add typing support

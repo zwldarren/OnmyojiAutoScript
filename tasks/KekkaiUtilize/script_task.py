@@ -276,10 +276,7 @@ class ScriptTask(GameUi, ReplaceShikigami, KekkaiUtilizeAssets):
                     if not self.appear(self.I_UI_CANCEL):
                         logger.info("No cancel button")
                         continue
-                    if exp_waste:
-                        check_button = self.I_UI_CONFIRM
-                    else:
-                        check_button = self.I_UI_CANCEL
+                    check_button = self.I_UI_CONFIRM if exp_waste else self.I_UI_CANCEL
                     while 1:
                         self.screenshot()
                         if not self.appear(check_button):
@@ -719,7 +716,7 @@ class ScriptTask(GameUi, ReplaceShikigami, KekkaiUtilizeAssets):
         safe_pos_y = random.randint(500, 565)
         p1 = (safe_pos_x, safe_pos_y)
         p2 = (safe_pos_x, safe_pos_y - 416)
-        logger.info("Swipe %s -> %s, %sS " % (point2str(*p1), point2str(*p2), duration))
+        logger.info(f"Swipe {point2str(*p1)} -> {point2str(*p2)}, {duration}S ")
         self.device.swipe_adb(p1, p2, duration=duration)
 
         # self.swipe(self.S_U_UP, duration=1, wait_up_time=1)
@@ -801,7 +798,7 @@ if __name__ == "__main__":
     c = Config("switch")
     d = Device(c)
     t = ScriptTask(c, d)
-    for i in range(10):
+    for _i in range(10):
         t.perform_swipe_action()
     t.recive_guild_ap_or_assets()
     # t.check_utilize_add()

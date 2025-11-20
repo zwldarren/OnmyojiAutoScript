@@ -62,9 +62,7 @@ class ScriptTask(GameUi, FindJadeAssets):
             return True
         if (lastTime.hour >= 18 or lastTime.hour < 5) and (18 > now.hour >= 5):
             return True
-        if (5 <= lastTime.hour < 18) and now.hour >= 18:
-            return True
-        return False
+        return bool(5 <= lastTime.hour < 18 and now.hour >= 18)
 
     def CreatObjectFromModule(self, task_name: str, **kwargs):
         module_name = "script_task"

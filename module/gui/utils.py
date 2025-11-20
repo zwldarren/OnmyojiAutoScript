@@ -38,7 +38,7 @@ def check_admin():
         # win = win32gui.GetForegroundWindow()
         # win32gui.ShowWindow(win, win32con.SW_HIDE)
         # Re-run the program as an admin
-        args = " ".join(sys.argv)
+        " ".join(sys.argv)
         ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, __file__, None, 1)
         sys.exit(0)
     logger.log("管理员身份运行")

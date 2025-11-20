@@ -50,9 +50,7 @@ class InviteInfo(BaseModel):
             return True
         if (last_time.hour >= 18 or last_time.hour < 5) and (18 > now.hour >= 5):
             return True
-        if (5 <= last_time.hour < 18) and now.hour >= 18:
-            return True
-        return False
+        return bool(5 <= last_time.hour < 18 and now.hour >= 18)
 
     def update_invite_history(self, ctype: CooperationType, name=None):
         if name != self.name:
@@ -137,10 +135,9 @@ class FindJade(ConfigBase):
             for key in remove_keys:
                 del data[key]
 
-            if item_type is not None:
-                if len(data[list_name]) < list_size:
-                    for i in range(list_size - len(data[list_name])):
-                        data[list_name].append(item_type())
+            if item_type is not None and len(data[list_name]) < list_size:
+                for _i in range(list_size - len(data[list_name])):
+                    data[list_name].append(item_type())
 
         validator_list("invite_info_list", v, InviteInfo, invite_info_count)
         validator_list("sup_account_list", v, AccountInfo, sup_account_count)

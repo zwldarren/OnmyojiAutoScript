@@ -282,7 +282,7 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, RyouToppaAssets):
             raise TaskEnd
         # 如果该区域攻略失败返回 False
         if self.appear(f1, threshold=0.8) or self.appear(f2, threshold=0.8):
-            logger.info("Area [%s] is futile attack, skip." % str(index + 1))
+            logger.info(f"Area [{str(index + 1)}] is futile attack, skip.")
             return False
         return True
 
@@ -290,7 +290,7 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, RyouToppaAssets):
         time.sleep(2)
         duration = 0.352
         count = random.randint(1, 3)
-        for i in range(count):
+        for _i in range(count):
             # 测试过很多次 win32api, win32gui 的 MOUSEEVENTF_WHEEL, WM_MOUSEWHEEL
             # 都出现过很多次离奇的事件，索性放弃了使用以下方法，参数是精心调试的
             # 每次执行刚好刷新一组（2个）设定随机刷新 1 - 3 次
@@ -298,7 +298,7 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, RyouToppaAssets):
             safe_pos_y = random.randint(320, 540)
             p1 = (safe_pos_x, safe_pos_y)
             p2 = (safe_pos_x, safe_pos_y - 101)
-            logger.info("Swipe %s -> %s, %s " % (point2str(*p1), point2str(*p2), duration))
+            logger.info(f"Swipe {point2str(*p1)} -> {point2str(*p2)}, {duration} ")
             self.device.swipe_adb(p1, p2, duration=duration)
             time.sleep(2)
 
@@ -330,7 +330,7 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, RyouToppaAssets):
                 self.screenshot()
                 if self.appear(self.I_TOPPA_RECORD, threshold=0.85):
                     continue
-                logger.info("Start attach area [%s]" % str(index + 1))
+                logger.info(f"Start attach area [{str(index + 1)}]")
                 return self.run_general_battle(config=self.config.ryou_toppa.general_battle_config)
 
             if self.appear_then_click(RealmRaidAssets.I_FIRE, interval=2, threshold=0.8):

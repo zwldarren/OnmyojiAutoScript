@@ -134,7 +134,7 @@ class BezierTrajectory:
         """
         s = []
         fun = cls.simulation(start, end, le, deviation, bias)
-        w = fun["P"]
+        fun["P"]
         fun = fun["equation"]
         if cbb != 0:
             numberListOfcbb = round(numberList * 0.2 / (cbb + 1))

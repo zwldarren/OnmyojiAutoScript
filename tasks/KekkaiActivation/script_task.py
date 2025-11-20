@@ -322,7 +322,7 @@ class ScriptTask(KU, KekkaiActivationAssets):
                 safe_pos_y = random.randint(580, 600)
                 p1 = (safe_pos_x, safe_pos_y)
                 p2 = (safe_pos_x, safe_pos_y - 410)
-                logger.info("Swipe %s -> %s, %sS " % (point2str(*p1), point2str(*p2), duration))
+                logger.info(f"Swipe {point2str(*p1)} -> {point2str(*p2)}, {duration}S ")
                 self.device.swipe_adb(p1, p2, duration=duration)
                 time.sleep(1)
                 continue

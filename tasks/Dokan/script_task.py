@@ -61,11 +61,10 @@ class ScriptTask(ExtendGreenMark, GameUi, SwitchSoul, DokanSceneDetector):
         attack_priority: int = cfg.dokan_config.dokan_attack_priority
 
         # 周几检测
-        if cfg.dokan_config.monday_to_thursday:
-            if datetime.now().weekday() >= 4:
-                logger.warning("weekend, exit")
-                self.next_run(True)
-                return
+        if cfg.dokan_config.monday_to_thursday and datetime.now().weekday() >= 4:
+            logger.warning("weekend, exit")
+            self.next_run(True)
+            return
 
         # # 自动换御魂
         # if cfg.switch_soul_config.enable:
@@ -717,7 +716,7 @@ class ScriptTask(ExtendGreenMark, GameUi, SwitchSoul, DokanSceneDetector):
             return False
 
         while num_fresh < self.config.dokan.dokan_config.find_dokan_refresh_count:
-            for i in range(3):
+            for _i in range(3):
                 sleep(3)
                 if find_challengeable():
                     logger.info("find challengeable dokan")
@@ -1024,13 +1023,13 @@ class ScriptTask(ExtendGreenMark, GameUi, SwitchSoul, DokanSceneDetector):
         return (src[0] + offset[0], src[1] + offset[1], src[2] + offset[2], src[3] + offset[3])
 
     def click_until_smt_disappear(self, click, stop, interval: float = 1):
-        if stop is None and (isinstance(click, RuleImage) or isinstance(click, RuleGif)):
+        if stop is None and (isinstance(click, (RuleImage, RuleGif))):
             stop = click
         while 1:
             self.screenshot()
             if not self.appear(stop):
                 break
-            if isinstance(click, RuleImage) or isinstance(click, RuleGif):
+            if isinstance(click, (RuleImage, RuleGif)):
                 self.appear_then_click(click, interval=interval)
                 continue
             if isinstance(click, RuleClick):

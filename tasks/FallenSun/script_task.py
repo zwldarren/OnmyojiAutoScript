@@ -146,10 +146,9 @@ class ScriptTask(
             if self.appear_then_click(self.I_PET_PRESENT, action=self.C_WIN_3, interval=1):
                 continue
 
-            if self.current_count >= self.limit_count:
-                if self.is_in_room():
-                    logger.info("FallenSun count limit out")
-                    break
+            if self.current_count >= self.limit_count and self.is_in_room():
+                logger.info("FallenSun count limit out")
+                break
 
             if datetime.now() - self.start_time >= self.limit_time:
                 if self.is_in_room():
@@ -200,9 +199,7 @@ class ScriptTask(
         self.ui_get_current_page()
         self.ui_goto(page_main)
 
-        if not success:
-            return False
-        return True
+        return success
 
     def run_member(self):
         logger.info("Start run member")

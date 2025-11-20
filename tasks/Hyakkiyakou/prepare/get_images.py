@@ -24,7 +24,7 @@ class GenerateImages(GameUi, HyakkiyakouAssets):
     def run(self):
         self.ui_get_current_page()
         self.ui_goto(page_hyakkiyakou)
-        for i in range(1):
+        for _i in range(1):
             self.save_one()
 
     def save_one(self):
@@ -67,11 +67,11 @@ class GenerateImages(GameUi, HyakkiyakouAssets):
     def save_image(self, image=None):
         if image is None:
             image = self.device.image
-        img1 = image[80:, :640]
-        img2 = image[80:, 640:]
+        image[80:, :640]
+        image[80:, 640:]
         # 时间戳毫秒级别
         time_now1 = int(time.time() * 1000)
-        time_now2 = time_now1 + 1
+        time_now1 + 1
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         # cv2.imwrite(str(self.save_folder / f'{time_now1}.png'), img1)
         # cv2.imwrite(str(self.save_folder / f'{time_now2}.png'), img2)

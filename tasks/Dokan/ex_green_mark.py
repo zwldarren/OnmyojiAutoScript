@@ -253,9 +253,7 @@ class ExtendGreenMark(GeneralBattle):
             )
             return res
 
-        if detect_green_marker_base(self.device.image):
-            return True
-        return False
+        return bool(detect_green_marker_base(self.device.image))
 
     def green_mark_screenshot(self, callback=None):
         """

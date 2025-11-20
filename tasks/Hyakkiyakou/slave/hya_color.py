@@ -37,9 +37,7 @@ class HyaColor(BaseTask):
             return False
         if abs(img_g - g) > offset:
             return False
-        if abs(img_b - b) > offset:
-            return False
-        return True
+        return not abs(img_b - b) > offset
 
 
 if __name__ == "__main__":

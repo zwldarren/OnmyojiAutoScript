@@ -74,10 +74,7 @@ class GameUi(BaseTask, GameUiAssets):
         """
         self.maybe_screenshot(skip_first_screenshot)
         if isinstance(page.check_button, list):
-            for button in page.check_button:
-                if self.appear(button, interval):
-                    return True
-            return False
+            return any(self.appear(button, interval) for button in page.check_button)
         return self.appear(page.check_button, interval)
 
     def ui_wait_until_appear(
@@ -244,10 +241,9 @@ class GameUi(BaseTask, GameUiAssets):
             logger.info(f"{show_paths}")
             # 遍历路径
             found = self._execute_path(path, timeout_timer)
-            if not found:
-                if close_unknown_timer.reached_and_reset():
-                    self.try_close_unknown_page(skip_screenshot=False)
-                    self.ui_current = None
+            if not found and close_unknown_timer.reached_and_reset():
+                self.try_close_unknown_page(skip_screenshot=False)
+                self.ui_current = None
         else:
             logger.error(f"Cannot goto page[{destination}], timeout[{timeout}s] reached")
         return False

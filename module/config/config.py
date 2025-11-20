@@ -64,10 +64,7 @@ class Function:
         if not isinstance(other, Function):
             return False
 
-        if self.command == other.command and self.next_run == other.next_run:
-            return True
-        else:
-            return False
+        return bool(self.command == other.command and self.next_run == other.next_run)
 
 
 def name_to_function(name):

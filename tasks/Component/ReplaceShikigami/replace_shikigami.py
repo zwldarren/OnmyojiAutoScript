@@ -59,7 +59,7 @@ class ReplaceShikigami(BaseTask, ReplaceShikigamiAssets):
                 continue
             if self.click(self.C_SHIKIGAMI_SWITCH_1, interval=3.5):
                 continue
-        logger.info("Select shikigami class: %s" % shikigami_class)
+        logger.info(f"Select shikigami class: {shikigami_class}")
 
     def unset_shikigami_max_lv(self):
         """
@@ -132,13 +132,11 @@ class ReplaceShikigami(BaseTask, ReplaceShikigamiAssets):
 
     def detect_no_shikigami(self) -> bool:
         self.screenshot()
-        if (
+        return bool(
             self.appear(self.I_DETECT_EMPTY_1)
             or self.appear(self.I_DETECT_EMPTY_2)
             or self.appear(self.I_DETECT_EMPTY_3)
             or self.appear(self.I_DETECT_EMPTY_4)
             or self.appear(self.I_DETECT_EMPTY_5)
             or self.appear(self.I_DETECT_EMPTY_6)
-        ):
-            return True
-        return False
+        )

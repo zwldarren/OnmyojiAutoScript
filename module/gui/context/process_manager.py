@@ -263,10 +263,7 @@ class ProcessManager(QObject):
         """
         if config in self.clients:
             logger.info(f"Gui set value of {config} {task}")
-            if self.check_script(config).gui_set_task(task, group, arg, value):
-                return True
-            else:
-                return False
+            return bool(self.check_script(config).gui_set_task(task, group, arg, value))
         else:
             logger.info(f"Script {config} is not running")
             return False
@@ -284,10 +281,7 @@ class ProcessManager(QObject):
         """
         if config in self.clients:
             logger.info(f"Gui set value of {config} {task}")
-            if self.check_script(config).gui_set_task(task, group, arg, value):
-                return True
-            else:
-                return False
+            return bool(self.check_script(config).gui_set_task(task, group, arg, value))
         else:
             logger.info(f"Script {config} is not running")
             return False
@@ -305,10 +299,7 @@ class ProcessManager(QObject):
         """
         if config in self.clients:
             logger.info(f"Gui set value of {config} {task}")
-            if self.check_script(config).gui_set_task(task, group, arg, value):
-                return True
-            else:
-                return False
+            return bool(self.check_script(config).gui_set_task(task, group, arg, value))
         else:
             logger.info(f"Script {config} is not running")
             return False
@@ -376,7 +367,7 @@ class ProcessManager(QObject):
         :param config_name:
         :return:
         """
-        q = self.log_queue[config_name] if config_name in self.log_queue else None
+        q = self.log_queue.get(config_name, None)
         if q is None:
             logger.error(f"Process manager has no config {config_name}")
             logger.info(f"Script {config_name} is not running")

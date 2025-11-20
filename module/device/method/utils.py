@@ -1,3 +1,4 @@
+import contextlib
 import random
 import re
 import socket
@@ -214,18 +215,14 @@ def remove_shell_warning(s):
     # WARNING: linker: [vdso]: unused DT entry: type 0x70000001 arg 0x0\n\x89PNG\r\n\x1a\n\x00\x00\x00\rIH
     if isinstance(s, bytes):
         if s.startswith(b"WARNING"):
-            try:
+            with contextlib.suppress(IndexError):
                 s = s.split(b"\n", maxsplit=1)[1]
-            except IndexError:
-                pass
         return s
         # return re.sub(b'^WARNING.+\n', b'', s)
     elif isinstance(s, str):
         if s.startswith("WARNING"):
-            try:
+            with contextlib.suppress(IndexError):
                 s = s.split("\n", maxsplit=1)[1]
-            except IndexError:
-                pass
     return s
 
 

@@ -276,7 +276,7 @@ class Scales(Buy, MallNavbar):
             buy_cycles_number = None
             buy_res_number = buy_number
         if buy_cycles_number:
-            for i in range(buy_cycles_number):
+            for _i in range(buy_cycles_number):
                 self._scales_buy_more(self.I_SCA_DEMON_BUY)
                 time.sleep(0.5)
         if buy_res_number:
@@ -341,7 +341,7 @@ class Scales(Buy, MallNavbar):
             buy_cycles_number = None
             buy_res_number = buy_number
         if buy_cycles_number:
-            for i in range(buy_cycles_number):
+            for _i in range(buy_cycles_number):
                 self._scales_buy_sea_more(self.I_SCA_PICTURE_BOOK)
                 time.sleep(0.5)
         if buy_res_number and buy_res_number >= 2:

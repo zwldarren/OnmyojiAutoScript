@@ -124,7 +124,7 @@ class Bondlings(Buy, MallNavbar):
             buy_res_number = buy_number
 
         if buy_cycles_number:
-            for i in range(buy_cycles_number):
+            for _i in range(buy_cycles_number):
                 self.buy_more(buy_button)
                 time.sleep(0.5)
         if buy_res_number:

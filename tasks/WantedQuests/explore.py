@@ -22,7 +22,6 @@ class WQExplore(BaseExploration, HighLight):
 
     def explore(self, goto: RuleImage, num: int):
         logger.info(f"Start exploring with number: {num}")
-        explore_init = False
         explore_only_boss: bool = True
         _cnt_exploration = 0
         search_fail_cnt = 0

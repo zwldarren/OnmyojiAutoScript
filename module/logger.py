@@ -357,10 +357,7 @@ class GuiRule(Rule):
         aside_len = (total_width - cell_len) // 2
         left = self.characters * aside_len
         right = self.characters * (total_width - cell_len - aside_len)
-        if self.title:
-            space = " "
-        else:
-            space = self.characters
+        space = " " if self.title else self.characters
         return f"{left}{space}{self.title}{space}{right}\n"
 
     def __repr__(self) -> str:
@@ -424,7 +421,7 @@ def attr(name: str, text: Any) -> None:
         name: Attribute name
         text: Attribute value
     """
-    logger.info("[%s] %s" % (str(name), str(text)))
+    logger.info(f"[{str(name)}] {str(text)}")
 
 
 def attr_align(name: str, text: Any, front: str = "", align: int = 22) -> None:
@@ -440,7 +437,7 @@ def attr_align(name: str, text: Any, front: str = "", align: int = 22) -> None:
     name_str = str(name).rjust(align)
     if front:
         name_str = front + name_str[len(front) :]
-    logger.info("%s: %s" % (name_str, str(text)))
+    logger.info(f"{name_str}: {str(text)}")
 
 
 from typing import Any, Literal, cast
@@ -491,7 +488,6 @@ def show() -> None:
     logger.info(
         "Tests very long strings. Tests very long strings. Tests very long strings. Tests very long strings. Tests very long strings."
     )
-    local_var1 = "This is local variable"
     # Line before exception
     raise Exception("Exception")
     # Line below exception

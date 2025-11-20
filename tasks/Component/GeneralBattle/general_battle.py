@@ -40,10 +40,7 @@ class GeneralBattle(GeneralBuff, GeneralBattleAssets):
             self.green_mark(config.green_enable, config.green_mark)
         # 战中设置
         win = self.battle_wait(config.random_click_swipt_enable)
-        if win:
-            return True
-        else:
-            return False
+        return bool(win)
 
     def battle_before(self, buff, config):
         """
@@ -460,16 +457,13 @@ class GeneralBattle(GeneralBuff, GeneralBattleAssets):
         """
         if is_screenshot:
             self.screenshot()
-        if (
+        return bool(
             self.appear(self.I_BATTLE_INFO)
             or self.appear(self.I_FRIENDS)
             or self.appear(self.I_WIN)
             or self.appear(self.I_FALSE)
             or self.appear(self.I_REWARD)
-        ):
-            return True
-        else:
-            return False
+        )
 
     def is_in_real_battle(self, is_screenshot: bool = True):
         """
@@ -488,16 +482,13 @@ class GeneralBattle(GeneralBuff, GeneralBattleAssets):
         """
         if is_screenshot:
             self.screenshot()
-        if (
+        return bool(
             self.appear(self.I_BUFF)
             or self.appear(self.I_PREPARE_HIGHLIGHT)
             or self.appear(self.I_PREPARE_DARK)
             or self.appear(self.I_PRESET)
             or self.appear(self.I_PRESET_WIT_NUMBER)
-        ):
-            return True
-        else:
-            return False
+        )
 
     def check_take_over_battle(
         self, is_screenshot: bool, config: GeneralBattleConfig

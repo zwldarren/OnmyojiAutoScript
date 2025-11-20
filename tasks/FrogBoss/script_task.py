@@ -286,7 +286,7 @@ class ScriptTask(RightActivity, FrogBossAssets, GeneralBattleAssets):
 
         for user in uids:
             uid = user["id"]
-            name = user["name"]
+            user["name"]
             feed_id = get_feed_id(uid)
             if feed_id:
                 details = get_feed_details(feed_id)
@@ -296,10 +296,7 @@ class ScriptTask(RightActivity, FrogBossAssets, GeneralBattleAssets):
                     bet_rate = re.compile(
                         r"([5-9]\d%|\d+开|[一二三四五六七八九十零]+开|([红蓝][一二三四五六七八九十零,0-9])+)"
                     ).search(details.get("body_text"))
-                    if bet_rate:
-                        bet_rate = "," + bet_rate.group()
-                    else:
-                        bet_rate = ""
+                    bet_rate = "," + bet_rate.group() if bet_rate else ""
                     # 输出博主结论，可省略
                     # logger.info(f"{name}({details['user_nick']}) has bet on the {bet_result}{bet_rate}")
 

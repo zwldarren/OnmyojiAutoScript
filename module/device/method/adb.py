@@ -402,7 +402,7 @@ class Adb(Connection):
         self.adb_shell(["input", "motionevent", "DOWN", str(start_point[0]), str(start_point[1])])
 
         # 移动到后续点
-        for i, point in enumerate(smooth_points[1:], start=1):
+        for _i, point in enumerate(smooth_points[1:], start=1):
             # 给点间隔
             time.sleep(interval)
             self.adb_shell(["input", "motionevent", "MOVE", str(point[0]), str(point[1])])

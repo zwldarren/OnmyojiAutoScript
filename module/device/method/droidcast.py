@@ -219,9 +219,8 @@ class DroidCast(Uiautomator2):
         if image is None:
             raise ImageTruncated("Empty image after cv2.cvtColor")
 
-        if self.is_mumu_over_version_356:
-            if self.orientation == 1:
-                image = cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)
+        if self.is_mumu_over_version_356 and self.orientation == 1:
+            image = cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)
 
         return image
 

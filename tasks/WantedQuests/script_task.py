@@ -215,9 +215,8 @@ class ScriptTask(WQExplore, SecretScriptTask, WantedQuestsAssets):
             if self.special_main and self.click(self.C_SPECIAL_MAIN, interval=3):
                 logger.info("Click special main left to find wanted quests")
                 continue
-            if self.appear(self.I_UI_BACK_RED):
-                if not done_timer.started():
-                    done_timer.start()
+            if self.appear(self.I_UI_BACK_RED) and not done_timer.started():
+                done_timer.start()
             if done_timer.started() and done_timer.reached():
                 self.ui_click_until_disappear(self.I_UI_BACK_RED)
                 return False
@@ -256,9 +255,8 @@ class ScriptTask(WQExplore, SecretScriptTask, WantedQuestsAssets):
             if self.special_main and self.click(self.C_SPECIAL_MAIN, interval=3):
                 logger.info("Click special main left to find wanted quests")
                 continue
-            if self.appear(self.I_UI_BACK_RED):
-                if not done_timer.started():
-                    done_timer.start()
+            if self.appear(self.I_UI_BACK_RED) and not done_timer.started():
+                done_timer.start()
             if done_timer.started() and done_timer.reached():
                 self.ui_click_until_disappear(self.I_UI_BACK_RED)
                 return False
@@ -440,7 +438,7 @@ class ScriptTask(WQExplore, SecretScriptTask, WantedQuestsAssets):
 
     def secret(self, goto, num=1):
         self.ui_click(goto, self.I_WQSE_FIRE)
-        for i in range(num):
+        for _i in range(num):
             self.wait_until_appear(self.I_WQSE_FIRE)
             # self.ui_click_until_disappear(self.I_WQSE_FIRE)
             # 又臭又长的对话针的是服了这个网易
@@ -461,7 +459,7 @@ class ScriptTask(WQExplore, SecretScriptTask, WantedQuestsAssets):
                         click_count = 0
                         self.device.click_record_clear()
                     continue
-            success = self.run_general_battle(self.battle_config)
+            self.run_general_battle(self.battle_config)
         while 1:
             self.screenshot()
             if self.appear(self.I_CHECK_EXPLORATION):
@@ -540,10 +538,7 @@ class ScriptTask(WQExplore, SecretScriptTask, WantedQuestsAssets):
            """
             index = 0
             item["inviteResult"] = False
-            if name_all is None:
-                name = self.get_invite_vip_name(item["type"])
-            else:
-                name = name_all
+            name = self.get_invite_vip_name(item["type"]) if name_all is None else name_all
             logger.warning("find cooperationType %s ,start invite %s", item["type"], name)
             while index < 5:
                 if self.cooperation_invite(item["inviteBtn"], name):
@@ -577,7 +572,7 @@ class ScriptTask(WQExplore, SecretScriptTask, WantedQuestsAssets):
         self.O_WQ_INVITE_COLUMN_2.keyword = name
 
         find = False
-        for i in range(2):
+        for _i in range(2):
             self.wait_until_appear(self.I_WQ_INVITE_FRIEND_LIST_APPEAR, wait_time=4)
             self.screenshot()
             in_col_1 = self.ocr_appear_click(self.O_WQ_INVITE_COLUMN_1)
@@ -615,7 +610,6 @@ class ScriptTask(WQExplore, SecretScriptTask, WantedQuestsAssets):
         """
         self.screenshot()
         retList = []
-        i = 0
         for index in range(3):
             btn = self.__getattribute__("I_WQ_INVITE_" + str(index + 1))
             if not self.appear(btn):
@@ -687,9 +681,7 @@ class ScriptTask(WQExplore, SecretScriptTask, WantedQuestsAssets):
     def special_main(self) -> bool:
         # 特殊的庭院需要点一下，左边然后才能找到图标
         main_type = self.config.global_game.costume_config.costume_main_type
-        if main_type == MainType.COSTUME_MAIN_3:
-            return True
-        return False
+        return main_type == MainType.COSTUME_MAIN_3
 
     def get_config(self):
         return self.config.wanted_quests.wanted_quests_config

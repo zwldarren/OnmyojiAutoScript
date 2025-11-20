@@ -13,7 +13,6 @@ from tasks.Component.SwitchSoul.switch_soul import SwitchSoul
 from tasks.GameUi.game_ui import GameUi
 from tasks.GameUi.page import page_main, page_shikigami_records
 from tasks.MetaDemon.assets import MetaDemonAssets
-from tasks.MetaDemon.config import MetaDemon
 from tasks.Restart.assets import RestartAssets
 
 """超鬼王"""
@@ -71,7 +70,6 @@ class ScriptTask(GeneralBattle, SwitchSoul, GameUi, MetaDemonAssets):
                 boss_timer.reset()
                 continue
 
-        config: MetaDemon = self.config.model.meta_demon
         # 主循环
         while 1:
             self.screenshot()
@@ -93,18 +91,14 @@ class ScriptTask(GeneralBattle, SwitchSoul, GameUi, MetaDemonAssets):
         if screenshot:
             self.screenshot()
         cu, res, total = self.O_MD_TICKET.ocr(self.device.image)
-        if cu <= 0:
-            return False
-        return True
+        return not cu <= 0
 
     def check_exhaustion(self, screenshot: bool = False) -> bool:
         # EXHAUSTION
         if screenshot:
             self.screenshot()
         cu, res, total = self.O_MD_EXHAUSTION.ocr(self.device.image)
-        if cu >= 100:
-            return False
-        return True
+        return not cu >= 100
 
     def current_exhaustion(self) -> int:
         self.screenshot()

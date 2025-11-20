@@ -434,10 +434,19 @@ class Minitouch(Connection):
         max_pressure = 50
         self.get_orientation()
 
-        self._minitouch_port = self.adb_forward("localabstract:minitouch")
+        # Ensure u2 session is initialized
+        _ = self.u2
 
-        # No need, minitouch already started by uiautomator2
-        # self.adb_shell([self.config.MINITOUCH_FILEPATH_REMOTE])
+        # Start minitouch service manually in uiautomator2 3.x
+        # u2 3.x does not automatically start minitouch like older versions
+        logger.info("Starting minitouch service")
+        self.adb_shell(["pkill", "-f", "minitouch"], timeout=5)
+        self.sleep(0.5)
+        # Run minitouch in background using stream to avoid blocking
+        self.adb.shell(["sh", "-c", "/data/local/tmp/minitouch > /dev/null 2>&1 &"])
+        self.sleep(1)
+
+        self._minitouch_port = self.adb_forward("localabstract:minitouch")
 
         retry_timeout = Timer(2).start()
         while 1:

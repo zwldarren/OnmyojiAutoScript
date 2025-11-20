@@ -11,10 +11,7 @@ from tasks.Hyakkiyakou.config import ControlMethod, ScreenshotMethod
 
 
 def image_black(img) -> bool:
-    for y, x in [(0, 0), (719, 1279), (719, 0), (0, 1279)]:
-        if np.all(img[y, x] != 0):
-            return False
-    return True
+    return all(not np.all(img[y, x] != 0) for y, x in [(0, 0), (719, 1279), (719, 0), (0, 1279)])
 
 
 class HyaDevice(BaseTask):
@@ -55,7 +52,7 @@ class HyaDevice(BaseTask):
     def fast_click(
         self, x: int, y: int, control_method: ControlMethod = ControlMethod.WINDOW_MESSAGE
     ) -> None:
-        logger.info("Click %s @ %s" % (point2str(x, y), "Click"))
+        logger.info("Click {} @ {}".format(point2str(x, y), "Click"))
         if control_method == ControlMethod.MINITOUCH:
             self.device.click_minitouch(x=x, y=y)
         else:

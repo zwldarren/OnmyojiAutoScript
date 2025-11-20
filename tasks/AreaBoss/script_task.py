@@ -44,9 +44,8 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, AreaBossAssets):
 
         # 已挑战鬼王数量
         boss_fought = 0
-        if con.boss_reward:
-            if self.fight_reward_boss():  # 挑战成功则加一
-                boss_fought += 1
+        if con.boss_reward and self.fight_reward_boss():  # 挑战成功则加一
+            boss_fought += 1
 
         self.open_filter()
         # 切换到对应集合(热门/收藏)
@@ -282,7 +281,7 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, AreaBossAssets):
             return self.boss_fight(photo, True, fileter_open=False)
         # 滑动到最顶层
         logger.info("Swipe to top")
-        for i in range(random.randint(1, 3)):
+        for _i in range(random.randint(1, 3)):
             self.swipe(self.S_AB_FILTER_DOWN)
         # 遍历所有boss找到名称一致的即目前挑战人数最多的
         for PHOTO in BOSS_REWARD_PHOTO1:
@@ -292,7 +291,7 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, AreaBossAssets):
                 return self.boss_fight(PHOTO, True, fileter_open=False)
             self.ui_click_until_disappear(self.I_AB_CLOSE_RED)
         # 倒数一和二
-        for i in range(random.randint(1, 3)):
+        for _i in range(random.randint(1, 3)):
             self.swipe(self.S_AB_FILTER_UP)
         for PHOTO in BOSS_REWARD_PHOTO2:
             self.open_filter()
@@ -410,9 +409,7 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, AreaBossAssets):
             try_num -= 1
         # 打开鬼王详情界面失败,直接返回
         self.screenshot()
-        if self.appear(self.I_AB_CLOSE_RED):
-            return True
-        return False
+        return bool(self.appear(self.I_AB_CLOSE_RED))
 
     def is_group_ranked(self):
         """

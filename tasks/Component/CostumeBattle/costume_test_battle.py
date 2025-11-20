@@ -50,7 +50,7 @@ class ScriptTask(ScriptTaskBase):
                 self.screenshot()
                 if self.appear(self.I_TOPPA_RECORD, threshold=0.85):
                     continue
-                logger.info("Start attach area [%s]" % str(index + 1))
+                logger.info(f"Start attach area [{str(index + 1)}]")
                 return self.run_general_battle_back(config=self.battle_config)
 
             if self.appear_then_click(RealmRaidAssets.I_FIRE, interval=2, threshold=0.8):
@@ -63,7 +63,7 @@ class ScriptTask(ScriptTaskBase):
         self.config.model.global_game.costume_config.costume_battle_type = costume
         self.check_costume()
         logger.info(
-            "Set costume to %s" % self.config.model.global_game.costume_config.costume_battle_type
+            f"Set costume to {self.config.model.global_game.costume_config.costume_battle_type}"
         )
 
 

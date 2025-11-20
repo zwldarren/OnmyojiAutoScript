@@ -47,7 +47,6 @@ class ScriptTask(GameUi, CollectiveMissionsAssets):
     def run(self):
         self.ui_get_current_page()
         self.ui_goto(page_guild)
-        rule = self.config.collective_missions.missions_config.missions_rule
         self.ui_click(self.I_CM_SHRINE, self.I_CM_CM)
         self.ui_click(self.I_CM_CM, self.I_CM_RECORDS)
         logger.info("Start to detect missions")
@@ -168,9 +167,7 @@ class ScriptTask(GameUi, CollectiveMissionsAssets):
 
         def bondling_finish():
             self.screenshot()
-            if self.appear(self.I_CM_REWARDS):
-                return True
-            return False
+            return bool(self.appear(self.I_CM_REWARDS))
 
         if not bondling_finish():
             self.config.bondling_fairyland.scheduler.next_run = self.start_time
@@ -241,12 +238,6 @@ class ScriptTask(GameUi, CollectiveMissionsAssets):
             1: self.S_CM_MATTER_2,
             2: self.S_CM_MATTER_3,
             3: self.S_CM_MATTER_4,
-        }
-        match_image = {
-            0: self.I_CM_ADD_1,
-            1: self.I_CM_ADD_2,
-            2: self.I_CM_ADD_3,
-            3: self.I_CM_ADD_4,
         }
         # 滑动到最多的材料
         random_click = [self.I_CM_ADD_1, self.I_CM_ADD_2, self.I_CM_ADD_3, self.I_CM_ADD_4]

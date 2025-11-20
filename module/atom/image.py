@@ -187,7 +187,7 @@ class RuleImage:
         results = cv2.matchTemplate(source, mat, cv2.TM_CCOEFF_NORMED)
         locations = np.where(results >= threshold)
         matches = []
-        for pt in zip(*locations[::-1]):  # (x, y) coordinates
+        for pt in zip(*locations[::-1], strict=False):  # (x, y) coordinates
             score = results[pt[1], pt[0]]
             # 得分, x, y, w, h
             x = self.roi_back[0] + pt[0]
@@ -216,7 +216,7 @@ class RuleImage:
         results = cv2.matchTemplate(source, mat, cv2.TM_CCOEFF_NORMED)
         locations = np.where(results >= threshold)
         matches = []
-        for pt in zip(*locations[::-1]):  # (x, y) coordinates
+        for pt in zip(*locations[::-1], strict=False):  # (x, y) coordinates
             score = results[pt[1], pt[0]]
             # 得分, x, y, w, h
             x = self.roi_back[0] + pt[0]
@@ -354,10 +354,7 @@ class RuleImage:
         image = self.corp(image)
         average_color = cv2.mean(image)
         # logger.info(f'{self.name} average_color: {average_color}')
-        for i in range(3):
-            if abs(average_color[i] - color[i]) > bias:
-                return False
-        return True
+        return all(abs(average_color[i] - color[i]) <= bias for i in range(3))
 
 
 if __name__ == "__main__":

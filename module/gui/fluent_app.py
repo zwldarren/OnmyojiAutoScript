@@ -75,7 +75,7 @@ class FluentApp:
 
 class Translator(QObject):
     def __init__(self, engine, app) -> None:
-        super(Translator, self).__init__()
+        super().__init__()
         self._engine = engine
         self._app = app
         self.path_en_US = str((Path.cwd() / "module" / "config" / "i18n" / "en_US.qm").resolve())

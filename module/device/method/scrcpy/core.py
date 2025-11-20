@@ -1,3 +1,4 @@
+import contextlib
 import socket
 import struct
 import threading
@@ -152,22 +153,16 @@ class ScrcpyCore(Connection):
 
         self._scrcpy_alive = False
         if self._scrcpy_server_stream is not None:
-            try:
+            with contextlib.suppress(Exception):
                 self._scrcpy_server_stream.close()
-            except Exception:
-                pass
 
         if self._scrcpy_control_socket is not None:
-            try:
+            with contextlib.suppress(Exception):
                 self._scrcpy_control_socket.close()
-            except Exception:
-                pass
 
         if self._scrcpy_video_socket is not None:
-            try:
+            with contextlib.suppress(Exception):
                 self._scrcpy_video_socket.close()
-            except Exception:
-                pass
 
         logger.info("Scrcpy server stopped")
 

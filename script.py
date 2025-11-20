@@ -1,6 +1,7 @@
 # @author runhey
 # github https://github.com/runhey
 
+import contextlib
 import json
 import os
 import re
@@ -167,14 +168,10 @@ class Script:
         group = convert_to_underscore(group)
         argument = convert_to_underscore(argument)
         # pandtic验证
-        if isinstance(value, str):
-            if len(value) == 8:
-                try:
-                    value = datetime.strptime(value, "%H:%M:%S").time()
-                except ValueError:
-                    pass
+        if isinstance(value, str) and len(value) == 8:
+            with contextlib.suppress(ValueError):
+                value = datetime.strptime(value, "%H:%M:%S").time()
 
-        path = f"{task}.{group}.{argument}"
         task_object = getattr(self.config.model, task, None)
         group_object = getattr(task_object, group, None)
         argument_object = getattr(group_object, argument, None)
@@ -525,7 +522,7 @@ class Script:
 
             # Check failures
             # failed = deep_get(self.failure_record, keys=task, default=0)
-            failed = self.failure_record[task] if task in self.failure_record else 0
+            failed = self.failure_record.get(task, 0)
             failed = 0 if success else failed + 1
             # deep_set(self.failure_record, keys=task, value=failed)
             self.failure_record[task] = failed

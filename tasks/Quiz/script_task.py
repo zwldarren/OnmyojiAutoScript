@@ -114,13 +114,11 @@ class ScriptTask(GameUi, QuizAssets, ActivityShikigamiAssets, Debugger):
         self.close_fn()
 
     def detect_new(self, select_1, select_2, select_3, select_4) -> bool:
-        new = (
-            True
-            if self.last_select_1 != select_1
+        new = bool(
+            self.last_select_1 != select_1
             or self.last_select_2 != select_2
             or self.last_select_3 != select_3
             or self.last_select_4 != select_4
-            else False
         )
         self.last_select_1, self.last_select_2, self.last_select_3, self.last_select_4 = (
             select_1,
