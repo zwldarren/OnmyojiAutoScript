@@ -2,9 +2,8 @@
 # github https://github.com/runhey
 
 from datetime import datetime, time, timedelta
-from time import sleep
-
 from functools import cached_property
+from time import sleep
 
 from module.base.timer import Timer
 from module.exception import TaskEnd

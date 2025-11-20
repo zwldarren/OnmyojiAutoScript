@@ -2,9 +2,9 @@
 # github https://github.com/runhey
 
 from enum import Enum
+from functools import cached_property
 
 from anytree import NodeMixin, PreOrderIter, RenderTree
-from functools import cached_property
 from win32api import GetSystemMetrics
 from win32con import (
     DESKTOPHORZRES,

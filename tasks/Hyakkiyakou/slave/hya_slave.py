@@ -1,8 +1,8 @@
 from enum import Enum
+from functools import cached_property
 from pathlib import Path
 
 import cv2
-from functools import cached_property
 
 from module.atom.image import RuleImage
 from module.base.timer import Timer

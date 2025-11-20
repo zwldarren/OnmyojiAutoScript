@@ -4,7 +4,6 @@ import random
 import re
 import time
 from datetime import datetime, timedelta
-
 from functools import cached_property
 
 from module.atom.click import RuleClick

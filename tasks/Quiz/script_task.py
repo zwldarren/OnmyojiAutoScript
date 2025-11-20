@@ -1,7 +1,6 @@
 # @author runhey
 # github https://github.com/runhey
 import random
-
 from functools import cached_property
 
 from module.base.timer import Timer

@@ -1,5 +1,4 @@
 import re
-
 from functools import cached_property
 
 from module.base.timer import Timer

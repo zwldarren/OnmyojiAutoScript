@@ -1,9 +1,8 @@
 # @author runhey
 # github https://github.com/runhey
 import re
-from pathlib import Path
-
 from functools import cached_property
+from pathlib import Path
 
 
 def remove_symbols(text):

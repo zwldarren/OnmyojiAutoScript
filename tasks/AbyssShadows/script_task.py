@@ -6,10 +6,9 @@
 import time
 from datetime import datetime
 from enum import Enum
+from functools import cached_property
 from pathlib import Path
 from time import sleep
-
-from functools import cached_property
 
 from module.exception import TaskEnd
 from module.logger import logger

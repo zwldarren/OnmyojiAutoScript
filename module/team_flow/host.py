@@ -2,9 +2,8 @@
 # github https://github.com/runhey
 import json
 from datetime import time
-from time import sleep
-
 from functools import cached_property
+from time import sleep
 
 from module.config.config import Config
 from module.logger import logger

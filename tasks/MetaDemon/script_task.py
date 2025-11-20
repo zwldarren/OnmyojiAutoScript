@@ -1,8 +1,7 @@
 # @author runhey
 # github https://github.com/runhey
-from time import sleep
-
 from functools import cached_property
+from time import sleep
 
 from module.base.timer import Timer
 from module.exception import TaskEnd

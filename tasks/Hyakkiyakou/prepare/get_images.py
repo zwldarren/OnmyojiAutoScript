@@ -1,10 +1,10 @@
 import time
 from datetime import datetime
+from functools import cached_property
 from pathlib import Path
 from random import choice
 
 import cv2
-from functools import cached_property
 
 from module.base.timer import Timer
 from module.logger import logger

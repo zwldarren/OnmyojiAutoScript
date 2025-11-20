@@ -1,5 +1,4 @@
 import ipaddress
-import logging
 import platform
 import re
 import socket
@@ -7,7 +6,6 @@ import subprocess
 import time
 from functools import wraps
 
-import uiautomator2 as u2
 from adbutils import AdbClient, AdbDevice, AdbTimeout, ForwardItem, ReverseItem
 from adbutils.errors import AdbError
 
@@ -211,13 +209,18 @@ class Connection(ConnectionAttr):
             cmd = list(map(str, cmd))
 
         if stream:
-            result = self.u2.shell(cmd, stream=stream, timeout=timeout)
-            # Already received all, so `recvall` is ignored
-            result = remove_shell_warning(result.content)
-            # bytes
-            return result
+            # uiautomator2 3.x: shell() no longer has stream parameter
+            # Use adb.shell for stream operations
+            result = self.adb.shell(cmd, stream=stream, timeout=timeout, rstrip=rstrip)
+            if recvall:
+                # bytes
+                return recv_all(result)
+            else:
+                # socket
+                return result
         else:
-            result = self.u2.shell(cmd, stream=stream, timeout=timeout).output
+            # uiautomator2 3.x: use u2.shell() without stream parameter
+            result = self.u2.shell(cmd, timeout=timeout).output
             if rstrip:
                 result = result.rstrip()
             result = remove_shell_warning(result)
@@ -642,18 +645,9 @@ class Connection(ConnectionAttr):
     def install_uiautomator2(self):
         """
         Init uiautomator2 and remove minicap.
+        uiautomator2 3.x no longer requires manual installation of atx-agent.
         """
-        logger.info("Install uiautomator2")
-        init = u2.init.Initer(self.adb, loglevel=logging.DEBUG)
-        # MuMu X has no ro.product.cpu.abi, pick abi from ro.product.cpu.abilist
-        if init.abi not in ["x86_64", "x86", "arm64-v8a", "armeabi-v7a", "armeabi"]:
-            init.abi = init.abis[0]
-        init.set_atx_agent_addr("127.0.0.1:7912")
-        try:
-            init.install()
-        except ConnectionError:
-            u2.init.GITHUB_BASEURL = "http://tool.appetizer.io/openatx"
-            init.install()
+        logger.info("uiautomator2 3.x: Manual installation not required, removing minicap")
         self.uninstall_minicap()
 
     def uninstall_minicap(self):

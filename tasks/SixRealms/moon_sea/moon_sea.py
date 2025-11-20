@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-
 from functools import cached_property
 
 from module.logger import logger

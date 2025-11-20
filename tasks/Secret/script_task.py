@@ -2,7 +2,6 @@
 # github https://github.com/runhey
 import time
 from datetime import datetime
-
 from functools import cached_property
 
 from module.atom.ocr import RuleOcr

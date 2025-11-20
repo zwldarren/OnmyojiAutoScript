@@ -5,9 +5,8 @@ import datetime
 import operator
 import random
 from datetime import datetime, timedelta
-from threading import Lock
-
 from functools import cached_property
+from threading import Lock
 
 from module.config.config_manual import ConfigManual
 from module.config.config_menu import ConfigMenu

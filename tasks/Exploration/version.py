@@ -1,9 +1,10 @@
 # @author runhey
 # github https://github.com/runhey
 
+from functools import cached_property
+
 import cv2
 import numpy as np
-from functools import cached_property
 
 from module.atom.gif import RuleGif
 from module.base.utils import color_similarity_2d, load_image

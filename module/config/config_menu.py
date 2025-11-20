@@ -1,7 +1,6 @@
 # @author runhey
 # github https://github.com/runhey
 import json
-
 from functools import cached_property
 
 from module.config.utils import *

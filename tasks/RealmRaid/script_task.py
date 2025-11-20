@@ -2,7 +2,6 @@
 # github https://github.com/runhey
 import re
 import time
-
 from functools import cached_property
 
 from module.atom.click import RuleClick

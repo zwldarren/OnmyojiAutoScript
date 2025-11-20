@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from functools import wraps
 from json.decoder import JSONDecodeError
-from subprocess import list2cmdline
 
 import cv2
 import numpy as np
@@ -271,8 +270,8 @@ class Uiautomator2(Connection):
         Returns:
             (width, height)
         """
-        info = self.u2.http.get("/info").json()
-        w, h = info["display"]["width"], info["display"]["height"]
+        # uiautomator2 3.x: use window_size() directly instead of http.get("/info")
+        w, h = self.u2.window_size()
         if cal_rotation:
             rotation = self.get_orientation()
             if (w > h) != (rotation % 2 == 1):
@@ -305,47 +304,37 @@ class Uiautomator2(Connection):
     def proc_list_uiautomator2(self) -> list[ProcessInfo]:
         """
         Get info about current processes.
+
+        Note: This method requires u2.http API which is not available in uiautomator2 3.x.
+        Currently disabled in uiautomator2 3.x.
         """
-        resp = self.u2.http.get("/proc/list", timeout=10)
-        resp.raise_for_status()
-        result = [
-            ProcessInfo(
-                pid=proc["pid"],
-                ppid=proc["ppid"],
-                thread_count=proc["threadCount"],
-                cmdline=" ".join(proc["cmdline"]) if proc["cmdline"] is not None else "",
-                name=proc["name"],
-            )
-            for proc in resp.json()
-        ]
-        return result
+        # uiautomator2 3.x removed u2.http API
+        # This functionality needs to be reimplemented using alternative methods
+        # For now, return empty list
+        logger.warning(
+            "proc_list_uiautomator2 is disabled in uiautomator2 3.x (u2.http not available)"
+        )
+        return []
 
     @retry
     def u2_shell_background(self, cmdline, timeout=10) -> ShellBackgroundResponse:
         """
         Run at background.
 
-        Note that this function will always return a success response,
-        as this is a untested and hidden method in ATX.
+        Note: This method requires u2.http API which is not available in uiautomator2 3.x.
+        Currently disabled in uiautomator2 3.x.
         """
-        if isinstance(cmdline, (list, tuple)):
-            cmdline = list2cmdline(cmdline)
-        elif isinstance(cmdline, str):
-            cmdline = cmdline
-        else:
-            raise TypeError("cmdargs type invalid", type(cmdline))
-
-        data = dict(command=cmdline, timeout=str(timeout))
-        ret = self.u2.http.post("/shell/background", data=data, timeout=timeout + 10)
-        ret.raise_for_status()
-
-        resp = ret.json()
-        resp = ShellBackgroundResponse(
-            success=bool(resp.get("success", False)),
-            pid=resp.get("pid", 0),
-            description=resp.get("description", ""),
+        # uiautomator2 3.x removed u2.http API
+        # This functionality needs to be reimplemented using alternative methods
+        # For now, return failure response
+        logger.warning(
+            "u2_shell_background is disabled in uiautomator2 3.x (u2.http not available)"
         )
-        return resp
+        return ShellBackgroundResponse(
+            success=False,
+            pid=0,
+            description="Disabled in uiautomator2 3.x",
+        )
 
 
 if __name__ == "__main__":

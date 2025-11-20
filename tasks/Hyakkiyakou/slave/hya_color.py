@@ -1,7 +1,8 @@
 # @author runhey
 # github https://github.com/runhey
-import cv2
 from functools import cached_property
+
+import cv2
 
 from tasks.base_task import BaseTask
 

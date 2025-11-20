@@ -2,10 +2,10 @@
 # github https://github.com/runhey
 import re
 from datetime import datetime, time, timedelta
+from functools import cached_property
 from time import sleep
 
 import cv2
-from functools import cached_property
 
 from module.atom.image import RuleImage
 from module.atom.ocr import RuleOcr

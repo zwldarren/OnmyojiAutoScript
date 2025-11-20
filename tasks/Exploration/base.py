@@ -3,9 +3,9 @@
 import time
 from datetime import datetime, timedelta
 from enum import Enum
+from functools import cached_property
 
 import numpy as np
-from functools import cached_property
 
 from module.atom.animate import RuleAnimate
 from module.base.timer import Timer

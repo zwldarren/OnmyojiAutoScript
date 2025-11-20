@@ -5,7 +5,6 @@ import re
 import time
 from datetime import timedelta
 from enum import Enum
-
 from functools import cached_property
 
 from module.atom.ocr import RuleOcr

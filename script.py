@@ -8,6 +8,7 @@ import threading
 import time
 from collections.abc import Callable
 from datetime import date, datetime, timedelta
+from functools import cached_property
 from multiprocessing.queues import Queue
 from pathlib import Path
 from threading import Thread
@@ -16,7 +17,6 @@ import cv2
 import inflection
 import zerorpc
 import zmq
-from functools import cached_property
 from pydantic import ValidationError
 
 from module.base.decorator import del_cached_property
@@ -36,8 +36,8 @@ class Script:
     def __init__(self, config_name: str = "oas") -> None:
         logger.hr("Start", level=0)
         self.server = None
-        self.state_queue: Queue = None
-        self.gui_update_task: Callable = (
+        self.state_queue: Queue | None = None
+        self.gui_update_task: Callable | None = (
             None  # 回调函数, gui进程注册当每次config更新任务的时候更新gui的信息
         )
         self.config_name = config_name
@@ -47,7 +47,7 @@ class Script:
         # Key: str, task name, value: int, failure count
         self.failure_record = {}
         # 运行loop的线程
-        self.loop_thread: Thread = None
+        self.loop_thread: Thread | None = None
 
     @cached_property
     def config(self) -> "Config":
@@ -93,13 +93,13 @@ class Script:
         from module.base.utils import save_image
         from module.handler.sensitive_info import handle_sensitive_image, handle_sensitive_logs
 
-        if self.config.script.error.save_error:
+        if self.config.script.error.save_error:  # type: ignore[union-attr]
             if not os.path.exists("./log/error"):
                 os.mkdir("./log/error")
             folder = f"./log/error/{int(time.time() * 1000)}"
             logger.warning(f"Saving error: {folder}")
             os.mkdir(folder)
-            for data in self.device.screenshot_deque:
+            for data in self.device.screenshot_deque:  # type: ignore[union-attr]
                 image_time = datetime.strftime(data["time"], "%Y-%m-%d_%H-%M-%S-%f")
                 image = handle_sensitive_image(data["image"])
                 save_image(image, f"{folder}/{image_time}.png")
@@ -115,7 +115,7 @@ class Script:
             with open(f"{folder}/log.txt", "w", encoding="utf-8") as f:
                 f.writelines(lines)
 
-    def init_server(self, port: int) -> int:
+    def init_server(self, port: int) -> int | None:
         """
         初始化zerorpc服务，返回端口号
         :return:
@@ -133,7 +133,8 @@ class Script:
         启动zerorpc服务
         :return:
         """
-        self.server.run()
+        if self.server:  # type: ignore[union-attr]
+            self.server.run()  # type: ignore[union-attr]
 
     def gui_args(self, task: str) -> str:
         """
@@ -262,7 +263,7 @@ class Script:
             result[key] = item
         return json.dumps(result)
 
-    def wait_until(self, future):
+    def wait_until(self, future) -> bool | None:
         """
         Wait until a specific time.
 
@@ -303,17 +304,18 @@ class Script:
             if task.next_run <= now:
                 return task.command
             # 根据策略执行等待逻辑
-            if not self._handle_wait_during_idle(task.next_run):
+            result = self._handle_wait_during_idle(task.next_run)
+            if result is False:
                 # 若等待被打断, 则刷新配置
                 del_cached_property(self, "config")
 
-    def _handle_wait_during_idle(self, next_run: datetime) -> bool:
+    def _handle_wait_during_idle(self, next_run: datetime) -> bool | None:
         """
         处理任务空闲期间的行为策略
         :param next_run: 下一个任务的时间
         :return: True 表示等待成功完成, False 表示等待被中断
         """
-        method = self.config.script.optimization.when_task_queue_empty
+        method = self.config.script.optimization.when_task_queue_empty  # type: ignore[union-attr]
         strategy_map = {
             "close_game": self._wait_close_game,
             "goto_main": self._wait_goto_main,
@@ -326,22 +328,22 @@ class Script:
             func = self._wait_stay_there
         return func(next_run)
 
-    def _wait_close_game(self, next_run: datetime) -> bool:
+    def _wait_close_game(self, next_run: datetime) -> bool | None:
         logger.info("Close game during wait")
-        self.device.app_stop()
-        self.device.release_during_wait()
+        self.device.app_stop()  # type: ignore[union-attr]
+        self.device.release_during_wait()  # type: ignore[union-attr]
         if not self.wait_until(next_run):
             return False
         self.run("Restart")
         return True
 
-    def _wait_goto_main(self, next_run: datetime) -> bool:
+    def _wait_goto_main(self, next_run: datetime) -> bool | None:
         logger.info("Goto main page during wait")
         self.run("GotoMain")
         self.device.release_during_wait()
         return self.wait_until(next_run)
 
-    def _wait_stay_there(self, next_run: datetime) -> bool:
+    def _wait_stay_there(self, next_run: datetime) -> bool | None:
         logger.info("Stay_there (no action) during wait")
         self.device.release_during_wait()
         return self.wait_until(next_run)
@@ -366,6 +368,7 @@ class Script:
         """
         if command == "start" or command == "goto_main":
             logger.error(f"Invalid command `{command}`")
+            return False
 
         try:
             self.device.screenshot()
@@ -374,6 +377,7 @@ class Script:
             logger.info(f"module_path: {module_path}, module_name: {module_name}")
             task_module = load_module(module_name, module_path)
             task_module.ScriptTask(config=self.config, device=self.device).run()
+            return True
         except TaskEnd:
             return True
         except GameNotRunningError as e:
@@ -462,14 +466,14 @@ class Script:
         self.config.model.running_task = ""
 
         # Update GUI 防呆, 读取设置并立刻显示后台模拟器到前台
-        if not self.config.script.device.run_background_only and IS_WINDOWS:
+        if not self.config.script.device.run_background_only and IS_WINDOWS:  # type: ignore[union-attr]
             from module.device.platform2.platform_windows import (
                 minimize_by_name,
                 show_window_by_name,
             )
 
-            target_window_name = self.config.script.device.handle  # 在这里输入你的具体窗口名称
-            if self.config.script.device.emulator_window_minimize:
+            target_window_name = self.config.script.device.handle  # type: ignore[union-attr] # 在这里输入你的具体窗口名称
+            if self.config.script.device.emulator_window_minimize:  # type: ignore[union-attr]
                 minimize_by_name(target_window_name)
                 logger.info(f"重新显示: {target_window_name}")
             else:
@@ -542,14 +546,14 @@ class Script:
                     content=f"<{self.config_name}> 任务连续失败三次，请上线查看",
                 )
                 # 关闭模拟器
-                if self.config.script.error.error_repeated:
-                    self.device.emulator_stop()
+                if self.config.script.error.error_repeated:  # type: ignore[union-attr]
+                    self.device.emulator_stop()  # type: ignore[union-attr]
                 exit(1)
 
             if success:
                 del_cached_property(self, "config")
                 continue
-            elif self.config.script.error.handle_error:
+            elif self.config.script.error.handle_error:  # type: ignore[union-attr]
                 # self.config.task_delay(success=False)
                 del_cached_property(self, "config")
                 # self.checker.check_now()

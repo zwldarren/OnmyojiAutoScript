@@ -1,6 +1,11 @@
 # @author runhey
 # github https://github.com/runhey
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from module.config.config import Function
+
 
 class ConfigState:
     """
@@ -11,4 +16,4 @@ class ConfigState:
         self.config_name = config_name
         self.pending_task: list[Function] = []
         self.waiting_task: list[Function] = []
-        self.task: str = None  # 任务名大驼峰
+        self.task: Function | None = None  # 任务对象

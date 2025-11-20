@@ -2,10 +2,10 @@
 # github https://github.com/runhey
 import random
 from datetime import datetime
+from functools import cached_property
 from pathlib import Path
 
 import cv2
-from functools import cached_property
 from fast_device import FastDevice
 from utils import usage_time
 

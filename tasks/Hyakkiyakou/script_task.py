@@ -2,11 +2,11 @@
 # github https://github.com/runhey
 import time
 from datetime import datetime, timedelta
+from functools import cached_property
 from random import choice
 
 import cv2
 import numpy as np
-from functools import cached_property
 from oashya.labels import label2id
 
 # Use cmd to install: ./toolkit/python.exe -m pip install -i https://pypi.org/simple/ oashya --trusted-host pypi.org

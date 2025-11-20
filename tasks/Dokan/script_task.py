@@ -6,11 +6,11 @@ import random
 import re
 import time
 from datetime import timedelta
+from functools import cached_property
 from time import sleep
 
 import cv2
 import numpy as np
-from functools import cached_property
 from future.backports.datetime import datetime
 
 from module.atom.click import RuleClick

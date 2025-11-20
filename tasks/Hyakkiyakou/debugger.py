@@ -2,12 +2,12 @@ import copy
 import shutil
 import time
 from datetime import datetime
+from functools import cached_property
 from pathlib import Path
 from threading import Event, Lock, Thread
 
 import cv2
 import numpy as np
-from functools import cached_property
 from numpy import fromfile, uint8
 from oashya.labels import CLASSINDEX, id2label, id2name
 from oashya.tracker import Tracker

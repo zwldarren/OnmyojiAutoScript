@@ -2,10 +2,10 @@
 # github https://github.com/runhey
 from datetime import time
 from enum import Enum
+from functools import cached_property
 from time import sleep
 
 import numpy as np
-from functools import cached_property
 
 from module.base.timer import Timer
 from module.logger import logger

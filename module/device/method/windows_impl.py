@@ -1,10 +1,10 @@
 # @author runhey
 # github https://github.com/runhey
 import time
+from functools import cached_property
 from math import dist
 
 import cv2
-from functools import cached_property
 from numpy import frombuffer, random
 from win32api import MAKELONG, PostMessage, SendMessage
 from win32con import (
