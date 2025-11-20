@@ -1,8 +1,8 @@
 from enum import Enum
 
+from tasks.base_task import BaseTask
 from tasks.Component.GeneralBattle.assets import GeneralBattleAssets
 from tasks.Dokan.assets import DokanAssets
-from tasks.base_task import BaseTask
 
 
 class DokanScene(Enum):
@@ -87,15 +87,19 @@ class DokanSceneDetector(DokanAssets, BaseTask, GeneralBattleAssets):
         if self.appear(self.I_DOKAN_BOSS_WAITING):
             return True, DokanScene.RYOU_DOKAN_SCENE_BOSS_WAITING
         # 状态: 馆主战开始,且可以挑战
-        if self.appear(self.I_RYOU_DOKAN_MASTER_BATTLE) and self.appear(self.I_RYOU_DOKAN_START_CHALLENGE):
+        if self.appear(self.I_RYOU_DOKAN_MASTER_BATTLE) and self.appear(
+            self.I_RYOU_DOKAN_START_CHALLENGE
+        ):
             return True, DokanScene.RYOU_DOKAN_SCENE_MASTER_BATTLING
 
         # 馆主战斗中,未开始战斗状态
-        if self.appear(self.I_RYOU_DOKAN_BATTLE_MASTER_FIRST) and \
-                self.appear(self.I_PREPARE_HIGHLIGHT):
+        if self.appear(self.I_RYOU_DOKAN_BATTLE_MASTER_FIRST) and self.appear(
+            self.I_PREPARE_HIGHLIGHT
+        ):
             return True, DokanScene.RYOU_DOKAN_SCENE_BATTLE_MASTER_FIRST
-        if self.appear(self.I_RYOU_DOKAN_BATTLE_MASTER_SECOND) and \
-                self.appear(self.I_PREPARE_HIGHLIGHT):
+        if self.appear(self.I_RYOU_DOKAN_BATTLE_MASTER_SECOND) and self.appear(
+            self.I_PREPARE_HIGHLIGHT
+        ):
             return True, DokanScene.RYOU_DOKAN_SCENE_BATTLE_MASTER_SECOND
 
         # 状态：达到失败次数，CD中
@@ -110,8 +114,11 @@ class DokanSceneDetector(DokanAssets, BaseTask, GeneralBattleAssets):
         if self.appear(self.I_RYOU_DOKAN_IN_FIELD):
             return True, DokanScene.RYOU_DOKAN_SCENE_IN_FIELD
         # 状态：战斗结算，可能是打完小朋友了，也可能是失败了。
-        if self.appear(self.I_RYOU_DOKAN_BATTLE_OVER) or self.appear(GeneralBattleAssets.I_WIN) \
-                or self.appear(GeneralBattleAssets.I_FALSE):
+        if (
+            self.appear(self.I_RYOU_DOKAN_BATTLE_OVER)
+            or self.appear(GeneralBattleAssets.I_WIN)
+            or self.appear(GeneralBattleAssets.I_FALSE)
+        ):
             return True, DokanScene.RYOU_DOKAN_SCENE_BATTLE_OVER
 
         # # 状态：加油中，左下角有鼓
@@ -138,9 +145,10 @@ class DokanSceneDetector(DokanAssets, BaseTask, GeneralBattleAssets):
             return True, DokanScene.RYOU_DOKAN_SCENE_WIN
 
         # 状态：道馆已经结束 在寮境,底部有 "今日可挑战机会" 字样
-        if (self.appear(self.I_RYOU_DOKAN_CENTER_TOP) and
-                (self.appear(self.I_RYOU_DOKAN_TODAY_ATTACK_COUNT)
-                 or self.appear(self.I_RYOU_DOKAN_REMAIN_ATTACK_COUNT_DONE))):
+        if self.appear(self.I_RYOU_DOKAN_CENTER_TOP) and (
+            self.appear(self.I_RYOU_DOKAN_TODAY_ATTACK_COUNT)
+            or self.appear(self.I_RYOU_DOKAN_REMAIN_ATTACK_COUNT_DONE)
+        ):
             return True, DokanScene.RYOU_DOKAN_SCENE_FINISHED
 
         return False, DokanScene.RYOU_DOKAN_SCENE_UNKNOWN

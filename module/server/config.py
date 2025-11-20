@@ -1,7 +1,7 @@
 """
 Copy from https://github.com/LmeSzinc/AzurLaneAutoScript
 """
-from typing import Optional, Union
+
 from filelock import FileLock
 
 from deploy.config import DeployConfig as _DeployConfig
@@ -21,9 +21,8 @@ def poor_yaml_write_with_lock(data, file, template_file=DEPLOY_TEMPLATE):
     if not os.path.exists(folder):
         os.mkdir(folder)
 
-    with FileLock(f"{file}.lock"):
-        with FileLock(f"{DEPLOY_TEMPLATE}.lock"):
-            return poor_yaml_write(data, file, template_file)
+    with FileLock(f"{file}.lock"), FileLock(f"{DEPLOY_TEMPLATE}.lock"):
+        return poor_yaml_write(data, file, template_file)
 
 
 class DeployConfig(_DeployConfig):

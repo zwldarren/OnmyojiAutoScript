@@ -9,7 +9,7 @@ from module.base.utils import random_rectangle_point
 from module.device.method.minitouch import insert_swipe
 from module.device.method.scrcpy.core import ScrcpyCore, ScrcpyError
 from module.device.method.uiautomator_2 import Uiautomator2
-from module.device.method.utils import RETRY_TRIES, retry_sleep, handle_adb_error
+from module.device.method.utils import RETRY_TRIES, handle_adb_error, retry_sleep
 from module.exception import RequestHumanTakeover
 from module.logger import logger
 
@@ -52,6 +52,7 @@ def retry(func):
             # AdbError
             except AdbError as e:
                 if handle_adb_error(e):
+
                     def init():
                         self.adb_reconnect()
                 else:
@@ -63,7 +64,7 @@ def retry(func):
                 def init():
                     pass
 
-        logger.critical(f'Retry {func.__name__}() failed')
+        logger.critical(f"Retry {func.__name__}() failed")
         raise RequestHumanTakeover
 
     return retry_wrapper
@@ -85,8 +86,11 @@ class Scrcpy(ScrcpyCore, Uiautomator2):
             now = time.time()
             while 1:
                 time.sleep(0.001)
-                if self._scrcpy_stream_loop_thread is None or not self._scrcpy_stream_loop_thread.is_alive():
-                    raise ScrcpyError('_scrcpy_stream_loop_thread died')
+                if (
+                    self._scrcpy_stream_loop_thread is None
+                    or not self._scrcpy_stream_loop_thread.is_alive()
+                ):
+                    raise ScrcpyError("_scrcpy_stream_loop_thread died")
                 if self._scrcpy_last_frame_time > now:
                     screenshot = self._scrcpy_last_frame.copy()
                     return screenshot

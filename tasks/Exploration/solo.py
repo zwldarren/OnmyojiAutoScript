@@ -1,15 +1,14 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
 from time import sleep
-from cached_property import cached_property
 
-from module.logger import logger
+from functools import cached_property
+
 from module.base.timer import Timer
-
-from tasks.Component.GeneralInvite.config_invite import InviteConfig, InviteNumber, FindMode
-from tasks.Exploration.base import BaseExploration, UpType, Scene
-from tasks.Exploration.config import ChooseRarity, AutoRotate, UserStatus, ExplorationLevel
+from module.logger import logger
+from tasks.Component.GeneralInvite.config_invite import FindMode, InviteConfig, InviteNumber
+from tasks.Exploration.base import BaseExploration, Scene
+from tasks.Exploration.config import AutoRotate, ExplorationLevel, UserStatus
 
 
 class SoloExploration(BaseExploration):
@@ -21,14 +20,14 @@ class SoloExploration(BaseExploration):
         return InviteConfig(
             invite_number=InviteNumber.ONE,
             friend_1=self._config.invite_config.friend_1,
-            friend_2='',
+            friend_2="",
             find_mode=self._config.invite_config.find_mode,
             wait_time=self._config.invite_config.wait_time,
-            default_invite=False
+            default_invite=False,
         )
 
     def run_solo(self):
-        logger.hr('solo')
+        logger.hr("solo")
         explore_init = False
         search_fail_cnt = 0
 
@@ -40,7 +39,7 @@ class SoloExploration(BaseExploration):
             if scene == Scene.WORLD:
                 if self.appear(self.I_TREASURE_BOX_CLICK):
                     # 宝箱
-                    logger.info('Treasure box appear, get it.')
+                    logger.info("Treasure box appear, get it.")
                     self.ui_click_until_disappear(self.I_TREASURE_BOX_CLICK)
                 if self.check_exit():
                     break
@@ -69,20 +68,22 @@ class SoloExploration(BaseExploration):
                 # boss
                 if self.appear(self.I_BOSS_BATTLE_BUTTON):
                     if self.fire(self.I_BOSS_BATTLE_BUTTON):
-                        logger.info(f'Boss battle, minions cnt {self.minions_cnt}')
+                        logger.info(f"Boss battle, minions cnt {self.minions_cnt}")
                     continue
                 # 小怪
                 fight_button = self.search_up_fight()
                 if fight_button is not None:
                     if self.fire(fight_button):
-                        logger.info(f'Fight, minions cnt {self.minions_cnt}')
+                        logger.info(f"Fight, minions cnt {self.minions_cnt}")
                     continue
                 # 向后拉,寻找怪
                 if search_fail_cnt >= 4:
                     search_fail_cnt = 0
-                    if (self._config.exploration_config.exploration_level == ExplorationLevel.EXPLORATION_28\
-                        and self.appear(self.I_SWIPE_END))\
-                            or self._match_end.stable(self.device.image, refresh_after_stable=True):
+                    if (
+                        self._config.exploration_config.exploration_level
+                        == ExplorationLevel.EXPLORATION_28
+                        and self.appear(self.I_SWIPE_END)
+                    ) or self._match_end.stable(self.device.image, refresh_after_stable=True):
                         self.quit_explore()
                         continue
                     if self.swipe(self.S_SWIPE_BACKGROUND_RIGHT, interval=3):
@@ -91,12 +92,14 @@ class SoloExploration(BaseExploration):
                     search_fail_cnt += 1
             #
             elif scene == Scene.BATTLE_PREPARE or scene == Scene.BATTLE_FIGHTING:
-                self.check_take_over_battle(is_screenshot=False, config=self._config.general_battle_config)
+                self.check_take_over_battle(
+                    is_screenshot=False, config=self._config.general_battle_config
+                )
             elif scene == Scene.UNKNOWN:
                 continue
 
     def run_leader(self):
-        logger.hr('leader')
+        logger.hr("leader")
         explore_init = False
         search_fail_cnt = 0
         friend_leave_timer = Timer(10)
@@ -109,13 +112,13 @@ class SoloExploration(BaseExploration):
                 self.wait_until_stable(self.I_CHECK_EXPLORATION)
                 if self.appear(self.I_TREASURE_BOX_CLICK):
                     # 宝箱
-                    logger.info('Treasure box appear, get it.')
+                    logger.info("Treasure box appear, get it.")
                     self.wait_until_stable(self.I_UI_CANCEL, timer=Timer(0.6, 1))
                     while 1:
                         self.screenshot()
                         if self.appear(self.I_REWARD):
                             self.ui_click_until_disappear(self.I_REWARD)
-                            logger.info('Get reward.')
+                            logger.info("Get reward.")
                             break
                         if self.ui_reward_appear_click():
                             continue
@@ -156,10 +159,12 @@ class SoloExploration(BaseExploration):
                 if self.appear(self.I_FIRE, threshold=0.8) and not self.appear(self.I_ADD_2):
                     self.ui_click_until_disappear(self.I_FIRE, interval=1)
                     continue
-                if self.appear(self.I_ADD_2) and self.run_invite(config=self._invite_config, is_first=True):
+                if self.appear(self.I_ADD_2) and self.run_invite(
+                    config=self._invite_config, is_first=True
+                ):
                     continue
                 else:
-                    logger.warning('Invite failed, quit')
+                    logger.warning("Invite failed, quit")
                     while 1:
                         self.screenshot()
                         if self.appear(self.I_CHECK_EXPLORATION):
@@ -187,34 +192,36 @@ class SoloExploration(BaseExploration):
                 # 中途有人跑路
                 if not self.appear(self.I_TEAM_EMOJI):
                     if not friend_leave_timer.started():
-                        logger.warning('Mate leave, start timer')
+                        logger.warning("Mate leave, start timer")
                         friend_leave_timer = Timer(10)
                         friend_leave_timer.start()
                     elif friend_leave_timer.started() and friend_leave_timer.reached():
-                        logger.warning('Mate leave timer reached')
-                        logger.warning('Exit team')
+                        logger.warning("Mate leave timer reached")
+                        logger.warning("Exit team")
                         self.quit_explore()
                         continue
                 else:
-                    logger.warning('Team emoji appear again, clear friend_leave_timer')
+                    logger.warning("Team emoji appear again, clear friend_leave_timer")
                     friend_leave_timer = Timer(10)
                 # boss
                 if self.appear(self.I_BOSS_BATTLE_BUTTON):
                     if self.fire(self.I_BOSS_BATTLE_BUTTON):
-                        logger.info(f'Boss battle, minions cnt {self.minions_cnt}')
+                        logger.info(f"Boss battle, minions cnt {self.minions_cnt}")
                     continue
                 # 小怪
                 fight_button = self.search_up_fight()
                 if fight_button is not None:
                     if self.fire(fight_button):
-                        logger.info(f'Fight, minions cnt {self.minions_cnt}')
+                        logger.info(f"Fight, minions cnt {self.minions_cnt}")
                     continue
                 # 向后拉,寻找怪
                 if search_fail_cnt >= 4:
                     search_fail_cnt = 0
-                    if (self._config.exploration_config.exploration_level == ExplorationLevel.EXPLORATION_28\
-                        and self.appear(self.I_SWIPE_END))\
-                            or self._match_end.stable(self.device.image, refresh_after_stable=True):
+                    if (
+                        self._config.exploration_config.exploration_level
+                        == ExplorationLevel.EXPLORATION_28
+                        and self.appear(self.I_SWIPE_END)
+                    ) or self._match_end.stable(self.device.image, refresh_after_stable=True):
                         self.quit_explore()
                         continue
                     if self.swipe(self.S_SWIPE_BACKGROUND_RIGHT, interval=4.5):
@@ -223,12 +230,14 @@ class SoloExploration(BaseExploration):
                     search_fail_cnt += 1
             #
             elif scene == Scene.BATTLE_PREPARE or scene == Scene.BATTLE_FIGHTING:
-                self.check_take_over_battle(is_screenshot=False, config=self._config.general_battle_config)
+                self.check_take_over_battle(
+                    is_screenshot=False, config=self._config.general_battle_config
+                )
             elif scene == Scene.UNKNOWN:
                 continue
 
     def run_member(self):
-        logger.hr('member')
+        logger.hr("member")
         explore_init = False
         wait_timer = Timer(50)
         friend_leave_timer = Timer(10)
@@ -240,14 +249,14 @@ class SoloExploration(BaseExploration):
             if scene == Scene.WORLD:
                 if self.appear(self.I_TREASURE_BOX_CLICK):
                     # 宝箱
-                    logger.info('Treasure box appear, get it.')
+                    logger.info("Treasure box appear, get it.")
                     self.ui_click_until_disappear(self.I_TREASURE_BOX_CLICK)
                 if self.check_exit():
                     break
                 if self.check_then_accept():
                     pass
                 if wait_timer.started() and wait_timer.reached():
-                    logger.warning('Wait timer reached')
+                    logger.warning("Wait timer reached")
                     break
 
                 explore_init = False
@@ -272,29 +281,31 @@ class SoloExploration(BaseExploration):
                         continue
                 #
                 if not self.appear(self.I_TEAM_EMOJI):
-                    logger.warning('Team emoji not appear')
+                    logger.warning("Team emoji not appear")
                     if not friend_leave_timer.started():
-                        logger.warning('Mate leave, start timer')
+                        logger.warning("Mate leave, start timer")
                         friend_leave_timer = Timer(10)
                         friend_leave_timer.start()
                     elif friend_leave_timer.started() and friend_leave_timer.reached():
-                        logger.warning('Mate leave timer reached')
-                        logger.warning('Exit team')
+                        logger.warning("Mate leave timer reached")
+                        logger.warning("Exit team")
                         self.quit_explore()
                         wait_timer = Timer(50)
                         wait_timer.start()
                         continue
                 else:
-                    logger.warning('Team emoji appear again, clear friend_leave_timer')
+                    logger.warning("Team emoji appear again, clear friend_leave_timer")
                     friend_leave_timer = Timer(10)
             #
             elif scene == Scene.BATTLE_PREPARE or scene == Scene.BATTLE_FIGHTING:
-                self.check_take_over_battle(is_screenshot=False, config=self._config.general_battle_config)
+                self.check_take_over_battle(
+                    is_screenshot=False, config=self._config.general_battle_config
+                )
             elif scene == Scene.UNKNOWN:
                 continue
 
     def invite_friend(self, name: str = None, find_mode: FindMode = FindMode.AUTO_FIND) -> bool:
-        logger.info('Click add to invite friend')
+        logger.info("Click add to invite friend")
         # 点击＋号
         while 1:
             self.screenshot()
@@ -314,36 +325,36 @@ class SoloExploration(BaseExploration):
         list_2 = self.O_F_LIST_2.ocr(self.device.image)
         list_3 = self.O_F_LIST_3.ocr(self.device.image)
         list_4 = self.O_F_LIST_4.ocr(self.device.image)
-        list_1 = list_1.replace(' ', '').replace('、', '')
-        list_2 = list_2.replace(' ', '').replace('、', '')
-        list_3 = list_3.replace(' ', '').replace('、', '')
-        if list_1 is not None and list_1 != '' and list_1 in self.friend_class:
+        list_1 = list_1.replace(" ", "").replace("、", "")
+        list_2 = list_2.replace(" ", "").replace("、", "")
+        list_3 = list_3.replace(" ", "").replace("、", "")
+        if list_1 is not None and list_1 != "" and list_1 in self.friend_class:
             friend_class.append(list_1)
-        if list_2 is not None and list_2 != '' and list_2 in self.friend_class:
+        if list_2 is not None and list_2 != "" and list_2 in self.friend_class:
             friend_class.append(list_2)
-        if list_3 is not None and list_3 != '' and list_3 in self.friend_class:
+        if list_3 is not None and list_3 != "" and list_3 in self.friend_class:
             friend_class.append(list_3)
-        if list_4 is not None and list_4 != '' and list_4 in self.friend_class:
+        if list_4 is not None and list_4 != "" and list_4 in self.friend_class:
             friend_class.append(list_4)
         for i in range(len(friend_class)):
-            if friend_class[i] == '蔡友':
-                friend_class[i] = '寮友'
-            elif friend_class[i] == '路区':
-                friend_class[i] = '跨区'
-            elif friend_class[i] == '察友':
-                friend_class[i] = '寮友'
-            elif friend_class[i] == '区':
-                friend_class[i] = '跨区'
-        logger.info(f'Friend class: {friend_class}')
+            if friend_class[i] == "蔡友":
+                friend_class[i] = "寮友"
+            elif friend_class[i] == "路区":
+                friend_class[i] = "跨区"
+            elif friend_class[i] == "察友":
+                friend_class[i] = "寮友"
+            elif friend_class[i] == "区":
+                friend_class[i] = "跨区"
+        logger.info(f"Friend class: {friend_class}")
 
         is_select: bool = False  # 是否选中了好友
         if find_mode == FindMode.RECENT_FRIEND:
-            logger.info('Find recent friend')
+            logger.info("Find recent friend")
             # 获取’最近‘在friend_class中的index
-            if '最近' not in friend_class:
-                logger.warning('No recent friend')
+            if "最近" not in friend_class:
+                logger.warning("No recent friend")
                 return False
-            recent_index = friend_class.index('最近')
+            recent_index = friend_class.index("最近")
             while recent_index == 1:
                 self.screenshot()
                 if self.appear(self.I_FLAG_2_ON):
@@ -351,7 +362,7 @@ class SoloExploration(BaseExploration):
                 if self.appear_then_click(self.I_FLAG_2_OFF, interval=1):
                     continue
 
-            logger.info(f'Now find friend in ”最近“')
+            logger.info("Now find friend in ”最近“")
             sleep(1)
             if not is_select:
                 if self.detect_select(name):
@@ -396,7 +407,7 @@ class SoloExploration(BaseExploration):
 
             # 选中好友， 在这里游戏获取在线的好友并不是很快，根据不同的设备会有不同的时间，而且没有什么元素提供我们来判断
             # 所以这里就直接等待一段时间
-            logger.info(f'Now find friend in {friend_class[index]}')
+            logger.info(f"Now find friend in {friend_class[index]}")
             sleep(1)
             if not is_select:
                 if self.detect_select(name):
@@ -407,9 +418,9 @@ class SoloExploration(BaseExploration):
                     is_select = True
 
         # 点击确定
-        logger.info('Click invite ensure')
+        logger.info("Click invite ensure")
         if not self.appear(self.I_INVITE_ENSURE):
-            logger.warning('No appear invite ensure while invite friend')
+            logger.warning("No appear invite ensure while invite friend")
         while 1:
             self.screenshot()
             if not self.appear(self.I_INVITE_ENSURE):
@@ -418,9 +429,9 @@ class SoloExploration(BaseExploration):
                 continue
         # 哪怕没有找到好友也有点击 确认 以退出好友列表
         if not is_select:
-            logger.warning('No find friend')
+            logger.warning("No find friend")
             # 这个时候任务运行失败
-            logger.info('Task failed')
+            logger.info("Task failed")
             return False
 
         return True
@@ -428,7 +439,7 @@ class SoloExploration(BaseExploration):
 
 class ScriptTask(SoloExploration):
     def run(self):
-        logger.hr('exploration')
+        logger.hr("exploration")
         random_click_cnt = 0
         while 1:
             self.screenshot()
@@ -436,7 +447,7 @@ class ScriptTask(SoloExploration):
             if random_click_cnt >= 2:
                 break
             if scene == Scene.UNKNOWN:
-                logger.warning('Unknown scene, random click')
+                logger.warning("Unknown scene, random click")
                 if self.click(self.C_SAFE_RANDOM, interval=1.5):
                     random_click_cnt += 1
                 continue
@@ -463,7 +474,7 @@ if __name__ == "__main__":
     from module.config.config import Config
     from module.device.device import Device
 
-    config = Config('oas1')
+    config = Config("oas1")
     device = Device(config)
     t = ScriptTask(config, device)
     t.run()

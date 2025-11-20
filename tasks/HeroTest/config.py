@@ -1,14 +1,14 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
 from enum import Enum  # type: ignore
-from datetime import datetime, time  # type: ignore
+
 from pydantic import BaseModel, Field
 
-from tasks.Component.GeneralBattle.config_general_battle import GeneralBattleConfig
+from tasks.Component.config_base import ConfigBase, Time
 from tasks.Component.config_scheduler import Scheduler
-from tasks.Component.config_base import ConfigBase, Time, TimeDelta
+from tasks.Component.GeneralBattle.config_general_battle import GeneralBattleConfig
 from tasks.Component.SwitchSoul.switch_soul_config import SwitchSoulConfig
+
 
 class Layer(str, Enum):
     YANWU: str = "鬼兵演武"
@@ -27,9 +27,7 @@ class HeroTestConfig(BaseModel):
     limit_count: int = Field(default=100, description="limit_count_help")
     # 是否开启经验加成
     exp_50_buff_enable_help: bool = Field(default=False, description="打开经验50%加成")
-    exp_100_buff_enable_help: bool = Field(
-        default=False, description="打开经验100%加成"
-    )
+    exp_100_buff_enable_help: bool = Field(default=False, description="打开经验100%加成")
 
 
 class HeroTest(ConfigBase):

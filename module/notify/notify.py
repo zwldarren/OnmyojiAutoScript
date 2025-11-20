@@ -1,6 +1,7 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
+
+from smtplib import SMTPResponseException
 
 import onepush.core
 import yaml
@@ -9,14 +10,14 @@ from onepush.core import Provider
 from onepush.exceptions import OnePushException
 from onepush.providers.custom import Custom
 from requests import Response
-from smtplib import SMTPResponseException
 
 from module.logger import logger
+
 onepush.core.log = logger
 
 
 class Notifier:
-    def __init__(self, _config: str, enable: bool=False) -> None:
+    def __init__(self, _config: str, enable: bool = False) -> None:
         self.config_name: str = ""
         self.enable: bool = enable
 
@@ -26,7 +27,7 @@ class Notifier:
         try:
             for item in yaml.safe_load_all(_config):
                 config.update(item)
-        except Exception as e:
+        except Exception:
             logger.error("Fail to load onepush config, skip sending")
             return
         self.config = config
@@ -56,10 +57,7 @@ class Notifier:
         # pre check
         for key in self.required:
             if key not in self.config:
-                logger.warning(
-                    f"Notifier {self.notifier} require param '{key}' but not provided"
-                )
-
+                logger.warning(f"Notifier {self.notifier} require param '{key}' but not provided")
 
         if isinstance(self.notifier, Custom):
             if "method" not in self.config or self.config["method"] == "post":
@@ -76,7 +74,6 @@ class Notifier:
             if access_token:
                 self.config["token"] = access_token
 
-
         try:
             resp = self.notifier.notify(**self.config)
             if isinstance(resp, Response):
@@ -89,8 +86,7 @@ class Notifier:
                         return_data: dict = resp.json()
                         if return_data["status"] == "failed":
                             logger.warning("Push notify failed!")
-                            logger.warning(
-                                f"Return message:{return_data['wording']}")
+                            logger.warning(f"Return message:{return_data['wording']}")
                             return False
         except SMTPResponseException:
             logger.warning("Appear SMTPResponseException")
@@ -104,6 +100,3 @@ class Notifier:
 
         logger.info("Push notify success")
         return True
-
-
-

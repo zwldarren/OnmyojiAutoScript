@@ -23,8 +23,8 @@ def invite_success_callback(self, ctype: CooperationType, name: str):
 
 
 def get_config(self):
-    config=WantedQuestsConfig()
-    config.invite_friend_name="default"
-    config.cooperation_only=True
-    config.cooperation_type=self.fade_conf.get_cooperation_type_mask()
+    config = WantedQuestsConfig()
+    config.invite_friend_name = "default"
+    config.cooperation_only = True
+    config.cooperation_type = self.fade_conf.get_cooperation_type_mask()
     return config

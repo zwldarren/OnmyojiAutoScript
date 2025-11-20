@@ -2,20 +2,17 @@ from adbutils import device
 
 from module.config.config import Config
 from module.device.device import Device
+from module.logger import logger
 from tasks.Component.SwitchAccount.assets import SwitchAccountAssets
 from tasks.Component.SwitchAccount.exit_game import ExitGame
 from tasks.Component.SwitchAccount.login_account import LoginAccount
 from tasks.Component.SwitchAccount.switch_account_config import AccountInfo
 from tasks.GameUi.game_ui import GameUi
-from tasks.GameUi.page import page_main, page_login
-from tasks.base_task import BaseTask
+from tasks.GameUi.page import page_login, page_main
 from tasks.Restart.login import LoginHandler
-
-from module.logger import logger
 
 
 class SwitchAccount(LoginAccount, ExitGame, GameUi, SwitchAccountAssets):
-
     def __init__(self, config: Config, device: Device, to: AccountInfo, frm: AccountInfo = None):
         """
 
@@ -33,7 +30,9 @@ class SwitchAccount(LoginAccount, ExitGame, GameUi, SwitchAccountAssets):
         self.from_account_info = frm
 
     def switchAccount(self):
-        logger.info("start switchAccount %s-%s", self.to_account_info.character, self.to_account_info.svr)
+        logger.info(
+            "start switchAccount %s-%s", self.to_account_info.character, self.to_account_info.svr
+        )
         # 判断所处界面
         curPage = self.ui_get_current_page()
 
@@ -55,9 +54,15 @@ class SwitchAccount(LoginAccount, ExitGame, GameUi, SwitchAccountAssets):
         return True
 
 
-if __name__ == '__main__':
-    config = Config('oas1')
-    device=Device()
-    toAccount=AccountInfo(account="email0@163.com", account_alias="emailO#emailo", apple_or_android=True, character="粘贴", svr="立秋夕烛")
-    sa=SwitchAccount(config,device,toAccount)
+if __name__ == "__main__":
+    config = Config("oas1")
+    device = Device()
+    toAccount = AccountInfo(
+        account="email0@163.com",
+        account_alias="emailO#emailo",
+        apple_or_android=True,
+        character="粘贴",
+        svr="立秋夕烛",
+    )
+    sa = SwitchAccount(config, device, toAccount)
     sa.switchAccount()

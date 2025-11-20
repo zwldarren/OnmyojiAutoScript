@@ -1,29 +1,24 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
 import copy
 import datetime
 import operator
-import threading
 import random
-
 from datetime import datetime, timedelta
-from cached_property import cached_property
 from threading import Lock
 
-from module.base.filter import Filter
-from module.config.config_updater import ConfigUpdater
+from functools import cached_property
+
 from module.config.config_manual import ConfigManual
-from module.config.config_watcher import ConfigWatcher
 from module.config.config_menu import ConfigMenu
 from module.config.config_model import ConfigModel
 from module.config.config_state import ConfigState
+from module.config.config_watcher import ConfigWatcher
 from module.config.scheduler import TaskScheduler
 from module.config.utils import *
-from module.notify.notify import Notifier
-
 from module.exception import RequestHumanTakeover, ScriptError
 from module.logger import logger
+from module.notify.notify import Notifier
 
 
 class Function:
@@ -43,13 +38,13 @@ class Function:
             self.next_run = DEFAULT_TIME
             return
 
-        self.enable: bool = data['scheduler']['enable']
+        self.enable: bool = data["scheduler"]["enable"]
         self.command: str = ConfigModel.type(key)
-        next_run = data['scheduler']['next_run']
+        next_run = data["scheduler"]["next_run"]
         if isinstance(next_run, str):
             next_run = datetime.strptime(next_run, "%Y-%m-%d %H:%M:%S")
         self.next_run: datetime = next_run
-        priority = data['scheduler']['priority']
+        priority = data["scheduler"]["priority"]
         if isinstance(priority, str):
             priority = int(priority)
         self.priority: int = priority
@@ -91,7 +86,6 @@ def name_to_function(name):
 
 
 class Config(ConfigState, ConfigManual, ConfigWatcher, ConfigMenu):
-
     def __init__(self, config_name: str, task=None) -> None:
         """
 
@@ -125,9 +119,11 @@ class Config(ConfigState, ConfigManual, ConfigWatcher, ConfigMenu):
 
     @cached_property
     def notifier(self):
-        notifier = Notifier(self.model.script.error.notify_config, enable=self.model.script.error.notify_enable)
+        notifier = Notifier(
+            self.model.script.error.notify_config, enable=self.model.script.error.notify_enable
+        )
         notifier.config_name = self.config_name.upper()
-        logger.info(f'Notifier: {notifier.config_name}')
+        logger.info(f"Notifier: {notifier.config_name}")
         return notifier
 
     def gui_args(self, task: str) -> str:
@@ -148,7 +144,7 @@ class Config(ConfigState, ConfigManual, ConfigWatcher, ConfigMenu):
         try:
             return self.data[task][group][argument]
         except:
-            logger.exception(f'have no arg {task}.{group}.{argument}')
+            logger.exception(f"have no arg {task}.{group}.{argument}")
 
     def set_arg(self, task: str, group: str, argument: str, value) -> None:
         """
@@ -162,7 +158,7 @@ class Config(ConfigState, ConfigManual, ConfigWatcher, ConfigMenu):
         try:
             self.data[task][group][argument] = value
         except:
-            logger.exception(f'have no arg {task}.{group}.{argument}')
+            logger.exception(f"have no arg {task}.{group}.{argument}")
 
     def reload(self):
         self.model = ConfigModel(config_name=self.config_name)
@@ -197,14 +193,15 @@ class Config(ConfigState, ConfigManual, ConfigWatcher, ConfigMenu):
         # f = Filter(regex=r"(.*)", attr=["command"])
         # f.load(self.SCHEDULER_PRIORITY)
         if pending_task:
-            pending_task = TaskScheduler.schedule(rule=self.model.script.optimization.schedule_rule,
-                                                  pending=pending_task)
+            pending_task = TaskScheduler.schedule(
+                rule=self.model.script.optimization.schedule_rule, pending=pending_task
+            )
             # 防止正在运行的任务被新上来的pending队列中的任务给顶替掉
             if self.model.running_task and pending_task:
                 for i, obj in enumerate(pending_task):
                     if obj.command == self.model.running_task:
                         pending_task.insert(0, pending_task.pop(i))
-                        logger.info(f'{self.model.running_task} is running')
+                        logger.info(f"{self.model.running_task} is running")
                         break
         if waiting_task:
             # waiting_task = f.apply(waiting_task)
@@ -247,7 +244,7 @@ class Config(ConfigState, ConfigManual, ConfigWatcher, ConfigMenu):
         :return:
         """
         # 根据调度器更新时间来判断是否有可运行的任务,保证逻辑一致性
-        scheduler_update_dt = getattr(self, 'scheduler_update_dt', datetime.now())
+        scheduler_update_dt = getattr(self, "scheduler_update_dt", datetime.now())
         running = {}
         if self.task is not None and self.task.next_run < scheduler_update_dt:
             running = {"name": self.task.command, "next_run": str(self.task.next_run)}
@@ -273,24 +270,28 @@ class Config(ConfigState, ConfigManual, ConfigWatcher, ConfigMenu):
         :return:
         """
         task = convert_to_underscore(task)
-        if self.model.deep_get(self.model, keys=f'{task}.scheduler.next_run') is None:
+        if self.model.deep_get(self.model, keys=f"{task}.scheduler.next_run") is None:
             raise ScriptError(f"Task to call: `{task}` does not exist in user config")
 
-        task_enable = self.model.deep_get(self.model, keys=f'{task}.scheduler.enable')
+        task_enable = self.model.deep_get(self.model, keys=f"{task}.scheduler.enable")
         if force_call or task_enable:
             logger.info(f"Task call: {task}")
-            next_run = datetime.now().replace(
-                microsecond=0
-            )
-            self.model.deep_set(self.model, keys=f'{task}.scheduler.next_run', value=next_run)
+            next_run = datetime.now().replace(microsecond=0)
+            self.model.deep_set(self.model, keys=f"{task}.scheduler.next_run", value=next_run)
             self.save()
             return True
         else:
             logger.info(f"Task call: {task} (skipped because disabled by user)")
             return False
 
-    def task_delay(self, task: str, start_time: datetime = None,
-                   success: bool = None, server: bool = True, target: datetime = None) -> None:
+    def task_delay(
+        self,
+        task: str,
+        start_time: datetime = None,
+        success: bool = None,
+        server: bool = True,
+        target: datetime = None,
+    ) -> None:
         """
         设置下次运行时间  当然这个也是可以重写的
         :param target: 可以自定义的下次运行时间
@@ -308,11 +309,11 @@ class Config(ConfigState, ConfigManual, ConfigWatcher, ConfigMenu):
         task = convert_to_underscore(task)
         task_object = getattr(self.model, task, None)
         if not task_object:
-            logger.warning(f'No task named {task}')
+            logger.warning(f"No task named {task}")
             return
-        scheduler = getattr(task_object, 'scheduler', None)
+        scheduler = getattr(task_object, "scheduler", None)
         if not scheduler:
-            logger.warning(f'No scheduler in {task}')
+            logger.warning(f"No scheduler in {task}")
             return
 
         # 任务开始时间
@@ -322,11 +323,7 @@ class Config(ConfigState, ConfigManual, ConfigWatcher, ConfigMenu):
         # 依次判断是否有自定义的下次运行时间
         run = []
         if success is not None:
-            interval = (
-                scheduler.success_interval
-                if success
-                else scheduler.failure_interval
-            )
+            interval = scheduler.success_interval if success else scheduler.failure_interval
             if isinstance(interval, str):
                 interval = timedelta(interval)
             run.append(start_time + interval)
@@ -342,24 +339,26 @@ class Config(ConfigState, ConfigManual, ConfigWatcher, ConfigMenu):
         next_run = None
         # 排序
         if not len(run):
-            raise ScriptError(
-                "Missing argument in delay_next_run, should set at least one"
-            )
+            raise ScriptError("Missing argument in delay_next_run, should set at least one")
 
         run = min(run).replace(microsecond=0)
         next_run = run
 
-        if server and hasattr(scheduler, 'server_update'):
+        if server and hasattr(scheduler, "server_update"):
             # 加入随机延迟时间
-            float_seconds = (scheduler.float_time.hour * 3600 +
-                             scheduler.float_time.minute * 60 +
-                             scheduler.float_time.second)
+            float_seconds = (
+                scheduler.float_time.hour * 3600
+                + scheduler.float_time.minute * 60
+                + scheduler.float_time.second
+            )
             random_float = random.randint(0, float_seconds)
             # 如果有强制运行时间
             if scheduler.server_update == time(hour=9):
                 next_run += timedelta(seconds=random_float)
             else:
-                next_run = parse_tomorrow_server(scheduler.server_update, scheduler.delay_date, random_float)
+                next_run = parse_tomorrow_server(
+                    scheduler.server_update, scheduler.delay_date, random_float
+                )
 
         # 将这些连接起来，方便日志输出
         kv = dict_to_kv(
@@ -380,11 +379,11 @@ class Config(ConfigState, ConfigManual, ConfigWatcher, ConfigMenu):
         finally:
             self.lock_config.release()
         # 设置
-        logger.attr(f'{task}.scheduler.next_run', next_run)
+        logger.attr(f"{task}.scheduler.next_run", next_run)
 
 
-if __name__ == '__main__':
-    config = Config(config_name='oas1')
+if __name__ == "__main__":
+    config = Config(config_name="oas1")
     config.notifier.push(title="0000", content="dddddddd")
 
     # print(config.get_next())

@@ -1,39 +1,39 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
-import cv2
-from numpy import frombuffer, uint8, array, random
-import numpy as np
 import time
-
 from math import dist
-from cached_property import cached_property
-from win32gui import (GetWindowText, EnumWindows, FindWindow, FindWindowEx,
-                      IsWindow, GetWindowRect, GetWindowDC, DeleteObject,
-                      SetForegroundWindow, IsWindowVisible, GetDC, GetParent,
-                      EnumChildWindows, SetForegroundWindow)
-from win32con import (SRCCOPY, DESKTOPHORZRES, DESKTOPVERTRES, WM_LBUTTONUP,
-                      WM_LBUTTONDOWN, WM_ACTIVATE, WA_ACTIVE, MK_LBUTTON,
-                      WM_NCHITTEST, WM_SETCURSOR, HTCLIENT, WM_MOUSEMOVE,
-                      WM_PARENTNOTIFY, WM_MOUSEACTIVATE, WM_MOUSEWHEEL,
-                      WM_SETFOCUS)
-from win32ui import CreateDCFromHandle, CreateBitmap
-from win32api import GetSystemMetrics, SendMessage, MAKELONG, PostMessage
-from win32con import SRCCOPY
 
+import cv2
+from functools import cached_property
+from numpy import frombuffer, random
+from win32api import MAKELONG, PostMessage, SendMessage
+from win32con import (
+    HTCLIENT,
+    MK_LBUTTON,
+    SRCCOPY,
+    WA_ACTIVE,
+    WM_ACTIVATE,
+    WM_LBUTTONDOWN,
+    WM_LBUTTONUP,
+    WM_MOUSEMOVE,
+    WM_MOUSEWHEEL,
+    WM_NCHITTEST,
+    WM_SETCURSOR,
+)
+from win32gui import (
+    DeleteObject,
+    GetWindowDC,
+    GetWindowRect,
+    SetForegroundWindow,
+)
+from win32ui import CreateBitmap, CreateDCFromHandle
 
 from module.base.cBezier import BezierTrajectory
-from module.exception import RequestHumanTakeover, ScriptError
-from module.base.decorator import Config
-from module.base.timer import timer
+from module.device.handle import EmulatorFamily, Handle
 from module.logger import logger
-from module.device.handle import Handle, window_scale_rate, EmulatorFamily
-
-
 
 
 class Window(Handle):
-
     def __init__(self, *args, **kwargs):
         logger.info("Window init")
         super().__init__(*args, **kwargs)
@@ -61,7 +61,7 @@ class Window(Handle):
 
         # 保存图像
         signedIntsArray = saveBitMap.GetBitmapBits(True)
-        imgSrceen = frombuffer(signedIntsArray, dtype='uint8')
+        imgSrceen = frombuffer(signedIntsArray, dtype="uint8")
         imgSrceen.shape = (heightScreen, widthScreen, 4)
         # 这点很重要 在alas中图片以np.ndarray（RGB）的顺序存储。但是opencv是以BGR
         imgSrceen = cv2.cvtColor(imgSrceen, cv2.COLOR_BGR2RGB)
@@ -108,9 +108,10 @@ class Window(Handle):
         elif self.emulator_family == EmulatorFamily.FAMILY_LD:
             result.append(self.root_node.children[0].num)
             return result
-        elif self.emulator_family == EmulatorFamily.FAMILY_MEMU:
-            pass
-        elif self.emulator_family == EmulatorFamily.FAMILY_BLUESTACKS:
+        elif (
+            self.emulator_family == EmulatorFamily.FAMILY_MEMU
+            or self.emulator_family == EmulatorFamily.FAMILY_BLUESTACKS
+        ):
             pass
 
     @cached_property
@@ -159,14 +160,20 @@ class Window(Handle):
             # mumu12模拟器 V3.5.16 之后后可以用下面的方式
             SendMessage(self.control_handle_list[1], WM_LBUTTONDOWN, 0, MAKELONG(x, y))
             time.sleep(press_time)
-            SendMessage(self.control_handle_list[1], WM_LBUTTONUP, 0, MAKELONG(x, y))  # 模拟鼠标弹起 后是子窗口
+            SendMessage(
+                self.control_handle_list[1], WM_LBUTTONUP, 0, MAKELONG(x, y)
+            )  # 模拟鼠标弹起 后是子窗口
         elif emulator_type > 2:  # 夜神模拟器
-            SendMessage(self.control_handle_list[0], WM_LBUTTONDOWN, 0, MAKELONG(x, y))  # 模拟鼠标按下 先是父窗口 上面的框高度是57
+            SendMessage(
+                self.control_handle_list[0], WM_LBUTTONDOWN, 0, MAKELONG(x, y)
+            )  # 模拟鼠标按下 先是父窗口 上面的框高度是57
             SendMessage(self.control_handle_list[1], WM_LBUTTONDOWN, 0, MAKELONG(x, y))
             SendMessage(self.control_handle_list[2], WM_LBUTTONDOWN, 0, MAKELONG(x, y))
             SendMessage(self.control_handle_list[3], WM_LBUTTONDOWN, 0, MAKELONG(x, y))
             time.sleep(press_time)
-            SendMessage(self.control_handle_list[3], WM_LBUTTONUP, 0, MAKELONG(x, y))  # 模拟鼠标弹起 后是子窗口
+            SendMessage(
+                self.control_handle_list[3], WM_LBUTTONUP, 0, MAKELONG(x, y)
+            )  # 模拟鼠标弹起 后是子窗口
         elif emulator_type == 1:  # 雷电模拟器
             clickPos = MAKELONG(x, y)
             SendMessage(self.control_handle_list[0], WM_LBUTTONDOWN, 0, clickPos)
@@ -192,14 +199,20 @@ class Window(Handle):
             # SendMessage(self.control_handle_list[0], WM_LBUTTONDOWN, 0, MAKELONG(x, y+self.mumu_head_height))  # 模拟鼠标按下 先是父窗口 上面的框高度是57
             SendMessage(self.control_handle_list[1], WM_LBUTTONDOWN, 0, MAKELONG(x, y))
             time.sleep(duration)  # 长按时间1000ms-1500ms
-            SendMessage(self.control_handle_list[1], WM_LBUTTONUP, 0, MAKELONG(x, y))  # 模拟鼠标弹起 后是子窗口
+            SendMessage(
+                self.control_handle_list[1], WM_LBUTTONUP, 0, MAKELONG(x, y)
+            )  # 模拟鼠标弹起 后是子窗口
         elif emulator_type > 2:  # 夜神模拟器
-            SendMessage(self.control_handle_list[0], WM_LBUTTONDOWN, 0, MAKELONG(x, y))  # 模拟鼠标按下 先是父窗口 上面的框高度是57
+            SendMessage(
+                self.control_handle_list[0], WM_LBUTTONDOWN, 0, MAKELONG(x, y)
+            )  # 模拟鼠标按下 先是父窗口 上面的框高度是57
             SendMessage(self.control_handle_list[1], WM_LBUTTONDOWN, 0, MAKELONG(x, y))
             SendMessage(self.control_handle_list[2], WM_LBUTTONDOWN, 0, MAKELONG(x, y))
             SendMessage(self.control_handle_list[3], WM_LBUTTONDOWN, 0, MAKELONG(x, y))
             time.sleep(duration)  # 长按时间1000ms-1500ms
-            SendMessage(self.control_handle_list[3], WM_LBUTTONUP, 0, MAKELONG(x, y))  # 模拟鼠标弹起 后是子窗口
+            SendMessage(
+                self.control_handle_list[3], WM_LBUTTONUP, 0, MAKELONG(x, y)
+            )  # 模拟鼠标弹起 后是子窗口
         elif emulator_type == 1:  # 雷电模拟器
             clickPos = MAKELONG(x, y)
             SendMessage(self.control_handle_list[0], WM_LBUTTONDOWN, 0, clickPos)  # 模拟鼠标按下
@@ -216,19 +229,32 @@ class Window(Handle):
         """
         # 生成的坐标点列表
         interval: int = 10  # 每次移动的间隔时间
-        numberList: int = int(dist(startPos, endPos) / (1 * interval))  # 表示每毫秒移动1.5个像素点， 总的时间除以每个点10ms就得到总的点的个数
+        numberList: int = int(
+            dist(startPos, endPos) / (1 * interval)
+        )  # 表示每毫秒移动1.5个像素点， 总的时间除以每个点10ms就得到总的点的个数
         le = random.randint(2, 4)  #
         deviation = random.randint(20, 40)  # 幅度
         _type: int = 3
-        obbsType = random.random()  # 0.8的概率是先快中间慢后面快， 0.1概率是先快后慢， 0.1概率先慢后快
+        obbsType = (
+            random.random()
+        )  # 0.8的概率是先快中间慢后面快， 0.1概率是先快后慢， 0.1概率先慢后快
         if 0 < obbsType <= 0.8:
             _type = 3
         elif obbsType < 0.9:
             _type = 2
         else:
             _type = 1
-        trace: list = BezierTrajectory.trackArray(start=startPos, end=endPos, numberList=numberList, le=le,
-                                                  deviation=deviation, bias=0.5, type=_type, cbb=0, yhh=20)
+        trace: list = BezierTrajectory.trackArray(
+            start=startPos,
+            end=endPos,
+            numberList=numberList,
+            le=le,
+            deviation=deviation,
+            bias=0.5,
+            type=_type,
+            cbb=0,
+            yhh=20,
+        )
 
         # 使用生成的点列表进行拖拽
         handleNum = None
@@ -275,7 +301,9 @@ class Window(Handle):
         """
         # 生成的坐标点列表
         interval: int = 8  # 每次移动的间隔时间
-        numberList: int = int(dist(startPos, endPos) / (1.5 * interval))  # 表示每毫秒移动1.5个像素点， 总的时间除以每个点10ms就得到总的点的个数
+        numberList: int = int(
+            dist(startPos, endPos) / (1.5 * interval)
+        )  # 表示每毫秒移动1.5个像素点， 总的时间除以每个点10ms就得到总的点的个数
 
         def generate_points(start_pos: list, end_pos: list, number: int) -> list:
             # 确定两点之间的步长
@@ -317,7 +345,7 @@ class Window(Handle):
         tmpPos = MAKELONG(trace[-1][0], trace[-1][1])
         PostMessage(handleNum, WM_LBUTTONUP, 0, tmpPos)
 
-    def scroll_window_message(self, x: int, y: int, delta: int=-120) -> None:
+    def scroll_window_message(self, x: int, y: int, delta: int = -120) -> None:
         """
         弃置
         https://github.com/runhey/OnmyojiAutoScript/issues/43
@@ -343,7 +371,6 @@ class Window(Handle):
         # SendMessage(handle_num, WM_ACTIVATE, WA_ACTIVE, 0)
         # SendMessage(handle_num, WM_MOUSEACTIVATE, WM_LBUTTONDOWN, lparam)
 
-
         SendMessage(handle_num, WM_NCHITTEST, 0, lparam)
         SendMessage(handle_num, WM_SETCURSOR, handle_num, lparam)
         PostMessage(handle_num, WM_MOUSEMOVE, 0, lparam)
@@ -358,11 +385,8 @@ class Window(Handle):
         # SendMessage(handle_num, WM_NCHITTEST, 0, lparam)
 
 
-
-
-
 if __name__ == "__main__":
-    w = Window(config='oas1')
+    w = Window(config="oas1")
     # img = w.screenshot_window_background()
     # handle = 459852
     # wparam = MAKELONG(0, -120)
@@ -370,5 +394,3 @@ if __name__ == "__main__":
     # PostMessage(handle, WM_MOUSEWHEEL, wparam, lparam)
 
     w.long_click_window_message(142, 310, 1.5)
-
-

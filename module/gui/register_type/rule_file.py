@@ -1,19 +1,15 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
 import os
-import json
 
 from filelock import FileLock
 from PySide6.QtCore import QObject, Slot
 
-from module.logger import logger
 from module.config.atomicwrites import atomic_write
-
+from module.logger import logger
 
 
 class RuleFile(QObject):
-
     def __init__(self):
         super().__init__()
 
@@ -34,9 +30,9 @@ class RuleFile(QObject):
         _, ext = os.path.splitext(file)
         lock = FileLock(f"{file}.lock")
         with lock:
-            logger.info(f'read: {file}')
-            if ext == '.json':
-                with open(file, mode='r', encoding='utf-8') as f:
+            logger.info(f"read: {file}")
+            if ext == ".json":
+                with open(file, encoding="utf-8") as f:
                     return f.read()
             else:
                 logger.error(f"not support {ext} file")
@@ -57,9 +53,9 @@ class RuleFile(QObject):
         _, ext = os.path.splitext(file)
         lock = FileLock(f"{file}.lock")
         with lock:
-            logger.info(f'write: {file}')
-            if ext == '.json':
-                with atomic_write(file, overwrite=True, encoding='utf-8') as f:
+            logger.info(f"write: {file}")
+            if ext == ".json":
+                with atomic_write(file, overwrite=True, encoding="utf-8") as f:
                     f.write(data)
             else:
                 logger.error(f"not support {ext} file")

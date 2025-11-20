@@ -1,5 +1,3 @@
-# This Python file uses the following encoding: utf-8
-
 import time
 from datetime import datetime, timedelta
 from functools import wraps
@@ -9,13 +7,14 @@ def timer(function):
     """
     装饰器 打印函数时间时间
     """
+
     @wraps(function)
     def function_timer(*args, **kwargs):
         t0 = time.time()
 
         result = function(*args, **kwargs)
         t1 = time.time()
-        print('%s: %s s' % (function.__name__, str(round(t1 - t0, 10))))
+        print("%s: %s s" % (function.__name__, str(round(t1 - t0, 10))))
         return result
 
     return function_timer
@@ -29,7 +28,7 @@ def future_time(string):
     Returns:
         datetime.datetime: Time with given hour, minute in the future.
     """
-    hour, minute = [int(x) for x in string.split(':')]
+    hour, minute = [int(x) for x in string.split(":")]
     future = datetime.now().replace(hour=hour, minute=minute, second=0, microsecond=0)
     future = future + timedelta(days=1) if future < datetime.now() else future
     return future
@@ -43,7 +42,7 @@ def past_time(string):
     Returns:
         datetime.datetime: Time with given hour, minute in the past.
     """
-    hour, minute = [int(x) for x in string.split(':')]
+    hour, minute = [int(x) for x in string.split(":")]
     past = datetime.now().replace(hour=hour, minute=minute, second=0, microsecond=0)
     past = past - timedelta(days=1) if past > datetime.now() else past
     return past
@@ -57,7 +56,7 @@ def future_time_range(string):
     Returns:
         tuple(datetime.datetime): (time start, time end).
     """
-    start, end = [future_time(s) for s in string.split('-')]
+    start, end = [future_time(s) for s in string.split("-")]
     if start > end:
         start = start - timedelta(days=1)
     return start, end
@@ -115,7 +114,7 @@ class Timer:
         if self.started():
             return time.time() - self._current
         else:
-            return 0.
+            return 0.0
 
     def reached(self):
         """
@@ -157,6 +156,7 @@ class Timer:
 
     def show(self):
         from module.logger import logger
+
         logger.info(str(self))
 
     def remain(self):
@@ -167,6 +167,6 @@ class Timer:
         return self._current + self.limit - time.time()
 
     def __str__(self):
-        return f'Timer(limit={round(self.current(), 3)}/{self.limit}, count={self._reach_count}/{self.count})'
+        return f"Timer(limit={round(self.current(), 3)}/{self.limit}, count={self._reach_count}/{self.count})"
 
     __repr__ = __str__

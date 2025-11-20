@@ -1,26 +1,31 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
 
+from datetime import datetime, time, timedelta
 from time import sleep
 
-from cached_property import cached_property
-from datetime import datetime
-from datetime import timedelta, time
+from functools import cached_property
+
 from module.base.timer import Timer
 from module.exception import TaskEnd
 from module.logger import logger
 from tasks.BondlingFairyland.assets import BondlingFairylandAssets
 from tasks.BondlingFairyland.battle import BondlingBattle
-from tasks.BondlingFairyland.config import BondlingMode, BondlingClass, BondlingSwitchSoul, BondlingConfig, UserStatus
+from tasks.BondlingFairyland.config import (
+    BondlingClass,
+    BondlingConfig,
+    BondlingMode,
+    BondlingSwitchSoul,
+    UserStatus,
+)
 from tasks.BondlingFairyland.config_battle import BattleConfig
 from tasks.BondlingFairyland.general_invite import GeneralInvite
 from tasks.Component.GeneralBattle.assets import GeneralBattleAssets
 from tasks.Component.GeneralBattle.config_general_battle import GeneralBattleConfig
 from tasks.Component.GeneralRoom.general_room import GeneralRoom
-from tasks.Component.SwitchSoul.switch_soul import SwitchSoul, switch_parser
+from tasks.Component.SwitchSoul.switch_soul import SwitchSoul
 from tasks.GameUi.game_ui import GameUi
-from tasks.GameUi.page import page_main, page_bondling_fairyland, page_shikigami_records, page_mall
+from tasks.GameUi.page import page_bondling_fairyland, page_main, page_mall, page_shikigami_records
 from tasks.RichMan.assets import RichManAssets
 
 
@@ -31,7 +36,15 @@ class BondlingNumberMax(Exception):
 """ 契灵 """
 
 
-class ScriptTask(GameUi, GeneralInvite, GeneralRoom, BondlingBattle, SwitchSoul, BondlingFairylandAssets, RichManAssets):
+class ScriptTask(
+    GameUi,
+    GeneralInvite,
+    GeneralRoom,
+    BondlingBattle,
+    SwitchSoul,
+    BondlingFairylandAssets,
+    RichManAssets,
+):
     ball_pos_list = [None, None, None, None, None]  # 用于记录每一个位置的球是否出现
     first_catch = True  # 用于记录是否是第一次捕捉
 
@@ -40,7 +53,7 @@ class ScriptTask(GameUi, GeneralInvite, GeneralRoom, BondlingBattle, SwitchSoul,
         cong = self.config.bondling_fairyland
 
         if cong.bondling_check.check_enable:
-            logger.hr('第一步, 检查契忆数量', 2)
+            logger.hr("第一步, 检查契忆数量", 2)
             self.ui_get_current_page()
             self.ui_goto(page_mall, confirm_wait=2.5)
             self.ui_click(self.I_MALL_SCCALES, self.I_MALL_SCCALES_CHECK)
@@ -50,15 +63,15 @@ class ScriptTask(GameUi, GeneralInvite, GeneralRoom, BondlingBattle, SwitchSoul,
             cu, re, total = self.O_BL_CHECK_MONEY.ocr(self.device.image)
 
             if cu >= MAX_COUNT:
-                logger.info(f'契忆数量: {cu} 大于 {MAX_COUNT}')
+                logger.info(f"契忆数量: {cu} 大于 {MAX_COUNT}")
                 self.ui_get_current_page()
                 self.ui_goto(page_main)
-                self.set_next_run(task='BondlingFairyland', finish=True, success=True)
+                self.set_next_run(task="BondlingFairyland", finish=True, success=True)
                 raise TaskEnd
 
-            logger.info(f'契忆数量: {cu} 小于 {MAX_COUNT}, 继续任务')
+            logger.info(f"契忆数量: {cu} 小于 {MAX_COUNT}, 继续任务")
 
-        logger.hr('第二步, 切换御魂', 2)
+        logger.hr("第二步, 切换御魂", 2)
         # 御魂切换方式一
         if cong.switch_soul_config.enable:
             self.ui_get_current_page()
@@ -68,9 +81,11 @@ class ScriptTask(GameUi, GeneralInvite, GeneralRoom, BondlingBattle, SwitchSoul,
         if cong.switch_soul_config.enable_switch_by_name:
             self.ui_get_current_page()
             self.ui_goto(page_shikigami_records)
-            self.run_switch_soul_by_name(cong.switch_soul_config.group_name, cong.switch_soul_config.team_name)
+            self.run_switch_soul_by_name(
+                cong.switch_soul_config.group_name, cong.switch_soul_config.team_name
+            )
 
-        logger.hr('第三步, 前往契灵主界面', 2)
+        logger.hr("第三步, 前往契灵主界面", 2)
         self.ui_get_current_page()
         self.ui_goto(page_bondling_fairyland)
 
@@ -83,7 +98,7 @@ class ScriptTask(GameUi, GeneralInvite, GeneralRoom, BondlingBattle, SwitchSoul,
                 self.ui_goto(page_bondling_fairyland)
                 continue
 
-        logger.hr('第四步, 开始战斗准备', 2)
+        logger.hr("第四步, 开始战斗准备", 2)
         self.current_count = 0
         self.limit_count = cong.bondling_config.limit_count  # 默认limit_count值
 
@@ -103,14 +118,15 @@ class ScriptTask(GameUi, GeneralInvite, GeneralRoom, BondlingBattle, SwitchSoul,
             case UserStatus.MEMBER:
                 self.run_member()
             case _:
-                logger.error(f'Unknown user status: {cong.bondling_config.user_status}')
+                logger.error(f"Unknown user status: {cong.bondling_config.user_status}")
 
     def run_leader(self):
-        """  点击 求援， 组队模式  """
-        logger.hr('Start run leader', 2)
+        """点击 求援， 组队模式"""
+        logger.hr("Start run leader", 2)
         success = True
         is_first = True
         while 1:
+
             def create_bond_team():
                 click_count = 0
                 while 1:
@@ -118,9 +134,10 @@ class ScriptTask(GameUi, GeneralInvite, GeneralRoom, BondlingBattle, SwitchSoul,
                     if self.appear(self.I_GI_IN_ROOM):
                         return True
                     if click_count >= 6:
-                        logger.error('Click fire failed')
+                        logger.error("Click fire failed")
                         logger.error(
-                            'You might need to check your bondling number. It most possibly arrived to the max 500')
+                            "You might need to check your bondling number. It most possibly arrived to the max 500"
+                        )
                         raise BondlingNumberMax
                     # 某些活动的时候出现 “选择共鸣的阴阳师”
                     if self.appear_then_click(self.I_UI_CONFIRM, interval=1):
@@ -136,9 +153,9 @@ class ScriptTask(GameUi, GeneralInvite, GeneralRoom, BondlingBattle, SwitchSoul,
                         return False
                     if self.appear(self.I_BALL_HELP, interval=1):
                         cu, res, total = self.O_B_BALL_NUMBER.ocr(self.device.image)
-                        logger.info(f'ball is cu {cu}, total {total}')
+                        logger.info(f"ball is cu {cu}, total {total}")
                         if cu <= 0 and total == 99:
-                            logger.info('ball is not enough')
+                            logger.info("ball is not enough")
                             return False
                         if self.appear_then_click(self.I_BALL_HELP, interval=2):
                             sleep(1)
@@ -157,37 +174,49 @@ class ScriptTask(GameUi, GeneralInvite, GeneralRoom, BondlingBattle, SwitchSoul,
             if self.current_count >= self.limit_count:
                 if self.appear(self.I_GI_IN_ROOM):
                     # 次数达到也要邀请好友进房间,然后退出,不然队员无法判断是否完成契灵,出现异常
-                    self.run_invite(config=self.config.bondling_fairyland.invite_config, is_first=is_first, is_over=False)
+                    self.run_invite(
+                        config=self.config.bondling_fairyland.invite_config,
+                        is_first=is_first,
+                        is_over=False,
+                    )
                     # 等待三秒让队员进房间,避免队员没进房间出现异常
                     sleep(3)
-                    logger.info(f'契灵次数:{self.current_count}已完成,退出')
+                    logger.info(f"契灵次数:{self.current_count}已完成,退出")
                     break
 
             if datetime.now() - self.start_time >= self.limit_time:
                 if self.appear(self.I_GI_IN_ROOM):
-                    logger.info('bondling_fairyland time limit out')
+                    logger.info("bondling_fairyland time limit out")
                     break
 
             if self.appear(self.I_GI_IN_ROOM):
                 # 点击挑战
                 if not is_first:
                     if self.run_invite(config=self.config.bondling_fairyland.invite_config):
-                        success = self.run_battle(self.config.bondling_fairyland.battle_config, limit_count=self.limit_count)
+                        success = self.run_battle(
+                            self.config.bondling_fairyland.battle_config,
+                            limit_count=self.limit_count,
+                        )
                     else:
                         # 邀请失败，退出任务
-                        logger.warning('Invite failed and exit this bondling_fairyland task')
+                        logger.warning("Invite failed and exit this bondling_fairyland task")
                         success = False
                         break
 
                 # 第一次会邀请队友
                 if is_first:
-                    if not self.run_invite(config=self.config.bondling_fairyland.invite_config, is_first=True):
-                        logger.warning('Invite failed and exit this bondling_fairyland task')
+                    if not self.run_invite(
+                        config=self.config.bondling_fairyland.invite_config, is_first=True
+                    ):
+                        logger.warning("Invite failed and exit this bondling_fairyland task")
                         success = False
                         break
                     else:
                         is_first = False
-                        success = self.run_battle(self.config.bondling_fairyland.battle_config, limit_count=self.limit_count)
+                        success = self.run_battle(
+                            self.config.bondling_fairyland.battle_config,
+                            limit_count=self.limit_count,
+                        )
                         continue
         # 当结束或者是失败退出循环的时候只有两个UI的可能，在房间或者是在组队界面
         # 如果在房间就退出
@@ -205,11 +234,11 @@ class ScriptTask(GameUi, GeneralInvite, GeneralRoom, BondlingBattle, SwitchSoul,
             self.run_member()
         self.ui_get_current_page()
         self.ui_goto(page_main)
-        self.set_next_run(task='BondlingFairyland', finish=True, success=True)
+        self.set_next_run(task="BondlingFairyland", finish=True, success=True)
         raise TaskEnd
 
     def run_member(self):
-        logger.hr('Start run member', 2)
+        logger.hr("Start run member", 2)
         self.ui_get_current_page()
         # 开始等待队长拉人
         wait_time = self.config.bondling_fairyland.invite_config.wait_time
@@ -218,10 +247,9 @@ class ScriptTask(GameUi, GeneralInvite, GeneralRoom, BondlingBattle, SwitchSoul,
         success = True
 
         # 进入战斗流程
-        self.device.stuck_record_add('BATTLE_STATUS_S')
+        self.device.stuck_record_add("BATTLE_STATUS_S")
 
         while 1:
-
             self.screenshot()
 
             if wait_timer.reached():
@@ -232,7 +260,7 @@ class ScriptTask(GameUi, GeneralInvite, GeneralRoom, BondlingBattle, SwitchSoul,
             #     logger.info('Orochi count limit out')
             #     breakpush_n
             if datetime.now() - self.start_time >= self.limit_time:
-                logger.info('BondlingFairyland time limit out')
+                logger.info("BondlingFairyland time limit out")
                 break
 
             if self.check_then_accept():
@@ -240,23 +268,34 @@ class ScriptTask(GameUi, GeneralInvite, GeneralRoom, BondlingBattle, SwitchSoul,
 
             if self.is_in_room():
                 logger.info("契灵：已经在组队房间中")
-                if self.wait_battle(wait_time=self.config.bondling_fairyland.invite_config.wait_time):
-                    self.run_battle(self.config.bondling_fairyland.battle_config, limit_count=self.limit_count)
+                if self.wait_battle(
+                    wait_time=self.config.bondling_fairyland.invite_config.wait_time
+                ):
+                    self.run_battle(
+                        self.config.bondling_fairyland.battle_config, limit_count=self.limit_count
+                    )
                     wait_timer.reset()
                     # 进入战斗流程
-                    self.device.stuck_record_add('BATTLE_STATUS_S')
+                    self.device.stuck_record_add("BATTLE_STATUS_S")
                 else:
                     break
             # 队长秒开的时候，检测是否进入到战斗中
-            elif self.check_take_over_battle(False, config=self.config.bondling_fairyland.battle_config):
+            elif self.check_take_over_battle(
+                False, config=self.config.bondling_fairyland.battle_config
+            ):
                 wait_timer.reset()
                 # 进入战斗流程
-                self.device.stuck_record_add('BATTLE_STATUS_S')
+                self.device.stuck_record_add("BATTLE_STATUS_S")
                 continue
 
         while 1:
             # 有一种情况是本来要退出的，但是队长邀请了进入的战斗的加载界面
-            if self.appear(self.I_GI_HOME) or self.appear(self.I_GI_EXPLORE) or self.appear(self.I_CHECK_BONDLING_FAIRYLAND) or self.appear(self.I_BALL_HELP) :
+            if (
+                self.appear(self.I_GI_HOME)
+                or self.appear(self.I_GI_EXPLORE)
+                or self.appear(self.I_CHECK_BONDLING_FAIRYLAND)
+                or self.appear(self.I_BALL_HELP)
+            ):
                 break
             # 如果可能在房间就退出
             if self.exit_room():
@@ -265,21 +304,21 @@ class ScriptTask(GameUi, GeneralInvite, GeneralRoom, BondlingBattle, SwitchSoul,
             if self.exit_battle():
                 pass
                 # 引用配置
-        if UserStatus.MEMBER == self.config.bondling_fairyland.bondling_config.user_status:
+        if self.config.bondling_fairyland.bondling_config.user_status == UserStatus.MEMBER:
             self.ui_get_current_page()
             self.ui_goto(page_main)
-            self.set_next_run(task='BondlingFairyland', finish=True, success=True)
+            self.set_next_run(task="BondlingFairyland", finish=True, success=True)
             raise TaskEnd
 
     def switch_ball(self):
-        logger.hr('Start switch ball', 2)
+        logger.hr("Start switch ball", 2)
         cong = self.config.bondling_fairyland
 
         bondling_config = cong.bondling_config
         bondling_switch_soul = cong.bondling_switch_soul
         battle_config = cong.battle_config
 
-        logger.info(f'抓捕契灵: [{bondling_config.bondling_stone_class}] ')
+        logger.info(f"抓捕契灵: [{bondling_config.bondling_stone_class}] ")
         match bondling_config.bondling_stone_class:
             case BondlingClass.TOMB_GUARD:
                 current_ball_index = 1
@@ -293,7 +332,6 @@ class ScriptTask(GameUi, GeneralInvite, GeneralRoom, BondlingBattle, SwitchSoul,
                 current_ball_index = 1
 
         while 1:
-
             if not self.in_search_ui(screenshot=True):
                 self.ui_get_current_page()
                 self.ui_goto(page_bondling_fairyland)
@@ -301,21 +339,25 @@ class ScriptTask(GameUi, GeneralInvite, GeneralRoom, BondlingBattle, SwitchSoul,
 
             if bondling_config.bondling_mode != BondlingMode.MODE1:
                 if self.ball_click(current_ball_index):
-                    logger.info(f'Current ball number: {current_ball_index} ')
+                    logger.info(f"Current ball number: {current_ball_index} ")
                 else:
-                    if self.run_stone(bondling_config.bondling_stone_enable, bondling_config.bondling_stone_class):
+                    if self.run_stone(
+                        bondling_config.bondling_stone_enable, bondling_config.bondling_stone_class
+                    ):
                         continue
                     else:
-                        logger.info('No bondling stone, exit')
+                        logger.info("No bondling stone, exit")
                         break
                 try:
                     # 执行捕捉
                     if self.run_catch(bondling_config, bondling_switch_soul, battle_config):
-                        logger.info(f'Catch successful and current ball number: {current_ball_index} ')
+                        logger.info(
+                            f"Catch successful and current ball number: {current_ball_index} "
+                        )
                     else:
                         break
                 except BondlingNumberMax:
-                    logger.error('Bondling number max, exit')
+                    logger.error("Bondling number max, exit")
                     break
             else:
                 # 否则就是模式1
@@ -328,11 +370,11 @@ class ScriptTask(GameUi, GeneralInvite, GeneralRoom, BondlingBattle, SwitchSoul,
                 break
             if self.in_catch_ui():
                 self.appear_then_click(self.I_BACK_Y, interval=1)
-        logger.info('BondlingFairyland task finished')
+        logger.info("BondlingFairyland task finished")
 
         self.ui_get_current_page()
         self.ui_goto(page_main)
-        self.set_next_run(task='BondlingFairyland', finish=True, success=True)
+        self.set_next_run(task="BondlingFairyland", finish=True, success=True)
         raise TaskEnd
 
     def run_stone(self, bondling_stone_enable: bool, bondling_stone_class: BondlingClass):
@@ -353,7 +395,7 @@ class ScriptTask(GameUi, GeneralInvite, GeneralRoom, BondlingBattle, SwitchSoul,
             # 如果没有石头了
             cu, res, total = self.O_B_STONE_NUMBER.ocr(self.device.image)
             if cu == 0 and cu + res == total:
-                logger.warning(f'已经没有鸣契石召唤契灵了')
+                logger.warning("已经没有鸣契石召唤契灵了")
                 return False
             while 1:
                 self.screenshot()
@@ -382,22 +424,25 @@ class ScriptTask(GameUi, GeneralInvite, GeneralRoom, BondlingBattle, SwitchSoul,
                 continue
             # 检查是否有挑战次数
             if self.current_count >= bondling_config.limit_count:
-                logger.warning(f'No challenge count, exit')
+                logger.warning("No challenge count, exit")
                 return False
             # 检查是否到了限制时间
             if datetime.now() - self.start_time >= self.limit_time:
-                logger.warning(f'No time, exit')
+                logger.warning("No time, exit")
                 return False
 
             if self.click_search():
                 self.run_general_battle(self.general_battle_config)
             else:
-                logger.warning(f'Full five ball')
+                logger.warning("Full five ball")
                 return True
 
-    def run_catch(self, bondling_config: BondlingConfig,
-                  bondling_switch_soul: BondlingSwitchSoul,
-                  battle_config: BattleConfig):
+    def run_catch(
+        self,
+        bondling_config: BondlingConfig,
+        bondling_switch_soul: BondlingSwitchSoul,
+        battle_config: BattleConfig,
+    ):
         """
         执行捕捉的(确保进入了结契界面)
         :return:
@@ -406,7 +451,7 @@ class ScriptTask(GameUi, GeneralInvite, GeneralRoom, BondlingBattle, SwitchSoul,
         (3) 挑战次数到了，返回False (退出页面是结契界面)
         (4) 捕获成功，返回True (退出页面是捕获的页面)
         """
-        logger.hr('Start run catch', 2)
+        logger.hr("Start run catch", 2)
         self.lock_team()
 
         def check_plate_number():
@@ -416,12 +461,12 @@ class ScriptTask(GameUi, GeneralInvite, GeneralRoom, BondlingBattle, SwitchSoul,
                 case BondlingMode.MODE3:
                     target_plate = self.O_B_MEDIUM_NUMBER
                 case _:
-                    logger.error('Invalid bondling mode')
+                    logger.error("Invalid bondling mode")
                     return False
             self.screenshot()
             cu, res, total = target_plate.ocr(self.device.image)
             if cu == 0 and cu + res == total:
-                logger.warning(f'No plate number, exit')
+                logger.warning("No plate number, exit")
                 return False
             return True
 
@@ -429,7 +474,7 @@ class ScriptTask(GameUi, GeneralInvite, GeneralRoom, BondlingBattle, SwitchSoul,
             self.screenshot()
             cu, res, total = self.O_B_BALL_NUMBER.ocr(self.device.image)
             if cu == 0 and cu + res == total and total == 99:
-                logger.warning(f'No ball number, exit')
+                logger.warning("No ball number, exit")
                 return False
             return True
 
@@ -442,7 +487,7 @@ class ScriptTask(GameUi, GeneralInvite, GeneralRoom, BondlingBattle, SwitchSoul,
 
         # 开始执行循环
         success = True
-        logger.hr(f'开始执行战斗循环', 2)
+        logger.hr("开始执行战斗循环", 2)
         while 1:
             self.screenshot()
 
@@ -455,15 +500,15 @@ class ScriptTask(GameUi, GeneralInvite, GeneralRoom, BondlingBattle, SwitchSoul,
 
             # 检查是否有盘子
             if not check_plate_number():
-                logger.warning(f'No plate number, exit')
+                logger.warning("No plate number, exit")
                 return False
             # 检查是否有挑战次数
             if self.current_count >= bondling_config.limit_count:
-                logger.warning(f'No challenge count, exit')
+                logger.warning("No challenge count, exit")
                 return False
             # 检查是否到了限制时间
             if datetime.now() - self.start_time >= self.limit_time:
-                logger.warning(f'No time, exit')
+                logger.warning("No time, exit")
                 return False
 
             # 引用配置
@@ -494,7 +539,7 @@ class ScriptTask(GameUi, GeneralInvite, GeneralRoom, BondlingBattle, SwitchSoul,
 
         def get_click_target(ind: int):
             if ind > 5 or ind < 1:
-                raise ValueError('index must be 1-5')
+                raise ValueError("index must be 1-5")
             match = {
                 1: self.C_STONE_1,
                 2: self.C_STONE_2,
@@ -506,7 +551,7 @@ class ScriptTask(GameUi, GeneralInvite, GeneralRoom, BondlingBattle, SwitchSoul,
 
         click_target = get_click_target(index)
         click_count = 0
-        logger.info(f'Click ball index: {index}')
+        logger.info(f"Click ball index: {index}")
         while 1:
             self.screenshot()
             if self.appear(self.I_BALL_HELP):
@@ -526,7 +571,7 @@ class ScriptTask(GameUi, GeneralInvite, GeneralRoom, BondlingBattle, SwitchSoul,
         """
         if mode == BondlingMode.MODE1:
             return None
-        logger.info(f'Capture setting mode: {mode}')
+        logger.info(f"Capture setting mode: {mode}")
         while 1:
             self.screenshot()
             if self.appear(self.I_CAPTION_ENSURE):
@@ -624,7 +669,9 @@ class ScriptTask(GameUi, GeneralInvite, GeneralRoom, BondlingBattle, SwitchSoul,
         if not self.config.bondling_fairyland.bondling_config.limit_time:
             return timedelta(minutes=20)
         limit_time = self.config.bondling_fairyland.bondling_config.limit_time
-        return timedelta(hours=limit_time.hour, minutes=limit_time.minute, seconds=limit_time.second)
+        return timedelta(
+            hours=limit_time.hour, minutes=limit_time.minute, seconds=limit_time.second
+        )
 
     def run_alone(self):
         """
@@ -639,8 +686,10 @@ class ScriptTask(GameUi, GeneralInvite, GeneralRoom, BondlingBattle, SwitchSoul,
                 click_count += 1
                 continue
             if click_count >= 6:
-                logger.error('Click fire failed')
-                logger.error('You might need to check your bondling number. It most possibly arrived to the max 500')
+                logger.error("Click fire failed")
+                logger.error(
+                    "You might need to check your bondling number. It most possibly arrived to the max 500"
+                )
                 raise BondlingNumberMax
             # 某些活动的时候出现 “选择共鸣的阴阳师”
             if self.appear_then_click(self.I_UI_CONFIRM, interval=1):
@@ -656,19 +705,24 @@ class ScriptTask(GameUi, GeneralInvite, GeneralRoom, BondlingBattle, SwitchSoul,
         wait_second = wait_time.second + wait_time.minute * 60
         self.timer_wait = Timer(wait_second)
         self.timer_wait.start()
-        logger.info(f'Wait battle {wait_second} seconds')
+        logger.info(f"Wait battle {wait_second} seconds")
         success = True
         while 1:
             self.screenshot()
 
             # 如果自己在探索界面或者是庭院，那就是房间已经被销毁了
-            if self.appear(self.I_GI_HOME) or self.appear(self.I_GI_EXPLORE) or self.appear(self.I_CHECK_BONDLING_FAIRYLAND) or self.appear(self.I_BALL_HELP):
-                logger.warning('Room destroyed')
+            if (
+                self.appear(self.I_GI_HOME)
+                or self.appear(self.I_GI_EXPLORE)
+                or self.appear(self.I_CHECK_BONDLING_FAIRYLAND)
+                or self.appear(self.I_BALL_HELP)
+            ):
+                logger.warning("Room destroyed")
                 success = False
                 break
 
             if self.timer_wait.reached():
-                logger.warning('Wait battle time out')
+                logger.warning("Wait battle time out")
                 success = False
                 break
 
@@ -683,7 +737,7 @@ class ScriptTask(GameUi, GeneralInvite, GeneralRoom, BondlingBattle, SwitchSoul,
         # 3. 等待时间到没有开始（还是在房间里面）
         # 4. 房间的时间到了被迫提出房间（这个时候来到了探索界面）
         if not success:
-            logger.info('Leave room')
+            logger.info("Leave room")
             self.exit_room()
 
         return success
@@ -694,7 +748,7 @@ class ScriptTask(GameUi, GeneralInvite, GeneralRoom, BondlingBattle, SwitchSoul,
         :return:
         """
         if self.appear(self.I_CHECK_TEAM):
-            logger.info('Exit team ui')
+            logger.info("Exit team ui")
             while 1:
                 self.screenshot()
                 if not self.appear(self.I_CHECK_TEAM):
@@ -749,9 +803,9 @@ class ScriptTask(GameUi, GeneralInvite, GeneralRoom, BondlingBattle, SwitchSoul,
         if not self.appear(self.I_I_ACCEPT):
             return False
         if self.appear(self.I_I_ACCEPT_JY):
-            logger.info('appear accept_jy')
+            logger.info("appear accept_jy")
             return False
-        logger.info('Click accept')
+        logger.info("Click accept")
 
         accept_timer = Timer(5)
         accept_timer.start()
@@ -791,11 +845,11 @@ class ScriptTask(GameUi, GeneralInvite, GeneralRoom, BondlingBattle, SwitchSoul,
         return gbc
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from module.config.config import Config
     from module.device.device import Device
 
-    config = Config('SWITCH')
+    config = Config("SWITCH")
     device = Device(config)
     t = ScriptTask(config, device)
     t.run()

@@ -1,35 +1,29 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
-from datetime import timedelta, datetime
-
 import random
-
-from module.server.i18n import I18n
-from tasks.Component.GeneralBattle.general_battle import GeneralBattle
-from tasks.BondlingFairyland.assets import BondlingFairylandAssets
-from tasks.BondlingFairyland.config_battle import BattleConfig
+from datetime import datetime, timedelta
 
 from module.logger import logger
-
-
+from module.server.i18n import I18n
+from tasks.BondlingFairyland.assets import BondlingFairylandAssets
+from tasks.BondlingFairyland.config_battle import BattleConfig
+from tasks.Component.GeneralBattle.general_battle import GeneralBattle
 
 
 class BondlingBattle(GeneralBattle, BondlingFairylandAssets):
-
     def run_battle(self, battle_config: BattleConfig, limit_count: int = None) -> bool:
         """
         :return: 如果结契成功返回True，否则返回False
         """
         logger.hr("General battle start", 2)
         self.current_count += 1
-        logger.info(f'Current tasks: {I18n.trans_zh_cn(self.config.task.command)}')
-        logger.info(f'Current count: {self.current_count} / {limit_count}')
+        logger.info(f"Current tasks: {I18n.trans_zh_cn(self.config.task.command)}")
+        logger.info(f"Current count: {self.current_count} / {limit_count}")
 
         task_run_time = datetime.now() - self.start_time
         # 格式化时间，只保留整数部分的秒
         task_run_time_seconds = timedelta(seconds=int(task_run_time.total_seconds()))
-        logger.info(f'Current times: {task_run_time_seconds} / {self.limit_time}')
+        logger.info(f"Current times: {task_run_time_seconds} / {self.limit_time}")
 
         if self.check_load():
             # 首先要判断进入战斗的界面
@@ -37,7 +31,6 @@ class BondlingBattle(GeneralBattle, BondlingFairylandAssets):
 
         # 进入战斗过程
         return self.catch_battle_wait(battle_config.random_click_swipt_enable)
-
 
     def check_load(self) -> bool:
         """
@@ -58,7 +51,7 @@ class BondlingBattle(GeneralBattle, BondlingFairylandAssets):
         重写一个 战斗等待
         :return: 如果捕获成功返回True，否则返回False
         """
-        self.device.stuck_record_add('BATTLE_STATUS_S')
+        self.device.stuck_record_add("BATTLE_STATUS_S")
         self.device.click_record_clear()
         # 有时候 只会点击 获得奖励和开始战斗
         # 战斗过程 随机点击和滑动 防封
@@ -67,7 +60,7 @@ class BondlingBattle(GeneralBattle, BondlingFairylandAssets):
         while 1:
             self.screenshot()
             # 如果捕获成功
-            if self.appear_then_click(self.I_CAP_SUCCESS, action=self.C_CAP_SUCCESS,  interval=1):
+            if self.appear_then_click(self.I_CAP_SUCCESS, action=self.C_CAP_SUCCESS, interval=1):
                 win = True
             # 如果捕获失败
             if self.appear_then_click(self.I_CAP_FAILURE, action=self.C_CAP_SUCCESS, interval=1):

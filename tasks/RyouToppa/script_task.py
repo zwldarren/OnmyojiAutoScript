@@ -1,68 +1,63 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
-import time
-from datetime import datetime, timedelta, time as dt_time
 import random
+import time
+from datetime import datetime, timedelta
+from datetime import time as dt_time
 
-from tasks.Component.SwitchSoul.switch_soul import SwitchSoul
-from tasks.RyouToppa.assets import RyouToppaAssets
-from tasks.Component.GeneralBattle.general_battle import GeneralBattle
-from tasks.Component.config_base import ConfigBase, Time
-from tasks.GameUi.game_ui import GameUi
-from tasks.GameUi.page import page_realm_raid, page_main, page_kekkai_toppa, page_shikigami_records
-from tasks.RealmRaid.assets import RealmRaidAssets
-
-from module.logger import logger
-from module.exception import TaskEnd
 from module.atom.image_grid import ImageGrid
 from module.base.utils import point2str
-from module.base.timer import Timer
-from module.exception import GamePageUnknownError
-
-
+from module.exception import TaskEnd
+from module.logger import logger
+from tasks.Component.config_base import Time
+from tasks.Component.GeneralBattle.general_battle import GeneralBattle
+from tasks.Component.SwitchSoul.switch_soul import SwitchSoul
+from tasks.GameUi.game_ui import GameUi
+from tasks.GameUi.page import page_kekkai_toppa, page_shikigami_records
+from tasks.RealmRaid.assets import RealmRaidAssets
+from tasks.RyouToppa.assets import RyouToppaAssets
 
 area_map = (
     {
         "fail_sign": (RyouToppaAssets.I_AREA_1_IS_FAILURE_NEW, RyouToppaAssets.I_AREA_1_IS_FAILURE),
         "rule_click": RyouToppaAssets.C_AREA_1,
-        "finished_sign": (RyouToppaAssets.I_AREA_1_FINISHED, RyouToppaAssets.I_AREA_1_FINISHED_NEW)
+        "finished_sign": (RyouToppaAssets.I_AREA_1_FINISHED, RyouToppaAssets.I_AREA_1_FINISHED_NEW),
     },
     {
         "fail_sign": (RyouToppaAssets.I_AREA_2_IS_FAILURE_NEW, RyouToppaAssets.I_AREA_2_IS_FAILURE),
         "rule_click": RyouToppaAssets.C_AREA_2,
-        "finished_sign": (RyouToppaAssets.I_AREA_2_FINISHED, RyouToppaAssets.I_AREA_2_FINISHED_NEW)
+        "finished_sign": (RyouToppaAssets.I_AREA_2_FINISHED, RyouToppaAssets.I_AREA_2_FINISHED_NEW),
     },
     {
         "fail_sign": (RyouToppaAssets.I_AREA_3_IS_FAILURE_NEW, RyouToppaAssets.I_AREA_3_IS_FAILURE),
         "rule_click": RyouToppaAssets.C_AREA_3,
-        "finished_sign": (RyouToppaAssets.I_AREA_3_FINISHED, RyouToppaAssets.I_AREA_3_FINISHED_NEW)
+        "finished_sign": (RyouToppaAssets.I_AREA_3_FINISHED, RyouToppaAssets.I_AREA_3_FINISHED_NEW),
     },
     {
         "fail_sign": (RyouToppaAssets.I_AREA_4_IS_FAILURE_NEW, RyouToppaAssets.I_AREA_4_IS_FAILURE),
         "rule_click": RyouToppaAssets.C_AREA_4,
-        "finished_sign": (RyouToppaAssets.I_AREA_4_FINISHED, RyouToppaAssets.I_AREA_4_FINISHED_NEW)
+        "finished_sign": (RyouToppaAssets.I_AREA_4_FINISHED, RyouToppaAssets.I_AREA_4_FINISHED_NEW),
     },
     {
         "fail_sign": (RyouToppaAssets.I_AREA_5_IS_FAILURE_NEW, RyouToppaAssets.I_AREA_5_IS_FAILURE),
         "rule_click": RyouToppaAssets.C_AREA_5,
-        "finished_sign": (RyouToppaAssets.I_AREA_5_FINISHED, RyouToppaAssets.I_AREA_5_FINISHED_NEW)
+        "finished_sign": (RyouToppaAssets.I_AREA_5_FINISHED, RyouToppaAssets.I_AREA_5_FINISHED_NEW),
     },
     {
         "fail_sign": (RyouToppaAssets.I_AREA_6_IS_FAILURE_NEW, RyouToppaAssets.I_AREA_6_IS_FAILURE),
         "rule_click": RyouToppaAssets.C_AREA_6,
-        "finished_sign": (RyouToppaAssets.I_AREA_6_FINISHED, RyouToppaAssets.I_AREA_6_FINISHED_NEW)
+        "finished_sign": (RyouToppaAssets.I_AREA_6_FINISHED, RyouToppaAssets.I_AREA_6_FINISHED_NEW),
     },
     {
         "fail_sign": (RyouToppaAssets.I_AREA_7_IS_FAILURE_NEW, RyouToppaAssets.I_AREA_7_IS_FAILURE),
         "rule_click": RyouToppaAssets.C_AREA_7,
-        "finished_sign": (RyouToppaAssets.I_AREA_7_FINISHED, RyouToppaAssets.I_AREA_7_FINISHED_NEW)
+        "finished_sign": (RyouToppaAssets.I_AREA_7_FINISHED, RyouToppaAssets.I_AREA_7_FINISHED_NEW),
     },
     {
         "fail_sign": (RyouToppaAssets.I_AREA_8_IS_FAILURE_NEW, RyouToppaAssets.I_AREA_8_IS_FAILURE),
         "rule_click": RyouToppaAssets.C_AREA_8,
-        "finished_sign": (RyouToppaAssets.I_AREA_8_FINISHED, RyouToppaAssets.I_AREA_8_FINISHED_NEW)
-    }
+        "finished_sign": (RyouToppaAssets.I_AREA_8_FINISHED, RyouToppaAssets.I_AREA_8_FINISHED_NEW),
+    },
 )
 
 
@@ -71,7 +66,8 @@ def random_delay(min_value: float = 1.0, max_value: float = 2.0, decimal: int = 
     生成一个指定范围内的随机小数
     """
     random_float_in_range = random.uniform(min_value, max_value)
-    return (round(random_float_in_range, decimal))
+    return round(random_float_in_range, decimal)
+
 
 class ScriptTask(GeneralBattle, GameUi, SwitchSoul, RyouToppaAssets):
     medal_grid: ImageGrid = None
@@ -83,9 +79,19 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, RyouToppaAssets):
         """
         ryou_config = self.config.ryou_toppa
         time_limit: Time = ryou_config.raid_config.limit_time
-        time_delta = timedelta(hours=time_limit.hour, minutes=time_limit.minute, seconds=time_limit.second)
-        self.medal_grid = ImageGrid([RealmRaidAssets.I_MEDAL_5, RealmRaidAssets.I_MEDAL_4, RealmRaidAssets.I_MEDAL_3,
-                                     RealmRaidAssets.I_MEDAL_2, RealmRaidAssets.I_MEDAL_1, RealmRaidAssets.I_MEDAL_0])
+        time_delta = timedelta(
+            hours=time_limit.hour, minutes=time_limit.minute, seconds=time_limit.second
+        )
+        self.medal_grid = ImageGrid(
+            [
+                RealmRaidAssets.I_MEDAL_5,
+                RealmRaidAssets.I_MEDAL_4,
+                RealmRaidAssets.I_MEDAL_3,
+                RealmRaidAssets.I_MEDAL_2,
+                RealmRaidAssets.I_MEDAL_1,
+                RealmRaidAssets.I_MEDAL_0,
+            ]
+        )
 
         if ryou_config.switch_soul_config.enable:
             self.ui_get_current_page()
@@ -95,7 +101,9 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, RyouToppaAssets):
         if ryou_config.switch_soul_config.enable_switch_by_name:
             self.ui_get_current_page()
             self.ui_goto(page_shikigami_records)
-            self.run_switch_soul_by_name(ryou_config.switch_soul_config.group_name, ryou_config.switch_soul_config.team_name)
+            self.run_switch_soul_by_name(
+                ryou_config.switch_soul_config.group_name, ryou_config.switch_soul_config.team_name
+            )
 
         self.ui_get_current_page()
         self.ui_goto(page_kekkai_toppa)
@@ -125,12 +133,14 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, RyouToppaAssets):
                 ryou_toppa_start_flag = False
                 break
             # 出现寮奖励， 说明寮突已开
-            elif self.appear(self.I_RYOU_REWARD, threshold=0.8) or self.appear(self.I_RYOU_REWARD_90, threshold=0.8):
+            elif self.appear(self.I_RYOU_REWARD, threshold=0.8) or self.appear(
+                self.I_RYOU_REWARD_90, threshold=0.8
+            ):
                 ryou_toppa_start_flag = True
                 break
 
-        logger.attr('ryou_toppa_start_flag', ryou_toppa_start_flag)
-        logger.attr('ryou_toppa_success_penetration', ryou_toppa_success_penetration)
+        logger.attr("ryou_toppa_start_flag", ryou_toppa_start_flag)
+        logger.attr("ryou_toppa_success_penetration", ryou_toppa_success_penetration)
         # 寮突未开 并且有权限， 开开寮突，没有权限则标记失败
         if not ryou_toppa_start_flag:
             if ryou_config.raid_config.ryou_access and ryou_toppa_admin_flag:
@@ -139,12 +149,12 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, RyouToppaAssets):
                 self.start_ryou_toppa()
             else:
                 logger.info("The ryou toppa is not open and you are a ryou member.")
-                self.set_next_run(task='RyouToppa', finish=True, server=True, success=False)
+                self.set_next_run(task="RyouToppa", finish=True, server=True, success=False)
                 raise TaskEnd
 
         # 100% 攻破, 第二天再执行
         if ryou_toppa_success_penetration:
-            logger.info('RyouToppa is 100%')
+            logger.info("RyouToppa is 100%")
             self.plan_tomorrow_ryoutoppa()
             raise TaskEnd
         if self.config.ryou_toppa.general_battle_config.lock_team_enable:
@@ -160,7 +170,7 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, RyouToppaAssets):
         success = True
         while 1:
             # 设置长任务标志,用来寻找寮突可进攻的目标
-            self.device.stuck_record_add('PREPARE_BEFORE_BATTLE')
+            self.device.stuck_record_add("PREPARE_BEFORE_BATTLE")
             if not self.has_ticket():
                 logger.info("We have no chance to attack. Try again after 1 hour.")
                 success = False
@@ -177,19 +187,18 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, RyouToppaAssets):
             if not res:
                 area_index += 1
                 if area_index >= len(area_map):
-                    logger.warning('All areas are not available, it will flush the area cache')
+                    logger.warning("All areas are not available, it will flush the area cache")
                     area_index = 0
                     self.flush_area_cache()
                 continue
-
 
         # 回 page_main 失败
         # self.ui_current = page_ryou_toppa
         # self.ui_goto(page_main)
         if success:
-            self.set_next_run(task='RyouToppa', finish=True, server=True, success=True)
+            self.set_next_run(task="RyouToppa", finish=True, server=True, success=True)
         else:
-            self.set_next_run(task='RyouToppa', finish=True, server=True, success=False)
+            self.set_next_run(task="RyouToppa", finish=True, server=True, success=False)
         raise TaskEnd
 
     def plan_tomorrow_ryoutoppa(self):
@@ -197,10 +206,18 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, RyouToppaAssets):
         now = datetime.now()
         # 如果时间在00:00-5:00之间则设定时间为当天的自定义时间
         if now.time() < dt_time(5, 0):  # 不确定 time 的使用范围，重命名 datetime 中的 time
-            self.custom_next_run(task='RyouToppa', custom_time=self.config.ryou_toppa.raid_config.next_ryoutoppa_time, time_delta=0)
+            self.custom_next_run(
+                task="RyouToppa",
+                custom_time=self.config.ryou_toppa.raid_config.next_ryoutoppa_time,
+                time_delta=0,
+            )
         # 如果时间在05:00-23:59之间则设定时间为明天的自定义时间
         else:
-            self.custom_next_run(task='RyouToppa', custom_time=self.config.ryou_toppa.raid_config.next_ryoutoppa_time, time_delta=1)
+            self.custom_next_run(
+                task="RyouToppa",
+                custom_time=self.config.ryou_toppa.raid_config.next_ryoutoppa_time,
+                time_delta=1,
+            )
 
     def start_ryou_toppa(self):
         """
@@ -212,14 +229,16 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, RyouToppaAssets):
             self.screenshot()
             if self.appear_then_click(self.I_SELECT_RYOU_BUTTON, interval=1):
                 break
-        logger.info(f'Click {self.I_SELECT_RYOU_BUTTON.name}')
+        logger.info(f"Click {self.I_SELECT_RYOU_BUTTON.name}")
 
         # 选择第一个寮
         while 1:
             self.screenshot()
-            if self.appear_then_click(self.I_GUILD_ORDERS_REWARDS, action=self.C_SELECT_FIRST_RYOU, interval=1):
+            if self.appear_then_click(
+                self.I_GUILD_ORDERS_REWARDS, action=self.C_SELECT_FIRST_RYOU, interval=1
+            ):
                 break
-        logger.info(f'Click {self.C_SELECT_FIRST_RYOU.name}')
+        logger.info(f"Click {self.C_SELECT_FIRST_RYOU.name}")
 
         # 点击开始突入
         while 1:
@@ -229,7 +248,7 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, RyouToppaAssets):
             # 出现寮奖励， 说明寮突已开
             if self.appear(self.I_RYOU_REWARD, threshold=0.8):
                 break
-        logger.info(f'Click {self.I_START_TOPPA_BUTTON.name}')
+        logger.info(f"Click {self.I_START_TOPPA_BUTTON.name}")
 
     def has_ticket(self) -> bool:
         """
@@ -243,7 +262,7 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, RyouToppaAssets):
         self.screenshot()
         cu, res, total = self.O_NUMBER.ocr(self.device.image)
         if cu == 0 and cu + res == total:
-            logger.warning(f'Execute round failed, no ticket')
+            logger.warning("Execute round failed, no ticket")
             return False
         return True
 
@@ -258,12 +277,12 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, RyouToppaAssets):
         # 如果该区域已经被攻破则退出
         # Ps: 这时候能打过的都打过了，没有能攻打的结界了, 代表任务已经完成，set_next_run time=1d
         if self.appear(f3, threshold=0.8) or self.appear(f4, threshold=0.8):
-            logger.info('RyouToppa has tried to attack')
+            logger.info("RyouToppa has tried to attack")
             self.plan_tomorrow_ryoutoppa()
             raise TaskEnd
         # 如果该区域攻略失败返回 False
         if self.appear(f1, threshold=0.8) or self.appear(f2, threshold=0.8):
-            logger.info('Area [%s] is futile attack, skip.' % str(index + 1))
+            logger.info("Area [%s] is futile attack, skip." % str(index + 1))
             return False
         return True
 
@@ -279,7 +298,7 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, RyouToppaAssets):
             safe_pos_y = random.randint(320, 540)
             p1 = (safe_pos_x, safe_pos_y)
             p2 = (safe_pos_x, safe_pos_y - 101)
-            logger.info('Swipe %s -> %s, %s ' % (point2str(*p1), point2str(*p2), duration))
+            logger.info("Swipe %s -> %s, %s " % (point2str(*p1), point2str(*p2), duration))
             self.device.swipe_adb(p1, p2, duration=duration)
             time.sleep(2)
 
@@ -295,7 +314,6 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, RyouToppaAssets):
         if self.config.ryou_toppa.raid_config.random_delay:
             delay = random_delay()
             time.sleep(delay)
-
 
         rcl = area_map[index].get("rule_click")
         # # 点击攻击区域，等待攻击按钮出现。
@@ -327,7 +345,7 @@ if __name__ == "__main__":
     from module.config.config import Config
     from module.device.device import Device
 
-    config = Config('oas1')
+    config = Config("oas1")
     device = Device(config)
     t = ScriptTask(config, device)
     t.run()

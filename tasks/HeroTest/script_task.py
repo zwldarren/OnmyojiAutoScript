@@ -1,31 +1,26 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
-from datetime import datetime, timedelta, time
 import random  # type: ignore
+from datetime import datetime, time, timedelta
 
-from tasks.Component.BaseActivity.base_activity import BaseActivity
-from tasks.HeroTest.assets import HeroTestAssets
-from tasks.GameUi.page import page_main, page_shikigami_records
-from tasks.GameUi.game_ui import GameUi
-from tasks.GameUi.page import page_exploration
-from tasks.Component.SwitchSoul.switch_soul import SwitchSoul
-
-from module.logger import logger
 from module.exception import TaskEnd
+from module.logger import logger
+from tasks.Component.BaseActivity.base_activity import BaseActivity
+from tasks.Component.SwitchSoul.switch_soul import SwitchSoul
+from tasks.GameUi.game_ui import GameUi
+from tasks.GameUi.page import page_exploration, page_main, page_shikigami_records
+from tasks.HeroTest.assets import HeroTestAssets
 
 
 class ScriptTask(GameUi, BaseActivity, HeroTestAssets, SwitchSoul):
-
     is_update = False
     is_skill = False
 
     def run(self) -> None:
-
         config = self.config.hero_test
         global is_update
         global is_skill
-         # 自动换御魂
+        # 自动换御魂
         if config.switch_soul_config.enable:
             self.ui_get_current_page()
             self.ui_goto(page_shikigami_records)
@@ -33,7 +28,9 @@ class ScriptTask(GameUi, BaseActivity, HeroTestAssets, SwitchSoul):
         if config.switch_soul_config.enable_switch_by_name:
             self.ui_get_current_page()
             self.ui_goto(page_shikigami_records)
-            self.run_switch_soul_by_name(config.switch_soul_config.group_name, config.switch_soul_config.team_name)
+            self.run_switch_soul_by_name(
+                config.switch_soul_config.group_name, config.switch_soul_config.team_name
+            )
 
         if config.herotest.layer.value == "鬼兵演武":
             is_update = True
@@ -103,10 +100,7 @@ class ScriptTask(GameUi, BaseActivity, HeroTestAssets, SwitchSoul):
 
         while 1:
             # 1
-            if (
-                self.limit_time is not None
-                and self.limit_time + self.start_time < datetime.now()
-            ):
+            if self.limit_time is not None and self.limit_time + self.start_time < datetime.now():
                 logger.info("Time out")
                 break
             if self.current_count >= self.limit_count:
@@ -195,9 +189,7 @@ class ScriptTask(GameUi, BaseActivity, HeroTestAssets, SwitchSoul):
                 # 点击赢了
                 # self.C_WIN_2 在掉落物品过多的时候可能会点击到物品，导致脚本卡死
                 action_click = random.choice([self.C_WIN_1, self.C_WIN_3])
-                if self.appear_then_click(
-                    self.I_WIN, action=action_click, interval=0.5
-                ):
+                if self.appear_then_click(self.I_WIN, action=action_click, interval=0.5):
                     continue
                 if not self.appear(self.I_WIN):
                     break
@@ -222,13 +214,9 @@ class ScriptTask(GameUi, BaseActivity, HeroTestAssets, SwitchSoul):
                         break
                     if self.appear_then_click(self.I_BCMJ_BLESS, interval=1):
                         break
-                    if self.appear_then_click(
-                        self.I_BCMJ_PROPERTY_ADD_CRITICAL, interval=1
-                    ):
+                    if self.appear_then_click(self.I_BCMJ_PROPERTY_ADD_CRITICAL, interval=1):
                         break
-                    if self.appear_then_click(
-                        self.I_BCMJ__DEFALUT_ATTRIBUTE, interval=1
-                    ):
+                    if self.appear_then_click(self.I_BCMJ__DEFALUT_ATTRIBUTE, interval=1):
                         break
                 if self.appear_then_click(self.I_BCMJ_SKILL_ADD_CONFIRM, interval=1):
                     return win
@@ -238,14 +226,10 @@ class ScriptTask(GameUi, BaseActivity, HeroTestAssets, SwitchSoul):
             self.screenshot()
             # 如果出现领奖励
             # self.C_REWARD_2 在掉落物品过多的时候可能会点击到物品，导致脚本卡死
-            action_click = random.choice(
-                [self.C_REWARD_1, self.C_REWARD_3]
-            )
+            action_click = random.choice([self.C_REWARD_1, self.C_REWARD_3])
             if self.appear_then_click(
                 self.I_REWARD, action=action_click, interval=1.5
-            ) or self.appear_then_click(
-                self.I_REWARD_GOLD, action=action_click, interval=1.5
-            ):
+            ) or self.appear_then_click(self.I_REWARD_GOLD, action=action_click, interval=1.5):
                 continue
             if not self.appear(self.I_REWARD) and not self.appear(self.I_REWARD_GOLD):
                 break
@@ -320,7 +304,6 @@ class ScriptTask(GameUi, BaseActivity, HeroTestAssets, SwitchSoul):
                 self.exp_50(False)
                 self.close_buff()
             break
-
 
 
 if __name__ == "__main__":

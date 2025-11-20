@@ -1,16 +1,11 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
-import time
 
 import importlib
+from collections import deque
 from pathlib import Path
-
-from datetime import datetime
 from time import sleep
 
-import random
-from collections import deque
 from module.atom.click import RuleClick
 from module.atom.gif import RuleGif
 from module.atom.image import RuleImage
@@ -18,26 +13,33 @@ from module.atom.list import RuleList
 from module.atom.ocr import RuleOcr
 from module.base.decorator import run_once
 from module.base.timer import Timer
-from module.exception import (GameNotRunningError, GamePageUnknownError)
+from module.exception import GameNotRunningError, GamePageUnknownError
 from module.logger import logger
+from tasks.ActivityShikigami.assets import ActivityShikigamiAssets
+from tasks.base_task import BaseTask
 from tasks.Component.GeneralBattle.assets import GeneralBattleAssets
 from tasks.GameUi.assets import GameUiAssets
 from tasks.GameUi.page import Page, PageRegistry, page_main, random_click
-from tasks.Restart.assets import RestartAssets
 from tasks.SixRealms.assets import SixRealmsAssets
-from tasks.base_task import BaseTask
-from tasks.ActivityShikigami.assets import ActivityShikigamiAssets
 
 
 class GameUi(BaseTask, GameUiAssets):
     ui_current: Page = None
-    ui_close = [GameUiAssets.I_BACK_MALL, GeneralBattleAssets.I_CONFIRM,
-                BaseTask.I_UI_BACK_RED, BaseTask.I_UI_BACK_YELLOW,
-                GameUiAssets.I_BACK_FRIENDS, GameUiAssets.I_BACK_DAILY,
-                GameUiAssets.I_REALM_RAID_GOTO_EXPLORATION,
-                GameUiAssets.I_SIX_GATES_GOTO_EXPLORATION, SixRealmsAssets.I_EXIT_SIXREALMS,
-                ActivityShikigamiAssets.I_SKIP_BUTTON, ActivityShikigamiAssets.I_RED_EXIT, BaseTask.I_UI_BACK_BLUE,
-                ActivityShikigamiAssets.I_RED_EXIT_2]
+    ui_close = [
+        GameUiAssets.I_BACK_MALL,
+        GeneralBattleAssets.I_CONFIRM,
+        BaseTask.I_UI_BACK_RED,
+        BaseTask.I_UI_BACK_YELLOW,
+        GameUiAssets.I_BACK_FRIENDS,
+        GameUiAssets.I_BACK_DAILY,
+        GameUiAssets.I_REALM_RAID_GOTO_EXPLORATION,
+        GameUiAssets.I_SIX_GATES_GOTO_EXPLORATION,
+        SixRealmsAssets.I_EXIT_SIXREALMS,
+        ActivityShikigamiAssets.I_SKIP_BUTTON,
+        ActivityShikigamiAssets.I_RED_EXIT,
+        BaseTask.I_UI_BACK_BLUE,
+        ActivityShikigamiAssets.I_RED_EXIT_2,
+    ]
 
     def __init__(self, config, device):
         super().__init__(config, device)
@@ -64,7 +66,9 @@ class GameUi(BaseTask, GameUiAssets):
     def ui_pages(self) -> list[Page]:
         return PageRegistry.all()
 
-    def ui_page_appear(self, page: Page, skip_first_screenshot: bool = True, interval: float = None):
+    def ui_page_appear(
+        self, page: Page, skip_first_screenshot: bool = True, interval: float = None
+    ):
         """
         判断当前页面是否为page
         """
@@ -76,8 +80,13 @@ class GameUi(BaseTask, GameUiAssets):
             return False
         return self.appear(page.check_button, interval)
 
-    def ui_wait_until_appear(self, page: Page, timeout: float = 5, interval: float = 0.5,
-                             skip_first_screenshot: bool = True) -> bool:
+    def ui_wait_until_appear(
+        self,
+        page: Page,
+        timeout: float = 5,
+        interval: float = 0.5,
+        skip_first_screenshot: bool = True,
+    ) -> bool:
         """
         等待页面出现
         :param page: 等待的页面
@@ -86,7 +95,7 @@ class GameUi(BaseTask, GameUiAssets):
         :param skip_first_screenshot:
         :return: 页面出现返回True, 否则返回False
         """
-        logger.info(f'Waiting for {page}')
+        logger.info(f"Waiting for {page}")
         timeout_timer = Timer(timeout).start()
         while not timeout_timer.reached():
             if self.ui_page_appear(page, skip_first_screenshot, interval=interval):
@@ -159,7 +168,7 @@ class GameUi(BaseTask, GameUiAssets):
         Args:
             button (Button):
         """
-        if getattr(button, 'name', None) and button.name in self.interval_timer:
+        if getattr(button, "name", None) and button.name in self.interval_timer:
             self.interval_timer[button.name].reset()
 
     def build_reverse_path_dict(self, destination: Page) -> dict[Page, list[Page]]:
@@ -193,13 +202,16 @@ class GameUi(BaseTask, GameUiAssets):
         sorted_paths = sorted(paths.items(), key=lambda kv: len(kv[1]))
         return sorted_paths
 
-    def ui_goto_page(self, dest_page: Page, confirm_wait=0, skip_first_screenshot=True, timeout: int = 60) -> bool:
-        """前往指定page, 自动调用获取当前页面方法, 其他参数同ui_goto
-        """
+    def ui_goto_page(
+        self, dest_page: Page, confirm_wait=0, skip_first_screenshot=True, timeout: int = 60
+    ) -> bool:
+        """前往指定page, 自动调用获取当前页面方法, 其他参数同ui_goto"""
         self.ui_get_current_page()
         return self.ui_goto(dest_page, confirm_wait, skip_first_screenshot, timeout)
 
-    def ui_goto(self, destination: Page, confirm_wait=0, skip_first_screenshot=True, timeout: int = 60) -> bool:
+    def ui_goto(
+        self, destination: Page, confirm_wait=0, skip_first_screenshot=True, timeout: int = 60
+    ) -> bool:
         """
         Args:
             destination (Page):
@@ -228,7 +240,7 @@ class GameUi(BaseTask, GameUiAssets):
                 continue
             skip_first_screenshot = False
             logger.info(f"Current page: {self.ui_current}. Following shortest path:")
-            show_paths: str = ' -> '.join([p.name for p in path])
+            show_paths: str = " -> ".join([p.name for p in path])
             logger.info(f"{show_paths}")
             # 遍历路径
             found = self._execute_path(path, timeout_timer)
@@ -237,7 +249,7 @@ class GameUi(BaseTask, GameUiAssets):
                     self.try_close_unknown_page(skip_screenshot=False)
                     self.ui_current = None
         else:
-            logger.error(f'Cannot goto page[{destination}], timeout[{timeout}s] reached')
+            logger.error(f"Cannot goto page[{destination}], timeout[{timeout}s] reached")
         return False
 
     def try_close_unknown_page(self, skip_screenshot: bool = True):
@@ -249,8 +261,8 @@ class GameUi(BaseTask, GameUiAssets):
         timer = Timer(None).start()
         for close in self.ui_close:
             if self.appear_then_click(close, interval=1.5):
-                logger.warning('Trying to switch to supported page')
-                logger.info(f'[{timer.current():.1f}s]Click {close} on {self.ui_current} success')
+                logger.warning("Trying to switch to supported page")
+                logger.info(f"[{timer.current():.1f}s]Click {close} on {self.ui_current} success")
                 return True
         return False
 
@@ -271,10 +283,10 @@ class GameUi(BaseTask, GameUiAssets):
             # 如果已经是最后一页，不再跳转
             if i == len(path) - 1:
                 if len(path) == 1:
-                    logger.info(f'Page arrived {current_page}')
+                    logger.info(f"Page arrived {current_page}")
                 break
             next_page = path[i + 1]
-            logger.info(f'Page switch: {current_page} -> {next_page}')
+            logger.info(f"Page switch: {current_page} -> {next_page}")
             # 获取页面跳转操作
             button = current_page.links.get(next_page)
             if not button:
@@ -287,7 +299,9 @@ class GameUi(BaseTask, GameUiAssets):
                     return False
                 if self.appear_then_operate(button, interval=0.8, skip_first_screenshot=False):
                     break
-                logger.warning(f"[{max_wait_timer.current():.1f}s]Failed click {button} on {current_page}, retry...")
+                logger.warning(
+                    f"[{max_wait_timer.current():.1f}s]Failed click {button} on {current_page}, retry..."
+                )
                 sleep(0.8)
             else:
                 self.ui_get_current_page(skip_first_screenshot=False)
@@ -299,7 +313,7 @@ class GameUi(BaseTask, GameUiAssets):
                 if timeout_timer.reached():
                     return False
                 if self.ui_wait_until_appear(next_page, timeout=2.5, skip_first_screenshot=False):
-                    logger.info(f'[{max_wait_timer.current():.1f}s]Page arrived {next_page}')
+                    logger.info(f"[{max_wait_timer.current():.1f}s]Page arrived {next_page}")
                     self.ui_current = next_page
                     break
             else:
@@ -307,17 +321,25 @@ class GameUi(BaseTask, GameUiAssets):
                 self.ui_get_current_page(skip_first_screenshot=False)
         return self.ui_current == path[-1]
 
-    def run_additional(self, page: Page, interval: float = None, skip_first_screenshot: bool = True):
+    def run_additional(
+        self, page: Page, interval: float = None, skip_first_screenshot: bool = True
+    ):
         """执行页面附加操作"""
         if not page.additional:
             return
         for btn in page.additional:
-            if self.appear_then_operate(btn, interval=interval, skip_first_screenshot=skip_first_screenshot):
-                logger.info(f'Page {page} additional {btn} clicked')
+            if self.appear_then_operate(
+                btn, interval=interval, skip_first_screenshot=skip_first_screenshot
+            ):
+                logger.info(f"Page {page} additional {btn} clicked")
                 skip_first_screenshot = False
 
-    def appear_then_operate(self, target: RuleList | RuleImage | RuleGif | RuleOcr | RuleClick,
-                            interval: float = None, skip_first_screenshot: bool = True):
+    def appear_then_operate(
+        self,
+        target: RuleList | RuleImage | RuleGif | RuleOcr | RuleClick,
+        interval: float = None,
+        skip_first_screenshot: bool = True,
+    ):
         """
         出现对应目标执行操作(点击图像, 滑动列表至array第一个元素并点击, 点击OCR, 点击)
         :param target: 目标
@@ -338,11 +360,11 @@ class GameUi(BaseTask, GameUiAssets):
         return operated
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from module.config.config import Config
     from module.device.device import Device
 
-    c = Config('oas2')
+    c = Config("oas2")
     d = Device(c)
     game = GameUi(config=c, device=d)
     game.ui_get_current_page()

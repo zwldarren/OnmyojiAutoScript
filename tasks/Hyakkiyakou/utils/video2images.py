@@ -1,11 +1,9 @@
-import cv2
-
 from datetime import datetime
 from pathlib import Path
 
-from module.logger import logger
+import cv2
 
-from tasks.base_task import BaseTask
+from module.logger import logger
 from tasks.Hyakkiyakou.assets import HyakkiyakouAssets
 
 
@@ -29,12 +27,12 @@ class TransformVideo(HyakkiyakouAssets):
         if isinstance(video, str):
             video = Path(video)
         if not isinstance(video, Path):
-            logger.error(f'{video} is not a valid path')
+            logger.error(f"{video} is not a valid path")
             return
         if isinstance(save_path, str):
             save_path = Path(save_path)
         if not isinstance(save_path, Path):
-            logger.error(f'{save_path} is not a valid path')
+            logger.error(f"{save_path} is not a valid path")
             return
         save_path.mkdir(parents=True, exist_ok=True)
         if video.is_dir():
@@ -54,17 +52,17 @@ class TransformVideo(HyakkiyakouAssets):
         if isinstance(video, str):
             video = Path(video)
         if not save_path:
-            save_path = video.parent / f'images_{video.stem}'
+            save_path = video.parent / f"images_{video.stem}"
         if isinstance(save_path, str):
             save_path = Path(save_path)
         save_path.mkdir(parents=True, exist_ok=True)
         # 获取时间戳的str形式，用来命名图片
-        datetime_now = datetime.now().strftime('%Y%m%dT%H%M%S')
-        logger.info(f'Start transform video {video}')
+        datetime_now = datetime.now().strftime("%Y%m%dT%H%M%S")
+        logger.info(f"Start transform video {video}")
 
         cap = cv2.VideoCapture(str(video))
         if not cap.isOpened():
-            logger.error(f'{video} open failed')
+            logger.error(f"{video} open failed")
             return
         fps = cap.get(cv2.CAP_PROP_FPS)
         frame_skip = int(fps * self.interval)
@@ -100,27 +98,27 @@ class TransformVideo(HyakkiyakouAssets):
 
             match mode:
                 case 0:
-                    img_a = frame[h-640:, 0:640]
+                    img_a = frame[h - 640 :, 0:640]
                     img_b = None
                 case 1:
                     img_a = None
-                    img_b = frame[h-640:, 640:1280]
+                    img_b = frame[h - 640 :, 640:1280]
                 case 2:
-                    img_a = frame[h-640:, 0:640]
-                    img_b = frame[h-640:, 640:1280]
+                    img_a = frame[h - 640 :, 0:640]
+                    img_b = frame[h - 640 :, 640:1280]
                 case _:
-                    raise ValueError('mode must be 0, 1, or 2')
+                    raise ValueError("mode must be 0, 1, or 2")
             if img_a is not None:
-                cv2.imwrite(str(save_path / f'{datetime_now}_{index_frame:05d}a.png'), img_a)
+                cv2.imwrite(str(save_path / f"{datetime_now}_{index_frame:05d}a.png"), img_a)
             if img_b is not None:
-                cv2.imwrite(str(save_path / f'{datetime_now}_{index_frame:05d}b.png'), img_b)
+                cv2.imwrite(str(save_path / f"{datetime_now}_{index_frame:05d}b.png"), img_b)
 
         cap.release()
-        logger.info(f'{video} done')
+        logger.info(f"{video} done")
 
 
-if __name__ == '__main__':
-    VIDEO = r'C:\Users\Ryland\Downloads\202404031513.mp4'
+if __name__ == "__main__":
+    VIDEO = r"C:\Users\Ryland\Downloads\202404031513.mp4"
     # SAVE_PATH = 'D:/Project/Hyakkiyakou/OnmyojiAutoScript-hyakkiyakou/temp/sources_images'
     t = TransformVideo(change_channel=True, interval=0.1)
     t.parse_one(VIDEO, mode=2)

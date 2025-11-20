@@ -1,17 +1,14 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
 from module.logger import logger
-from module.base.timer import Timer
-
-from tasks.GameUi.page import page_kekkai_toppa
-from tasks.Component.GeneralBattle.config_general_battle import GreenMarkType, GeneralBattleConfig
-from tasks.RyouToppa.script_task import ScriptTask as ScriptTaskBase
 from tasks.Component.Costume.config import BattleType
+from tasks.Component.GeneralBattle.config_general_battle import GeneralBattleConfig, GreenMarkType
+from tasks.GameUi.page import page_kekkai_toppa
+from tasks.RyouToppa.script_task import ScriptTask as ScriptTaskBase
+
 
 # 突破/前提是有突破券
 class ScriptTask(ScriptTaskBase):
-
     def run(self):
         self.ui_get_current_page()
         self.ui_goto(page_kekkai_toppa)
@@ -33,8 +30,9 @@ class ScriptTask(ScriptTaskBase):
 
     def attack(self):
         import time
-        from tasks.RyouToppa.script_task import area_map
+
         from tasks.RealmRaid.assets import RealmRaidAssets
+        from tasks.RyouToppa.script_task import area_map
 
         index = 1
         if not self.check_area(index):
@@ -61,17 +59,19 @@ class ScriptTask(ScriptTaskBase):
             if self.click(rcl, interval=5):
                 continue
 
-    def set_costume(self, costume: BattleType=BattleType.COSTUME_BATTLE_DEFAULT):
+    def set_costume(self, costume: BattleType = BattleType.COSTUME_BATTLE_DEFAULT):
         self.config.model.global_game.costume_config.costume_battle_type = costume
         self.check_costume()
-        logger.info('Set costume to %s' % self.config.model.global_game.costume_config.costume_battle_type)
+        logger.info(
+            "Set costume to %s" % self.config.model.global_game.costume_config.costume_battle_type
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from module.config.config import Config
     from module.device.device import Device
 
-    c = Config('oas1')
+    c = Config("oas1")
     d = Device(c)
     t = ScriptTask(c, d)
     t.set_costume(BattleType.COSTUME_BATTLE_9)

@@ -11,12 +11,13 @@ class OcrModel:
 OCR_MODEL = OcrModel()
 
 
-
 if __name__ == "__main__":
     model = OCR_MODEL.ch
-    import cv2
     import time
+
+    import cv2
     from memory_profiler import profile
+
     image = cv2.imread(r"E:\Project\OnmyojiAutoScript-assets\jade.png")
 
     # 引入ocr 会导致非常巨大的内存开销
@@ -27,6 +28,6 @@ if __name__ == "__main__":
             result = model.detect_and_ocr(image)
             print(result)
             end_time = time.time()
-            print(f'耗时：{end_time-start_time}')
+            print(f"耗时：{end_time - start_time}")
 
     test_memory()

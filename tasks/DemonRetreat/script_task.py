@@ -1,26 +1,22 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
+from datetime import datetime
 from time import sleep
-from datetime import timedelta, datetime, time
-from cached_property import cached_property
 
+from module.base.timer import Timer
 from module.exception import TaskEnd
 from module.logger import logger
-from module.base.timer import Timer
-
-from tasks.GameUi.game_ui import GameUi
-from tasks.GameUi.page import page_main, page_hunt, page_shikigami_records, page_guild
-from tasks.Component.GeneralBattle.general_battle import GeneralBattle
+from tasks.AbyssShadows.assets import AbyssShadowsAssets
 from tasks.Component.GeneralBattle.config_general_battle import GeneralBattleConfig
-from tasks.Component.GeneralInvite.general_invite import GeneralInvite
+from tasks.Component.GeneralBattle.general_battle import GeneralBattle
 from tasks.Component.SwitchSoul.switch_soul import SwitchSoul
 from tasks.DemonRetreat.assets import DemonRetreatAssets
-from tasks.AbyssShadows.assets import AbyssShadowsAssets
 from tasks.DemonRetreat.config import DemonRetreat
+from tasks.GameUi.game_ui import GameUi
+from tasks.GameUi.page import page_guild, page_main, page_shikigami_records
+
 
 class ScriptTask(GameUi, GeneralBattle, SwitchSoul, DemonRetreatAssets, AbyssShadowsAssets):
-
     def run(self):
         """
         首领退治主函数
@@ -45,7 +41,11 @@ class ScriptTask(GameUi, GeneralBattle, SwitchSoul, DemonRetreatAssets, AbyssSha
                 days_until_saturday = 5 - current_day_of_week + 7
 
                 # 设置下次运行时间
-            self.custom_next_run(task='DemonRetreat', custom_time=cfg.demon_retreat_time.custom_run_time, time_delta=days_until_saturday)
+            self.custom_next_run(
+                task="DemonRetreat",
+                custom_time=cfg.demon_retreat_time.custom_run_time,
+                time_delta=days_until_saturday,
+            )
             raise TaskEnd
 
         if cfg.switch_soul_config.enable:
@@ -55,7 +55,9 @@ class ScriptTask(GameUi, GeneralBattle, SwitchSoul, DemonRetreatAssets, AbyssSha
         if cfg.switch_soul_config.enable_switch_by_name:
             self.ui_get_current_page()
             self.ui_goto(page_shikigami_records)
-            self.run_switch_soul_by_name(cfg.switch_soul_config.group_name, cfg.switch_soul_config.team_name)
+            self.run_switch_soul_by_name(
+                cfg.switch_soul_config.group_name, cfg.switch_soul_config.team_name
+            )
 
         # 进入妖怪退治
         if not self.goto_demon_retreat():
@@ -63,7 +65,7 @@ class ScriptTask(GameUi, GeneralBattle, SwitchSoul, DemonRetreatAssets, AbyssSha
             if self.appear_then_click(self.I_DEMON_BACK_CHECK, interval=1):
                 pass
             self.goto_main()
-            self.set_next_run(task='DemonRetreat', finish=False, server=True, success=False)
+            self.set_next_run(task="DemonRetreat", finish=False, server=True, success=False)
             raise TaskEnd
 
         # 首领退治战斗
@@ -79,7 +81,7 @@ class ScriptTask(GameUi, GeneralBattle, SwitchSoul, DemonRetreatAssets, AbyssSha
                 continue
             if self.appear_then_click(self.I_REWARD_ALL, interval=1.5):
                 self.ui_reward_appear_click(True)
-                logger.info('Claim rewards finished')
+                logger.info("Claim rewards finished")
                 break
             if self.appear(self.I_RANK_LSIT):
                 logger.info("No rewards to claim")
@@ -91,14 +93,16 @@ class ScriptTask(GameUi, GeneralBattle, SwitchSoul, DemonRetreatAssets, AbyssSha
 
         # 设置下次运行时间
         if success:
-            logger.info(f"The next time the demon retreat is next Saturday")
-            self.custom_next_run(task='DemonRetreat', custom_time=cfg.demon_retreat_time.custom_run_time, time_delta=7)
+            logger.info("The next time the demon retreat is next Saturday")
+            self.custom_next_run(
+                task="DemonRetreat",
+                custom_time=cfg.demon_retreat_time.custom_run_time,
+                time_delta=7,
+            )
         else:
             self.set_next_run(task="DemonRetreat", finish=True, server=True, success=False)
 
         raise TaskEnd
-
-
 
     def goto_demon_retreat(self) -> bool:
         """
@@ -135,9 +139,12 @@ class ScriptTask(GameUi, GeneralBattle, SwitchSoul, DemonRetreatAssets, AbyssSha
                 sleep(1)
                 if self.appear_then_click(self.I_DEMON_BACK_CHECK, interval=1):
                     pass
-                logger.info(f"The next time the demon retreat is next Saturday")
-                self.custom_next_run(task='DemonRetreat', custom_time=cfg.demon_retreat_time.custom_run_time,
-                                     time_delta=7)
+                logger.info("The next time the demon retreat is next Saturday")
+                self.custom_next_run(
+                    task="DemonRetreat",
+                    custom_time=cfg.demon_retreat_time.custom_run_time,
+                    time_delta=7,
+                )
                 raise TaskEnd
 
             if self.appear(self.I_RANK_LSIT):
@@ -153,27 +160,24 @@ class ScriptTask(GameUi, GeneralBattle, SwitchSoul, DemonRetreatAssets, AbyssSha
 
     def demon_retreat(self):
         cfg: DemonRetreat = self.config.demon_retreat
-        logger.hr('demon retreat', 2)
+        logger.hr("demon retreat", 2)
 
         # 来晚了直接进入战斗
         if not set(self.O_LATER_ENTER_CHECK.ocr(image=self.device.image)).intersection(set("集结")):
             logger.info("arrive later")
             self.ui_click_until_disappear(self.I_ENTER_FIRE, interval=1)
-            self.device.stuck_record_add('BATTLE_STATUS_S')
+            self.device.stuck_record_add("BATTLE_STATUS_S")
             success = self.run_demon_battle(cfg.general_battle)
         else:
             # 等待进入战斗
             sleep(5)
-            self.device.stuck_record_add('BATTLE_STATUS_S')
+            self.device.stuck_record_add("BATTLE_STATUS_S")
             self.wait_until_disappear(self.I_DEMON_GATHER)
             self.device.stuck_record_clear()
-            self.device.stuck_record_add('BATTLE_STATUS_S')
+            self.device.stuck_record_add("BATTLE_STATUS_S")
             success = self.run_demon_battle(cfg.general_battle)
 
         return success
-
-
-
 
     def run_demon_battle(self, config: GeneralBattleConfig = None) -> bool:
         """
@@ -192,7 +196,9 @@ class ScriptTask(GameUi, GeneralBattle, SwitchSoul, DemonRetreatAssets, AbyssSha
             logger.info("Lock team is not enable")
             # 如果更换队伍
             if self.current_count == 1:
-                self.switch_preset_team(config.preset_enable, config.preset_group, config.preset_team)
+                self.switch_preset_team(
+                    config.preset_enable, config.preset_group, config.preset_team
+                )
 
             # 点击准备按钮
             self.wait_until_appear(self.I_PREPARE_HIGHLIGHT)
@@ -220,16 +226,13 @@ class ScriptTask(GameUi, GeneralBattle, SwitchSoul, DemonRetreatAssets, AbyssSha
         else:
             return False
 
-
-
-
     def battle_wait(self, random_click_swipt_enable: bool) -> bool:
         """
         重写 三轮战斗 战斗过程中点击准备 返回到寮信息界面
         :param random_click_swipt_enable:
         :return:
         """
-        self.device.stuck_record_add('BATTLE_STATUS_S')
+        self.device.stuck_record_add("BATTLE_STATUS_S")
         self.device.click_record_clear()
         # 战斗过程 随机点击和滑动 防封 并点击 准备
         logger.info("Start battle process")
@@ -238,13 +241,13 @@ class ScriptTask(GameUi, GeneralBattle, SwitchSoul, DemonRetreatAssets, AbyssSha
         while 1:
             self.screenshot()
             if self.appear(self.I_WIN):
-                logger.info('Battle win')
+                logger.info("Battle win")
                 self.ui_click_until_disappear(self.I_WIN)
                 return True
             # 战斗过程中出现准备
             if self.appear_then_click(self.I_PREPARE_HIGHLIGHT, interval=1.5):
                 self.device.stuck_record_clear()
-                self.device.stuck_record_add('BATTLE_STATUS_S')
+                self.device.stuck_record_add("BATTLE_STATUS_S")
             # 如果出现失败 就点击，返回False
             if self.appear(self.I_FALSE, threshold=0.8):
                 logger.info("Battle result is false")
@@ -254,28 +257,22 @@ class ScriptTask(GameUi, GeneralBattle, SwitchSoul, DemonRetreatAssets, AbyssSha
             if stuck_timer and stuck_timer.reached():
                 stuck_timer = None
                 self.device.stuck_record_clear()
-                self.device.stuck_record_add('BATTLE_STATUS_S')
-
+                self.device.stuck_record_add("BATTLE_STATUS_S")
 
     def goto_main(self):
-        ''' 保持好习惯，一个任务结束了就返回庭院，方便下一任务的开始或者是出错重启
-        '''
+        """保持好习惯，一个任务结束了就返回庭院，方便下一任务的开始或者是出错重启"""
         self.ui_get_current_page()
         logger.info("Exiting DemonRetreat")
         self.ui_goto(page_main)
 
 
-
-
-
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     from module.config.config import Config
     from module.device.device import Device
-    c = Config('日常1')
+
+    c = Config("日常1")
     d = Device(c)
     t = ScriptTask(c, d)
     t.screenshot()
 
     t.run()
-

@@ -1,20 +1,16 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
-import re
-from copy import deepcopy
 
-from cached_property import cached_property
+from functools import cached_property
 
-from deploy.utils import DEPLOY_TEMPLATE, poor_yaml_read, poor_yaml_write
 from module.base.timer import timer
 from module.config.utils import *
 
-class ConfigUpdater:
 
+class ConfigUpdater:
     @cached_property
     def args(self):
-        return read_file(filepath_args(filename='args'))
+        return read_file(filepath_args(filename="args"))
 
     @timer
     def update_template(self, template_name: str = "template") -> None:
@@ -53,7 +49,7 @@ class ConfigUpdater:
         return old
 
     @staticmethod
-    def write_file(config_name, data, mod_name='alas'):
+    def write_file(config_name, data, mod_name="alas"):
         """
         Write config file.
 
@@ -63,4 +59,3 @@ class ConfigUpdater:
             mod_name (str):
         """
         write_file(filepath_config(config_name, mod_name), data)
-

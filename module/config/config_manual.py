@@ -1,6 +1,6 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
+
 
 class ConfigManual:
     """
@@ -30,10 +30,10 @@ class ConfigManual:
     # ASCREENCAP_FILEPATH_REMOTE = '/data/local/tmp/ascreencap'
 
     # 'DroidCast', 'DroidCast_raw'
-    DROIDCAST_VERSION = 'DroidCast'
-    DROIDCAST_FILEPATH_LOCAL = './bin/droidcast/DroidCast_raw-release-1.0.apk'
-    DROIDCAST_FILEPATH_REMOTE = '/data/local/tmp/DroidCast_raw.apk'
+    DROIDCAST_VERSION = "DroidCast"
+    DROIDCAST_FILEPATH_LOCAL = "./bin/droidcast/DroidCast_raw-release-1.0.apk"
+    DROIDCAST_FILEPATH_REMOTE = "/data/local/tmp/DroidCast_raw.apk"
 
-    MINITOUCH_FILEPATH_REMOTE = '/data/local/tmp/minitouch'
+    MINITOUCH_FILEPATH_REMOTE = "/data/local/tmp/minitouch"
 
-    HERMIT_FILEPATH_LOCAL = './bin/hermit/hermit.apk'
+    HERMIT_FILEPATH_LOCAL = "./bin/hermit/hermit.apk"

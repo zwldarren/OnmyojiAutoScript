@@ -1,16 +1,13 @@
-import threading
 from enum import Enum
 
 import cv2
 import numpy as np
-from pydantic import BaseModel
 
 from module.base.timer import Timer
 from module.logger import logger
 from tasks.Component.GeneralBattle.config_general_battle import GreenMarkType
 from tasks.Component.GeneralBattle.general_battle import GeneralBattle
 from tasks.Dokan.utils import retry
-
 
 #
 # def green_marker_detector(func):
@@ -84,10 +81,10 @@ from tasks.Dokan.utils import retry
 
 class GreenMarkState(int, Enum):
     #
-    NOT_INIT = 0,
-    INITED = 1,
+    NOT_INIT = (0,)
+    INITED = (1,)
     # 备用
-    MARKED = 2,
+    MARKED = (2,)
     DISAPPEARED = 3
 
 
@@ -180,7 +177,7 @@ class ExtendGreenMark(GeneralBattle):
             union = txtset1.union(txtset2)
             return len(intersection) / len(union)
 
-        name_list = names.split(',')
+        name_list = names.split(",")
         for name in name_list:
             # 此处为了获取到OCR模型，随机选择一个了RuleOcr对象，可以使用任意的RuleOcr对象
             res_list = self.O_EXP_50.model.detect_and_ocr(img, 0.7)
@@ -196,8 +193,12 @@ class ExtendGreenMark(GeneralBattle):
             # 经实验，点击式神名称位置，可能点击不到，故此做一个修正
             offset = [5, 30, -10, 0]
             # x,y,w,h
-            return [box[0, 0] + offset[0], box[0, 1] + offset[1], box[2, 0] - box[0, 0] + offset[2],
-                    box[2, 1] - box[0, 1] + offset[3]]
+            return [
+                box[0, 0] + offset[0],
+                box[0, 1] + offset[1],
+                box[2, 0] - box[0, 0] + offset[2],
+                box[2, 1] - box[0, 1] + offset[3],
+            ]
         return None
 
     def calc_green_mark_locate_area(self, roi, margin=None):
@@ -245,9 +246,11 @@ class ExtendGreenMark(GeneralBattle):
             mask = cv2.inRange(hsv_image, lower_green, upper_green)
             result = cv2.bitwise_and(image, image, mask=mask)
             # 伤害数字，御魂生效后弹出会遮挡绿标信息，目前的策略：尽量的延长检测到绿标的时间
-            res = (self.I_GREEN_MARKER_LEFT_TOP.match(result)
-                   or self.I_GREEN_MARKER_BOTTOM.match(result)
-                   or self.I_GREEN_MARKER.match(result))
+            res = (
+                self.I_GREEN_MARKER_LEFT_TOP.match(result)
+                or self.I_GREEN_MARKER_BOTTOM.match(result)
+                or self.I_GREEN_MARKER.match(result)
+            )
             return res
 
         if detect_green_marker_base(self.device.image):
@@ -266,10 +269,16 @@ class ExtendGreenMark(GeneralBattle):
             return self.device.image
 
         # 检测式神名区域
-        if self._green_mark_click_roi is None and (self._shikigami_name is not None and self._shikigami_name != ""):
-            self._green_mark_click_roi = self.detect_name_position(self.device.image, self._shikigami_name)
+        if self._green_mark_click_roi is None and (
+            self._shikigami_name is not None and self._shikigami_name != ""
+        ):
+            self._green_mark_click_roi = self.detect_name_position(
+                self.device.image, self._shikigami_name
+            )
             if self._green_mark_click_roi is not None:
-                self._green_mark_detect_area = self.calc_green_mark_locate_area(self._green_mark_click_roi)
+                self._green_mark_detect_area = self.calc_green_mark_locate_area(
+                    self._green_mark_click_roi
+                )
 
         # 如果检测到绿标，直接返回
         if self.detect_green_mark(self.device.image):
@@ -346,11 +355,10 @@ def change_green_mark(obj):
     obj.green_mark = obj.ex_green_mark_3_retry
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # 读取图片,然后转换为HSV格式 ,使用cv2 matchtemplate 比较
     import cv2
     import numpy as np
-
 
     def detect_green_marker_with_template(image_path, template_path):
         # 读取图片
@@ -401,34 +409,37 @@ if __name__ == '__main__':
         cv2.rectangle(image, top_left, bottom_right, (0, 255, 0), 2)
 
         # 返回匹配结果
-        return {
-            "position": top_left,
-            "similarity": max_val,
-            "image": image
-        }
-
+        return {"position": top_left, "similarity": max_val, "image": image}
 
     # 示例调用
     result = detect_green_marker_with_template("E:\\111.png", "E:\\same.png")
     if result:
-        logger.info(f"Match found at position: {result['position']} with similarity: {result['similarity']}")
+        logger.info(
+            f"Match found at position: {result['position']} with similarity: {result['similarity']}"
+        )
     else:
         logger.info("No match found.")
 
     result = detect_green_marker_with_template("E:\\111.png", "E:\\diff.png")
     if result:
-        logger.info(f"Match found at position: {result['position']} with similarity: {result['similarity']}")
+        logger.info(
+            f"Match found at position: {result['position']} with similarity: {result['similarity']}"
+        )
     else:
         logger.info("No match found.")
 
     result = detect_green_marker_with_template("E:\\222.png", "E:\\gb_prepare_highlight.png")
     if result:
-        logger.info(f"Match found at position: {result['position']} with similarity: {result['similarity']}")
+        logger.info(
+            f"Match found at position: {result['position']} with similarity: {result['similarity']}"
+        )
     else:
         logger.info("No match found.")
 
     result = detect_green_marker_with_template("E:\\222.png", "E:\\gb_prepare_dark.png")
     if result:
-        logger.info(f"Match found at position: {result['position']} with similarity: {result['similarity']}")
+        logger.info(
+            f"Match found at position: {result['position']} with similarity: {result['similarity']}"
+        )
     else:
         logger.info("No match found.")

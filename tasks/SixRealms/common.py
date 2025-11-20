@@ -9,5 +9,3 @@ class MoonSeaType(Enum):
     island104 = 104  #
     island105 = 105
     island106 = 106  # boss
-
-

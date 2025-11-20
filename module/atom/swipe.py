@@ -1,19 +1,16 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
-import numpy as np
 import random
-
 from math import dist
 
-from module.base.decorator import cached_property
+import numpy as np
+
 from module.atom.cBezier import BezierTrajectory
-from module.logger import logger
+from module.base.decorator import cached_property
 
 
 class RuleSwipe:
-
-    def __init__(self, roi_front: tuple, roi_back: tuple, mode: str, name: str =None) -> None:
+    def __init__(self, roi_front: tuple, roi_back: tuple, mode: str, name: str = None) -> None:
         """
         初始化
         :param roi_front:
@@ -26,7 +23,7 @@ class RuleSwipe:
         if name:
             self.name = name
         else:
-            self.name = 'swipe'
+            self.name = "swipe"
 
         self.interval: int = 8  # 每次移动的间隔时间
 
@@ -36,7 +33,7 @@ class RuleSwipe:
         是否是默认模式
         :return:
         """
-        return self.mode == 'default'
+        return self.mode == "default"
 
     @cached_property
     def is_vector_mode(self) -> bool:
@@ -44,7 +41,7 @@ class RuleSwipe:
         是否是向量模式
         :return:
         """
-        return self.mode == 'vector'
+        return self.mode == "vector"
 
     def coord(self) -> tuple:
         """
@@ -71,7 +68,9 @@ class RuleSwipe:
             le = random.randint(2, 4)  #
             deviation = random.randint(20, 40)  # 幅度
             b_type = 3
-            obbs_type = random.random()  # 0.8的概率是先快中间慢后面快， 0.1概率是先快后慢， 0.1概率先慢后快
+            obbs_type = (
+                random.random()
+            )  # 0.8的概率是先快中间慢后面快， 0.1概率是先快后慢， 0.1概率先慢后快
             if 0 < obbs_type <= 0.8:
                 b_type = 3
             elif obbs_type < 0.9:
@@ -79,8 +78,17 @@ class RuleSwipe:
             else:
                 b_type = 1
 
-            return BezierTrajectory.trackArray(start=start_pos, end=end_pos, numberList=number_list, le=le,
-                     deviation=30, bias=0.5, type=b_type, cbb=0, yhh=20)
+            return BezierTrajectory.trackArray(
+                start=start_pos,
+                end=end_pos,
+                numberList=number_list,
+                le=le,
+                deviation=30,
+                bias=0.5,
+                type=b_type,
+                cbb=0,
+                yhh=20,
+            )
 
         elif self.is_vector_mode:
             # 获取两个点的直线的规矩
@@ -88,7 +96,9 @@ class RuleSwipe:
             # 表示每秒移动1.5个像素点， 总的时间除以每个点10ms就得到总的点的个数
             number_list: int = int(dist(start_pos, end_pos) / (1.5 * self.interval))
 
-            def generate_linear_trajectory(start_pos: tuple, end_pos: tuple, num_points: int) -> list:
+            def generate_linear_trajectory(
+                start_pos: tuple, end_pos: tuple, num_points: int
+            ) -> list:
                 """
                 生成线性轨迹
                 :param start_pos:
@@ -108,8 +118,4 @@ class RuleSwipe:
             return generate_linear_trajectory(start_pos, end_pos, number_list)
 
         else:
-            raise ValueError(f'Invalid mode: {self.mode}')
-
-
-
-
+            raise ValueError(f"Invalid mode: {self.mode}")

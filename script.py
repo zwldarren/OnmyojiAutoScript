@@ -1,52 +1,45 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
 
+import json
+import os
+import re
+import threading
+import time
+from collections.abc import Callable
+from datetime import date, datetime, timedelta
+from multiprocessing.queues import Queue
+from pathlib import Path
+from threading import Thread
+
+import cv2
+import inflection
 import zerorpc
 import zmq
-import msgpack
-import random
-import re
-import cv2
-import time
-import os
-import inflection
-import asyncio
-import json
+from functools import cached_property
+from pydantic import ValidationError
 
-from datetime import date
-import threading
-from typing import Callable
-from datetime import datetime, timedelta
-from pathlib import Path
-from cached_property import cached_property
-from pydantic import BaseModel, ValidationError
-from threading import Thread
-from multiprocessing.queues import Queue
-
-
-from module.config.utils import convert_to_underscore
+from module.base.decorator import del_cached_property
+from module.base.utils import load_module
 from module.config.config import Config
-from module.config.config_model import ConfigModel
+from module.config.utils import convert_to_underscore
 from module.device.device import Device
 from module.device.env import IS_WINDOWS
-from module.base.utils import load_module
-from module.base.decorator import del_cached_property
-from module.logger import logger
 from module.exception import *
+from module.logger import logger
 from module.server.i18n import I18n
 
-
-
-_log_switch_lock = threading.Lock()#线程锁
+_log_switch_lock = threading.Lock()  # 线程锁
 
 
 class Script:
-    def __init__(self, config_name: str ='oas') -> None:
-        logger.hr('Start', level=0)
+    def __init__(self, config_name: str = "oas") -> None:
+        logger.hr("Start", level=0)
         self.server = None
         self.state_queue: Queue = None
-        self.gui_update_task: Callable = None  # 回调函数, gui进程注册当每次config更新任务的时候更新gui的信息
+        self.gui_update_task: Callable = (
+            None  # 回调函数, gui进程注册当每次config更新任务的时候更新gui的信息
+        )
         self.config_name = config_name
         # Skip first restart
         self.is_first_task = True
@@ -60,10 +53,11 @@ class Script:
     def config(self) -> "Config":
         try:
             from module.config.config import Config
+
             config = Config(config_name=self.config_name)
             return config
         except RequestHumanTakeover:
-            logger.critical('Request human takeover')
+            logger.critical("Request human takeover")
             exit(1)
         except Exception as e:
             logger.exception(e)
@@ -73,10 +67,11 @@ class Script:
     def device(self) -> "Device":
         try:
             from module.device.device import Device
+
             device = Device(config=self.config)
             return device
         except RequestHumanTakeover:
-            logger.critical('Request human takeover')
+            logger.critical("Request human takeover")
             exit(1)
         except Exception as e:
             logger.exception(e)
@@ -96,28 +91,28 @@ class Script:
         Save logs to ./log/error/<timestamp>/log.txt
         """
         from module.base.utils import save_image
-        from module.handler.sensitive_info import (handle_sensitive_image,
-                                                   handle_sensitive_logs)
+        from module.handler.sensitive_info import handle_sensitive_image, handle_sensitive_logs
+
         if self.config.script.error.save_error:
-            if not os.path.exists('./log/error'):
-                os.mkdir('./log/error')
-            folder = f'./log/error/{int(time.time() * 1000)}'
-            logger.warning(f'Saving error: {folder}')
+            if not os.path.exists("./log/error"):
+                os.mkdir("./log/error")
+            folder = f"./log/error/{int(time.time() * 1000)}"
+            logger.warning(f"Saving error: {folder}")
             os.mkdir(folder)
             for data in self.device.screenshot_deque:
-                image_time = datetime.strftime(data['time'], '%Y-%m-%d_%H-%M-%S-%f')
-                image = handle_sensitive_image(data['image'])
-                save_image(image, f'{folder}/{image_time}.png')
-            with open(logger.log_file, 'r', encoding='utf-8') as f:
+                image_time = datetime.strftime(data["time"], "%Y-%m-%d_%H-%M-%S-%f")
+                image = handle_sensitive_image(data["image"])
+                save_image(image, f"{folder}/{image_time}.png")
+            with open(logger.log_file, encoding="utf-8") as f:
                 lines = f.readlines()
                 start = 0
                 for index, line in enumerate(lines):
-                    line = line.strip(' \r\t\n')
-                    if re.match('^═{15,}$', line):
+                    line = line.strip(" \r\t\n")
+                    if re.match("^═{15,}$", line):
                         start = index
-                lines = lines[start - 2:]
+                lines = lines[start - 2 :]
                 lines = handle_sensitive_logs(lines)
-            with open(f'{folder}/log.txt', 'w', encoding='utf-8') as f:
+            with open(f"{folder}/log.txt", "w", encoding="utf-8") as f:
                 f.writelines(lines)
 
     def init_server(self, port: int) -> int:
@@ -127,7 +122,7 @@ class Script:
         """
         self.server = zerorpc.Server(self)
         try:
-            self.server.bind(f'tcp://127.0.0.1:{port}')
+            self.server.bind(f"tcp://127.0.0.1:{port}")
             return port
         except zmq.error.ZMQError:
             logger.error(f"Ocr server cannot bind on port {port}")
@@ -174,24 +169,23 @@ class Script:
         if isinstance(value, str):
             if len(value) == 8:
                 try:
-                    value = datetime.strptime(value, '%H:%M:%S').time()
+                    value = datetime.strptime(value, "%H:%M:%S").time()
                 except ValueError:
                     pass
 
-
-        path = f'{task}.{group}.{argument}'
+        path = f"{task}.{group}.{argument}"
         task_object = getattr(self.config.model, task, None)
         group_object = getattr(task_object, group, None)
         argument_object = getattr(group_object, argument, None)
 
         if argument_object is None:
-            logger.error(f'Set arg {task}.{group}.{argument}.{value} failed')
+            logger.error(f"Set arg {task}.{group}.{argument}.{value} failed")
             return False
 
         try:
             setattr(group_object, argument, value)
             argument_object = getattr(group_object, argument, None)
-            logger.info(f'Set arg {task}.{group}.{argument}.{argument_object}')
+            logger.info(f"Set arg {task}.{group}.{argument}.{argument_object}")
             self.config.save()  # 我是没有想到什么方法可以使得属性改变自动保存的
             return True
         except ValidationError as e:
@@ -207,7 +201,7 @@ class Script:
         # return msgpack.packb(cv2.imencode('.jpg', self.device.screenshot())[1].tobytes())
         img = cv2.cvtColor(self.device.screenshot(), cv2.COLOR_RGB2BGR)
         self.device.stuck_record_clear()
-        ret, buffer = cv2.imencode('.jpg', img)
+        ret, buffer = cv2.imencode(".jpg", img)
         yield buffer.tobytes()
 
     def _gui_update_tasks(self) -> None:
@@ -231,7 +225,6 @@ class Script:
         for w in self.config.waiting_task:
             item = {"name": w.command, "next_run": str(w.next_run)}
             waiting.append(item)
-
 
         data["pending"] = pending
         data["waiting"] = waiting
@@ -264,8 +257,7 @@ class Script:
                 continue
 
             scheduler = value["scheduler"]
-            item = {"enable": scheduler["enable"],
-                    "next_run": str(scheduler["next_run"])}
+            item = {"enable": scheduler["enable"], "next_run": str(scheduler["next_run"])}
             key = self.config.model.type(key)
             result[key] = item
         return json.dumps(result)
@@ -328,7 +320,9 @@ class Script:
         }
         func = strategy_map.get(method)
         if not func:
-            logger.warning(f"Invalid Optimization_WhenTaskQueueEmpty: {method}, fallback to stay_there")
+            logger.warning(
+                f"Invalid Optimization_WhenTaskQueueEmpty: {method}, fallback to stay_there"
+            )
             func = self._wait_stay_there
         return func(next_run)
 
@@ -354,14 +348,15 @@ class Script:
 
     def exception_handler(self, e: Exception, command: str) -> None:
         # 处理御魂溢出
-        from tasks.Utils.post_diagnotor import PostDiagnotor, AnalyzeType
-        image = getattr(self.device, 'image', None)
+        from tasks.Utils.post_diagnotor import AnalyzeType, PostDiagnotor
+
+        image = getattr(self.device, "image", None)
         # image为None则不做处理
         if image is None:
             return
         analyse_type = PostDiagnotor().handle(e=e, command=command, image=image)
         if analyse_type == AnalyzeType.SoulOverflow:
-            self.config.task_call('SoulsTidy')
+            self.config.task_call("SoulsTidy")
             time.sleep(1)
 
     def run(self, command: str) -> bool:
@@ -369,14 +364,14 @@ class Script:
         :param command:  大写驼峰命名的任务名字
         :return:
         """
-        if command == 'start' or command == 'goto_main':
-            logger.error(f'Invalid command `{command}`')
+        if command == "start" or command == "goto_main":
+            logger.error(f"Invalid command `{command}`")
 
         try:
             self.device.screenshot()
-            module_name = 'script_task'
-            module_path = str(Path.cwd() / 'tasks' / command / (module_name+'.py'))
-            logger.info(f'module_path: {module_path}, module_name: {module_name}')
+            module_name = "script_task"
+            module_path = str(Path.cwd() / "tasks" / command / (module_name + ".py"))
+            logger.info(f"module_path: {module_path}, module_name: {module_name}")
             task_module = load_module(module_name, module_path)
             task_module.ScriptTask(config=self.config, device=self.device).run()
         except TaskEnd:
@@ -384,54 +379,75 @@ class Script:
         except GameNotRunningError as e:
             logger.warning(e)
             self.exception_handler(e=e, command=command)
-            self.config.task_call('Restart')
+            self.config.task_call("Restart")
             return True
         except (GameStuckError, GameTooManyClickError) as e:
             logger.error(e)
             self.save_error_log()
             self.exception_handler(e=e, command=command)
-            logger.warning(f'Game stuck, {self.device.package} will be restarted in 10 seconds')
-            logger.warning('If you are playing by hand, please stop Alas')
-            self.config.notifier.push(title=f'{I18n.trans_zh_cn(command)}{command}', content=f"<{self.config_name}> GameStuckError or GameTooManyClickError")
-            self.config.task_call('Restart')
+            logger.warning(f"Game stuck, {self.device.package} will be restarted in 10 seconds")
+            logger.warning("If you are playing by hand, please stop Alas")
+            self.config.notifier.push(
+                title=f"{I18n.trans_zh_cn(command)}{command}",
+                content=f"<{self.config_name}> GameStuckError or GameTooManyClickError",
+            )
+            self.config.task_call("Restart")
             self.device.sleep(10)
             return False
         except GameBugError as e:
             logger.warning(e)
             self.save_error_log()
             self.exception_handler(e=e, command=command)
-            logger.warning('An error has occurred in Azur Lane game client, Alas is unable to handle')
-            logger.warning(f'Restarting {self.device.package} to fix it')
-            self.config.task_call('Restart')
+            logger.warning(
+                "An error has occurred in Azur Lane game client, Alas is unable to handle"
+            )
+            logger.warning(f"Restarting {self.device.package} to fix it")
+            self.config.task_call("Restart")
             self.device.sleep(10)
             return False
         except GamePageUnknownError as e:
-            logger.info('Game server may be under maintenance or network may be broken, check server status now')
+            logger.info(
+                "Game server may be under maintenance or network may be broken, check server status now"
+            )
             # 这个还不重要 留着坑填
-            logger.critical('Game page unknown')
+            logger.critical("Game page unknown")
             self.save_error_log()
             self.exception_handler(e=e, command=command)
-            self.config.notifier.push(title=f'{I18n.trans_zh_cn(command)}{command}', content=f"<{self.config_name}> GamePageUnknownError")
-            self.config.task_call('Restart')
+            self.config.notifier.push(
+                title=f"{I18n.trans_zh_cn(command)}{command}",
+                content=f"<{self.config_name}> GamePageUnknownError",
+            )
+            self.config.task_call("Restart")
             self.device.sleep(10)
             return False
         except ScriptError as e:
             logger.critical(e)
             self.exception_handler(e=e, command=command)
-            logger.critical('This is likely to be a mistake of developers, but sometimes just random issues')
-            self.config.notifier.push(title=f'{I18n.trans_zh_cn(command)}{command}', content=f"<{self.config_name}> ScriptError")
+            logger.critical(
+                "This is likely to be a mistake of developers, but sometimes just random issues"
+            )
+            self.config.notifier.push(
+                title=f"{I18n.trans_zh_cn(command)}{command}",
+                content=f"<{self.config_name}> ScriptError",
+            )
             exit(1)
         except RequestHumanTakeover as e:
             logger.critical(e)
             self.exception_handler(e=e, command=command)
-            logger.critical('Request human takeover')
-            self.config.notifier.push(title=f'{I18n.trans_zh_cn(command)}{command}', content=f"<{self.config_name}> RequestHumanTakeover")
+            logger.critical("Request human takeover")
+            self.config.notifier.push(
+                title=f"{I18n.trans_zh_cn(command)}{command}",
+                content=f"<{self.config_name}> RequestHumanTakeover",
+            )
             exit(1)
         except Exception as e:
             logger.exception(e)
             self.exception_handler(e=e, command=command)
             self.save_error_log()
-            self.config.notifier.push(title=f'{I18n.trans_zh_cn(command)}{command}', content=f"<{self.config_name}> Exception occured")
+            self.config.notifier.push(
+                title=f"{I18n.trans_zh_cn(command)}{command}",
+                content=f"<{self.config_name}> Exception occured",
+            )
             exit(1)
 
     def loop(self):
@@ -442,19 +458,23 @@ class Script:
         with _log_switch_lock:
             logger.set_file_logger(self.config_name, do_cleanup=True)
         start_day = date.today()
-        logger.info(f'Start scheduler loop: {self.config_name}')
-        self.config.model.running_task = ''
+        logger.info(f"Start scheduler loop: {self.config_name}")
+        self.config.model.running_task = ""
 
         # Update GUI 防呆, 读取设置并立刻显示后台模拟器到前台
         if not self.config.script.device.run_background_only and IS_WINDOWS:
-            from module.device.platform2.platform_windows import minimize_by_name, show_window_by_name
+            from module.device.platform2.platform_windows import (
+                minimize_by_name,
+                show_window_by_name,
+            )
+
             target_window_name = self.config.script.device.handle  # 在这里输入你的具体窗口名称
             if self.config.script.device.emulator_window_minimize:
                 minimize_by_name(target_window_name)
-                logger.info(f'重新显示: {target_window_name}')
+                logger.info(f"重新显示: {target_window_name}")
             else:
                 show_window_by_name(target_window_name)
-                
+
         while 1:
             if date.today() > start_day:
                 with _log_switch_lock:
@@ -482,21 +502,21 @@ class Script:
             task = self.get_next_task()
             _ = self.device
             # Skip first restart
-            if self.is_first_task and task == 'Restart':
-                logger.info('Skip task `Restart` at scheduler start')
-                self.config.task_delay(task='Restart', success=True, server=True)
-                del_cached_property(self, 'config')
+            if self.is_first_task and task == "Restart":
+                logger.info("Skip task `Restart` at scheduler start")
+                self.config.task_delay(task="Restart", success=True, server=True)
+                del_cached_property(self, "config")
                 continue
 
             # Run
-            logger.info(f'Scheduler: Start task `{task}`')
+            logger.info(f"Scheduler: Start task `{task}`")
             self.device.stuck_record_clear()
             self.device.click_record_clear()
             logger.hr(task, level=0)
             self.config.model.running_task = task
             success = self.run(inflection.camelize(task))
-            self.config.model.running_task = ''
-            logger.info(f'Scheduler: End task `{task}`')
+            self.config.model.running_task = ""
+            logger.info(f"Scheduler: End task `{task}`")
             self.is_first_task = False
 
             # Check failures
@@ -507,15 +527,19 @@ class Script:
             self.failure_record[task] = failed
             if failed >= 3:
                 logger.critical(f"Task `{task}` failed 3 or more times.")
-                logger.critical("Possible reason #1: You haven't used it correctly. "
-                                "Please read the help text of the options.")
-                logger.critical("Possible reason #2: There is a problem with this task. "
-                                "Please contact developers or try to fix it yourself.")
-                logger.critical('Request human takeover')
+                logger.critical(
+                    "Possible reason #1: You haven't used it correctly. "
+                    "Please read the help text of the options."
+                )
+                logger.critical(
+                    "Possible reason #2: There is a problem with this task. "
+                    "Please contact developers or try to fix it yourself."
+                )
+                logger.critical("Request human takeover")
                 # 添加失败三次的推送通知
                 self.config.notifier.push(
-                    title=f'{I18n.trans_zh_cn(task)}{task}',
-                    content=f"<{self.config_name}> 任务连续失败三次，请上线查看"
+                    title=f"{I18n.trans_zh_cn(task)}{task}",
+                    content=f"<{self.config_name}> 任务连续失败三次，请上线查看",
                 )
                 # 关闭模拟器
                 if self.config.script.error.error_repeated:
@@ -523,11 +547,11 @@ class Script:
                 exit(1)
 
             if success:
-                del_cached_property(self, 'config')
+                del_cached_property(self, "config")
                 continue
             elif self.config.script.error.handle_error:
                 # self.config.task_delay(success=False)
-                del_cached_property(self, 'config')
+                del_cached_property(self, "config")
                 # self.checker.check_now()
                 continue
             else:
@@ -539,7 +563,7 @@ class Script:
         :return:
         """
         if self.loop_thread is None:
-            self.loop_thread = Thread(target=self.loop, name='Script_loop')
+            self.loop_thread = Thread(target=self.loop, name="Script_loop")
             self.loop_thread.start()
 
 

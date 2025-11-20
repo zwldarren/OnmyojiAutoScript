@@ -1,19 +1,14 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
-import cv2
 
-from numpy import float32, int32, uint8, fromfile
-from PySide6.QtCore import QUrl, Property
+from PySide6.QtCore import Property, Slot
 from PySide6.QtGui import QImage, QPainter
 from PySide6.QtQuick import QQuickPaintedItem
-from PySide6.QtCore import QObject, Slot, Signal
 
 from module.logger import logger
 
 
 class PaintImage(QQuickPaintedItem):
-
     def __init__(self, parent=None):
         super().__init__(parent)
         self._image = QImage()
@@ -41,7 +36,6 @@ class PaintImage(QQuickPaintedItem):
             return None
         image_name = image_name.lstrip("file:///")
 
-
         if self._image.load(image_name):
             logger.info("load image success")
             self.update()
@@ -68,7 +62,7 @@ class PaintImage(QQuickPaintedItem):
         if not isinstance(file, str):
             logger.error("file must be str")
             return
-        x, y, width, height = map(int, roi.split(','))
+        x, y, width, height = map(int, roi.split(","))
         roi_image = self._image.copy(x, y, width, height)
         roi_image.save(file)
         logger.info(f"save target image {file}success")

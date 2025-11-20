@@ -1,20 +1,17 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
 import time
 
-from tasks.GameUi.game_ui import GameUi
-from tasks.GameUi.page import page_main, page_daily
-from tasks.TalismanPass.assets import TalismanPassAssets
-from tasks.TalismanPass.config import TalismanConfig, LevelReward
-
-from module.logger import logger
-from module.exception import TaskEnd
 from module.base.timer import Timer
+from module.exception import TaskEnd
+from module.logger import logger
+from tasks.GameUi.game_ui import GameUi
+from tasks.GameUi.page import page_daily, page_main
+from tasks.TalismanPass.assets import TalismanPassAssets
+from tasks.TalismanPass.config import LevelReward, TalismanConfig
 
 
 class ScriptTask(GameUi, TalismanPassAssets):
-
     def run(self):
         self.ui_goto_page(page_daily)
         con: TalismanConfig = self.config.talisman_pass.talisman
@@ -28,8 +25,8 @@ class ScriptTask(GameUi, TalismanPassAssets):
         if con.harvest_soul:
             self.ui_goto_page(page_main)
             self.harvest_soul()
-        self.set_next_run(task='TalismanPass', success=True, finish=True)
-        raise TaskEnd('TalismanPass')
+        self.set_next_run(task="TalismanPass", success=True, finish=True)
+        raise TaskEnd("TalismanPass")
 
     def get_all(self):
         """
@@ -38,9 +35,9 @@ class ScriptTask(GameUi, TalismanPassAssets):
         """
         self.screenshot()
         if not self.appear(self.I_TP_GET_ALL):
-            logger.info('No appear get all button')
+            logger.info("No appear get all button")
         self.ui_get_reward(self.I_TP_GET_ALL)
-        logger.info('Get all reward')
+        logger.info("Get all reward")
         time.sleep(0.5)
 
     def get_flower(self, level: LevelReward = LevelReward.TWO):
@@ -55,31 +52,31 @@ class ScriptTask(GameUi, TalismanPassAssets):
         }
         self.screenshot()
         if not self.appear(self.I_RED_POINT_LEVEL):
-            logger.info('No any level reward')
+            logger.info("No any level reward")
             return
-        logger.info('Appear level reward')
+        logger.info("Appear level reward")
         self.ui_click(self.I_RED_POINT_LEVEL, self.I_TP_GET_ALL)
-        logger.info('Click level reward')
+        logger.info("Click level reward")
         check_timer = Timer(2)
         check_timer.start()
         while 1:
             self.screenshot()
             if self.appear_then_click(match_level[level], interval=0.8):
-                logger.info(f'Select {level} reward')
+                logger.info(f"Select {level} reward")
                 if self.appear_then_click(self.I_OVERFLOW_CONFIRME):
                     pass
                 check_timer.reset()
                 continue
 
             if self.ui_reward_appear_click(False):
-                logger.info('Get reward')
+                logger.info("Get reward")
                 check_timer.reset()
                 continue
             if check_timer.reached():
-                logger.warning('No reward and break')
+                logger.warning("No reward and break")
                 break
             if self.appear_then_click(self.I_TP_GET_ALL, interval=2.1):
-                logger.info('Get all reward')
+                logger.info("Get all reward")
                 check_timer.reset()
                 continue
 
@@ -92,19 +89,19 @@ class ScriptTask(GameUi, TalismanPassAssets):
         if self.appear(self.I_TP_GOTO) or self.appear(self.I_TP_EXP):
             return True
         return False
-    
+
     def harvest_soul(self):
         """
         获得1500签御魂奖励
         :return: 如果没有发现御魂奖励则退出
         """
-        logger.hr('Harvest soul')
+        logger.hr("Harvest soul")
         timer_harvest = Timer(5)  # 如果连续5秒没有发现任何奖励，退出
         while 1:
             self.screenshot()
             # 自选御魂
             if self.appear(self.I_TP_SOUL_1):
-                logger.info('Select soul 2')
+                logger.info("Select soul 2")
                 self.ui_click(self.I_TP_SOUL_1, stop=self.I_TP_SOUL_2)
                 self.ui_click(self.I_TP_SOUL_2, stop=self.I_TP_SOUL_3, interval=3)
                 self.ui_click_until_disappear(click=self.I_TP_SOUL_3)
@@ -114,18 +111,17 @@ class ScriptTask(GameUi, TalismanPassAssets):
                 timer_harvest.start()
             else:
                 if timer_harvest.reached():
-                    logger.info('No more reward')
+                    logger.info("No more reward")
                     return
 
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     from module.config.config import Config
     from module.device.device import Device
-    c = Config('oas1')
+
+    c = Config("oas1")
     d = Device(c)
     t = ScriptTask(c, d)
     t.screenshot()
 
     t.run()
-

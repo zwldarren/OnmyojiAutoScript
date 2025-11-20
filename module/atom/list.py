@@ -1,22 +1,21 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
 
-import cv2
-import random
-import numpy as np
-
 from random import randint
 
+import cv2
+import numpy as np
 from ppocronnx.predict_system import BoxedResult
-from module.atom.ocr import RuleOcr
+
 from module.atom.image import RuleImage
+from module.atom.ocr import RuleOcr
 from module.logger import logger
 
 
 class RuleList:
-
-    def __init__(self, folder: str, direction: str, mode: str, roi_back: tuple, size: tuple, array: list[str]) -> None:
+    def __init__(
+        self, folder: str, direction: str, mode: str, roi_back: tuple, size: tuple, array: list[str]
+    ) -> None:
         """
         初始化
         :param folder:
@@ -33,7 +32,11 @@ class RuleList:
         self.roi_back: list = list(roi_back)
         self.size: list = list(size)
         # 这个表示一个区域中一次所能显示的最大数量
-        self.max_show: int = self.roi_back[3] // self.size[1] if self.is_vertical else self.roi_back[2] // self.size[0]
+        self.max_show: int = (
+            self.roi_back[3] // self.size[1]
+            if self.is_vertical
+            else self.roi_back[2] // self.size[0]
+        )
 
         self.array: list = array
 
@@ -45,42 +48,63 @@ class RuleList:
 
     @property
     def name(self):
-        return f'RuleList[{self.__hash__()}]'
+        return f"RuleList[{self.__hash__()}]"
 
     def __hash__(self):
-        return hash((self.folder, self.is_vertical, self.is_image, self.is_ocr, tuple(self.roi_back), tuple(self.size), tuple(self.array)))
+        return hash(
+            (
+                self.folder,
+                self.is_vertical,
+                self.is_image,
+                self.is_ocr,
+                tuple(self.roi_back),
+                tuple(self.size),
+                tuple(self.array),
+            )
+        )
 
-    def swipe_pos(self, number: int=2, after: bool=True) -> tuple:
+    def swipe_pos(self, number: int = 2, after: bool = True) -> tuple:
         """
         返回滑动的起始位置和终点位置
         :param number:
         :param after:
         :return:
         """
-        center: tuple = (self.roi_back[0] + self.roi_back[2]) // 2, (self.roi_back[1] + self.roi_back[3]) // 2
+        center: tuple = (
+            (self.roi_back[0] + self.roi_back[2]) // 2,
+            (self.roi_back[1] + self.roi_back[3]) // 2,
+        )
         distance: int = self.size[1] * number if self.is_vertical else self.size[0] * number
-        random_start: int = randint(- self.size[0] // 4, self.size[0] // 4) if self.is_vertical else randint(- self.size[1] // 4, self.size[1] // 4)
-        random_end: int = randint(- self.size[0] // 4, self.size[0] // 4) if self.is_vertical else randint(- self.size[1] // 4, self.size[1] // 4)
+        random_start: int = (
+            randint(-self.size[0] // 4, self.size[0] // 4)
+            if self.is_vertical
+            else randint(-self.size[1] // 4, self.size[1] // 4)
+        )
+        random_end: int = (
+            randint(-self.size[0] // 4, self.size[0] // 4)
+            if self.is_vertical
+            else randint(-self.size[1] // 4, self.size[1] // 4)
+        )
 
         x1, y1, x2, y2 = None, None, None, None
         if self.is_vertical:
             if after:
                 # 竖直方向向下滑动， 那就是起始点是在下面 终点是在上面
-                x1, y1 = center[0]+random_start, center[1] + distance//2
-                x2, y2 = center[0]+random_end, center[1] - distance//2
+                x1, y1 = center[0] + random_start, center[1] + distance // 2
+                x2, y2 = center[0] + random_end, center[1] - distance // 2
             else:
                 # 竖直方向向上滑动， 那就是起始点是在上面 终点是在下面
-                x1, y1 = center[0]+random_start, center[1] - distance//2
-                x2, y2 = center[0]+random_end, center[1] + distance//2
+                x1, y1 = center[0] + random_start, center[1] - distance // 2
+                x2, y2 = center[0] + random_end, center[1] + distance // 2
         else:
             if after:
                 # 水平方向向右滑动， 那就是起始点是在右面 终点是在左面
-                x1, y1 = center[0] + distance//2, center[1]+random_start
-                x2, y2 = center[0] - distance//2, center[1]+random_end
+                x1, y1 = center[0] + distance // 2, center[1] + random_start
+                x2, y2 = center[0] - distance // 2, center[1] + random_end
             else:
                 # 水平方向向左滑动， 那就是起始点是在左面 终点是在右面
-                x1, y1 = center[0] - distance//2, center[1]+random_start
-                x2, y2 = center[0] + distance//2, center[1]+random_end
+                x1, y1 = center[0] - distance // 2, center[1] + random_start
+                x2, y2 = center[0] + distance // 2, center[1] + random_end
 
         if x1 is None or y1 is None or x2 is None or y2 is None:
             raise Exception("滑动位置计算错误")
@@ -105,22 +129,35 @@ class RuleList:
 
         # 保证匹配的目标 是正确的
         if self.is_image:
-            if self._target is None or isinstance(self._target, RuleOcr):
-                self._target = RuleImage(roi_front=self.roi_back, roi_back=self.roi_back, method="Template matching", threshold=0.8, file=file)
-            # 如果不对的话，就重新构建
-            elif self._target.name != name:
-                self._target = RuleImage(roi_front=self.roi_back, roi_back=self.roi_back, method="Template matching", threshold=0.8, file=file)
+            if (
+                self._target is None
+                or isinstance(self._target, RuleOcr)
+                or self._target.name != name
+            ):
+                self._target = RuleImage(
+                    roi_front=self.roi_back,
+                    roi_back=self.roi_back,
+                    method="Template matching",
+                    threshold=0.8,
+                    file=file,
+                )
             else:
                 pass
         elif self.is_ocr:
             if self._target is None or isinstance(self._target, RuleImage):
-                self._target = RuleOcr(roi=self.roi_back, area=(0, 0, 10, 10), mode="Full", method="Default",
-                                       keyword=name, name=name)
+                self._target = RuleOcr(
+                    roi=self.roi_back,
+                    area=(0, 0, 10, 10),
+                    mode="Full",
+                    method="Default",
+                    keyword=name,
+                    name=name,
+                )
             elif self._target.name != name:
                 self._target.name = name
                 self._target.keyword = name
         else:
-            logger.error(f'Not found {name} in {self.array}')
+            logger.error(f"Not found {name} in {self.array}")
             return False
 
     def targets_check(self, targets: list):
@@ -134,8 +171,13 @@ class RuleList:
                 continue
             # 如果还没有缓存的话就先缓存
             file = self.folder + "/" + item + ".png"
-            self.targets[item] = RuleImage(roi_front=self.roi_back, roi_back=self.roi_back,
-                                           method="Template matching", threshold=0.8, file=file)
+            self.targets[item] = RuleImage(
+                roi_front=self.roi_back,
+                roi_back=self.roi_back,
+                method="Template matching",
+                threshold=0.8,
+                file=file,
+            )
 
     def image_appear(self, image: np.array, name: str) -> bool | tuple:
         """
@@ -160,7 +202,7 @@ class RuleList:
             return False
 
         else:
-            logger.error(f'Mode is not image')
+            logger.error("Mode is not image")
             return False
 
     def ocr_appear(self, image: np.array, name: str):
@@ -178,7 +220,7 @@ class RuleList:
         # 开始一次ocr的检测
         boxed_results: list[BoxedResult] = self._target.detect_and_ocr(image)
         if not boxed_results:
-            logger.warning(f'Not angy result in image')
+            logger.warning("Not angy result in image")
             return 0, 0
 
         # 判断所有的结果，给获取的列表建立引索
@@ -190,10 +232,15 @@ class RuleList:
                 box = item.box
                 break
         if box is not None:
-            rec_x, rec_y, rec_w, rec_h = box[0, 0], box[0, 1], box[1, 0] - box[0, 0], box[2, 1] - box[0, 1]
+            rec_x, rec_y, rec_w, rec_h = (
+                box[0, 0],
+                box[0, 1],
+                box[1, 0] - box[0, 0],
+                box[2, 1] - box[0, 1],
+            )
             x = rec_x + rec_w // 2 + self.roi_back[0]
             y = rec_y + rec_h // 2 + self.roi_back[1]
-            logger.info(f'Ocr {name} appear in current screen, do not need to scroll')
+            logger.info(f"Ocr {name} appear in current screen, do not need to scroll")
             return x, y
 
         # if index_list and len(index_list) >= 1:
@@ -203,13 +250,15 @@ class RuleList:
 
         # 如果没有找到，那么应该不是在当前的页面，需要获取当前的信息判断是往前滑动还是往后滑动
         else:
-            keyword_list: list = [item.ocr_text for item in boxed_results if item.score > RuleOcr.score]
+            keyword_list: list = [
+                item.ocr_text for item in boxed_results if item.score > RuleOcr.score
+            ]
 
             # 判断识别处理的文字是否属于要验证识别的文字（array）
             keyword_list = [keyword for keyword in keyword_list if keyword in self.array]
-            logger.info(f'After list: {keyword_list}')
+            logger.info(f"After list: {keyword_list}")
             if not keyword_list:
-                logger.warning(f'Not found {name} in {self.array}')
+                logger.warning(f"Not found {name} in {self.array}")
                 return 2
 
             start_index = self.array.index(keyword_list[0])
@@ -228,15 +277,33 @@ class RuleList:
             # 如果目标的是在当前的显示的后面， 则distance为正的
             # 所有前面返回的是负的，后面返回的是正的
             if distance_start == 0 and distance_end == 0:
-                logger.error(f'{name} not found in {keyword_list}')
+                logger.error(f"{name} not found in {keyword_list}")
 
             return (distance_start + distance_end) // 2
 
 
-if __name__ == '__main__':
-    L_N33AME = RuleList(folder="./tasks/Orochi/res", direction="vertical", mode="ocr", roi_back=(160, 130, 317, 500),
-                        size=(301, 86),
-                        array=["壹层", "贰层", "叁层", "肆层", "伍层", "陆层", "柒层", "捌层", "玖层", "拾层", "悲鸣", "神罚"])
+if __name__ == "__main__":
+    L_N33AME = RuleList(
+        folder="./tasks/Orochi/res",
+        direction="vertical",
+        mode="ocr",
+        roi_back=(160, 130, 317, 500),
+        size=(301, 86),
+        array=[
+            "壹层",
+            "贰层",
+            "叁层",
+            "肆层",
+            "伍层",
+            "陆层",
+            "柒层",
+            "捌层",
+            "玖层",
+            "拾层",
+            "悲鸣",
+            "神罚",
+        ],
+    )
     image = cv2.imread("D:/watu_list_text204237.png")
     print(L_N33AME.ocr_appear(image, "柒层"))
     print(L_N33AME.ocr_appear(image, "神罚"))

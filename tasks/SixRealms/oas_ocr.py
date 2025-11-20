@@ -3,12 +3,10 @@ import functools
 import cv2
 import numpy as np
 
-
 from module.base.utils import color_similarity_2d, load_image
+
 # from module.ocr.ocr import Ocr
 from module.ocr.base_ocr import BaseCor
-
-
 
 
 def apply_mask(image, mask):
@@ -81,11 +79,17 @@ class StoneOcr(VerticalText):
         return image
 
 
-if __name__ == '__main__':
-    from tasks.SixRealms.assets import SixRealmsAssets
-    file = r'C:\Users\Ryland\Desktop\Desktop\20.png'
+if __name__ == "__main__":
+    file = r"C:\Users\Ryland\Desktop\Desktop\20.png"
     image = load_image(file)
-    ocr = StoneOcr(roi=(0,0,1280,720), area=(0,0,1280,720), mode="Full", method="Default", keyword="", name="ocr_map")
+    ocr = StoneOcr(
+        roi=(0, 0, 1280, 720),
+        area=(0, 0, 1280, 720),
+        mode="Full",
+        method="Default",
+        keyword="",
+        name="ocr_map",
+    )
     results = ocr.detect_and_ocr(image)
     for r in results:
         print(r.box, r.ocr_text)

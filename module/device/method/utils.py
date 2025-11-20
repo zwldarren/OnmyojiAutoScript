@@ -4,8 +4,7 @@ import socket
 import time
 
 import uiautomator2 as u2
-from adbutils import AdbTimeout
-from adbutils import _AdbStreamConnection
+from adbutils import AdbConnection, AdbTimeout
 from lxml import etree
 
 from module.base.decorator import cached_property
@@ -16,12 +15,12 @@ RETRY_DELAY = 3
 
 
 def is_port_using(port_num):
-    """ if port is using by others, return True. else return False """
+    """if port is using by others, return True. else return False"""
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.settimeout(2)
 
     try:
-        s.bind(('127.0.0.1', port_num))
+        s.bind(("127.0.0.1", port_num))
         return False
     except OSError:
         # Address already bind
@@ -31,7 +30,7 @@ def is_port_using(port_num):
 
 
 def random_port(port_range):
-    """ get a random port from port set """
+    """get a random port from port set"""
     new_port = random.choice(list(range(*port_range)))
     if is_port_using(new_port):
         return random_port(port_range)
@@ -52,7 +51,7 @@ def recv_all(stream, chunk_size=4096, recv_interval=0.000) -> bytes:
     Raises:
         AdbTimeout
     """
-    if isinstance(stream, _AdbStreamConnection):
+    if isinstance(stream, AdbConnection):
         stream = stream.conn
         stream.settimeout(10)
     else:
@@ -68,9 +67,9 @@ def recv_all(stream, chunk_size=4096, recv_interval=0.000) -> bytes:
                 time.sleep(recv_interval)
             else:
                 break
-        return remove_shell_warning(b''.join(fragments))
-    except socket.timeout:
-        raise AdbTimeout('adb read timeout')
+        return remove_shell_warning(b"".join(fragments))
+    except TimeoutError:
+        raise AdbTimeout("adb read timeout")
 
 
 def possible_reasons(*args):
@@ -82,7 +81,7 @@ def possible_reasons(*args):
     """
     for index, reason in enumerate(args):
         index += 1
-        logger.critical(f'Possible reason #{index}: {reason}')
+        logger.critical(f"Possible reason #{index}: {reason}")
 
 
 class PackageNotInstalled(Exception):
@@ -95,10 +94,7 @@ class ImageTruncated(Exception):
 
 def retry_sleep(trial):
     # First trial
-    if trial == 0:
-        pass
-    # Failed once, fast retry
-    elif trial == 1:
+    if trial == 0 or trial == 1:
         pass
     # Failed twice
     elif trial == 2:
@@ -117,23 +113,23 @@ def handle_adb_error(e):
         bool: If should retry
     """
     text = str(e)
-    if 'not found' in text:
+    if "not found" in text:
         # When you call `adb disconnect <serial>`
         # Or when adb server was killed (low possibility)
         # AdbError(device '127.0.0.1:59865' not found)
         logger.error(e)
         return True
-    elif 'timeout' in text:
+    elif "timeout" in text:
         # AdbTimeout(adb read timeout)
         logger.error(e)
         return True
-    elif 'closed' in text:
+    elif "closed" in text:
         # AdbError(closed)
         # Usually after AdbTimeout(adb read timeout)
         # Disconnect and re-connect should fix this.
         logger.error(e)
         return True
-    elif 'device offline' in text:
+    elif "device offline" in text:
         # AdbError(device offline)
         # When a device that has been connected wirelessly is disconnected passively,
         # it does not disappear from the adb device list,
@@ -143,12 +139,12 @@ def handle_adb_error(e):
         # the device is still available, but it needs to be disconnected and re-connected.
         logger.error(e)
         return True
-    elif 'is offline' in text:
+    elif "is offline" in text:
         # RuntimeError: USB device 127.0.0.1:7555 is offline
         # Raised by uiautomator2 when current adb service is killed by another version of adb service.
         logger.error(e)
         return True
-    elif 'unknown host service' in text:
+    elif "unknown host service" in text:
         # AdbError(unknown host service)
         # Another version of ADB service started, current ADB service has been killed.
         # Usually because user opened a Chinese emulator, which uses ADB from the Stone Age.
@@ -158,9 +154,9 @@ def handle_adb_error(e):
         # AdbError()
         logger.exception(e)
         possible_reasons(
-            'If you are using BlueStacks or LD player or WSA, please enable ADB in the settings of your emulator',
-            'Emulator died, please restart emulator',
-            'Serial incorrect, no such device exists or emulator is not running'
+            "If you are using BlueStacks or LD player or WSA, please enable ADB in the settings of your emulator",
+            "Emulator died, please restart emulator",
+            "Serial incorrect, no such device exists or emulator is not running",
         )
         return False
 
@@ -173,18 +169,18 @@ def get_serial_pair(serial):
     Returns:
         str, str: `127.0.0.1:5555+{X}` and `emulator-5554+{X}`, 0 <= X <= 32
     """
-    if serial.startswith('127.0.0.1:'):
+    if serial.startswith("127.0.0.1:"):
         try:
             port = int(serial[10:])
             if 5555 <= port <= 5555 + 32:
-                return f'127.0.0.1:{port}', f'emulator-{port - 1}'
+                return f"127.0.0.1:{port}", f"emulator-{port - 1}"
         except (ValueError, IndexError):
             pass
-    if serial.startswith('emulator-'):
+    if serial.startswith("emulator-"):
         try:
             port = int(serial[9:])
             if 5554 <= port <= 5554 + 32:
-                return f'127.0.0.1:{port + 1}', f'emulator-{port}'
+                return f"127.0.0.1:{port + 1}", f"emulator-{port}"
         except (ValueError, IndexError):
             pass
 
@@ -202,7 +198,7 @@ def remove_prefix(s, prefix):
     Returns:
         str, bytes:
     """
-    return s[len(prefix):] if s.startswith(prefix) else s
+    return s[len(prefix) :] if s.startswith(prefix) else s
 
 
 def remove_shell_warning(s):
@@ -217,32 +213,20 @@ def remove_shell_warning(s):
     """
     # WARNING: linker: [vdso]: unused DT entry: type 0x70000001 arg 0x0\n\x89PNG\r\n\x1a\n\x00\x00\x00\rIH
     if isinstance(s, bytes):
-        if s.startswith(b'WARNING'):
+        if s.startswith(b"WARNING"):
             try:
-                s = s.split(b'\n', maxsplit=1)[1]
+                s = s.split(b"\n", maxsplit=1)[1]
             except IndexError:
                 pass
         return s
         # return re.sub(b'^WARNING.+\n', b'', s)
     elif isinstance(s, str):
-        if s.startswith('WARNING'):
+        if s.startswith("WARNING"):
             try:
-                s = s.split('\n', maxsplit=1)[1]
+                s = s.split("\n", maxsplit=1)[1]
             except IndexError:
                 pass
     return s
-
-
-class IniterNoMinicap(u2.init.Initer):
-    @property
-    def minicap_urls(self):
-        """
-        Don't install minicap on emulators, return empty urls.
-
-        binary from https://github.com/openatx/stf-binaries
-        only got abi: armeabi-v7a and arm64-v8a
-        """
-        return []
 
 
 class Device(u2.Device):
@@ -254,7 +238,6 @@ class Device(u2.Device):
 
 
 # Monkey patch
-u2.init.Initer = IniterNoMinicap
 u2.Device = Device
 
 
@@ -262,7 +245,8 @@ class HierarchyButton:
     """
     Convert UI hierarchy to an object like the Button in Alas.
     """
-    _name_regex = re.compile('@.*?=[\'\"](.*?)[\'\"]')
+
+    _name_regex = re.compile("@.*?=['\"](.*?)['\"]")
 
     def __init__(self, hierarchy: etree._Element, xpath: str):
         self.hierarchy = hierarchy
@@ -275,7 +259,7 @@ class HierarchyButton:
         if res:
             return res[0]
         else:
-            return 'HierarchyButton'
+            return "HierarchyButton"
 
     @cached_property
     def count(self):
@@ -307,6 +291,6 @@ class HierarchyButton:
     @cached_property
     def focused(self):
         if self.exist:
-            return self.nodes[0].attrib.get("focused").lower() == 'true'
+            return self.nodes[0].attrib.get("focused").lower() == "true"
         else:
             return False

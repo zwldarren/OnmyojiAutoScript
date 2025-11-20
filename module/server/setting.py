@@ -1,10 +1,12 @@
 """
 Copy from https://github.com/LmeSzinc/AzurLaneAutoScript
 """
+
 import multiprocessing
 import threading
+from collections.abc import Callable
 from multiprocessing.managers import SyncManager
-from typing import TYPE_CHECKING, Callable, Generic, TypeVar
+from typing import TYPE_CHECKING, Generic, TypeVar
 
 if TYPE_CHECKING:
     from module.config.config_updater import ConfigUpdater
@@ -34,7 +36,7 @@ class cached_class_property(Generic[T]):
 
     def __init__(self, func: Callable[..., T]):
         self.__func__ = func
-        self.__cache_name__ = '_{}_'.format(func.__name__.strip('_'))
+        self.__cache_name__ = "_{}_".format(func.__name__.strip("_"))
         if self.__cache_name__ == func.__name__:
             raise self.AliasConflict(self.__cache_name__)
 

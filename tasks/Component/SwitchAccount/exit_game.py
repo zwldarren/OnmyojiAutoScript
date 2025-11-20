@@ -1,10 +1,9 @@
-from tasks.Component.SwitchAccount.assets import SwitchAccountAssets
-from tasks.base_task import BaseTask
 from module.logger import logger
+from tasks.base_task import BaseTask
+from tasks.Component.SwitchAccount.assets import SwitchAccountAssets
 
 
 class ExitGame(BaseTask, SwitchAccountAssets):
-
     def exitGame(self):
         logger.info("start game exit")
         # 打开该页面比较慢 如果interval短 将发生异常

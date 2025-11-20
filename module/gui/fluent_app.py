@@ -1,22 +1,19 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
-import sys
 import os
-
-from PySide6.QtGui import QGuiApplication, QIcon
-from PySide6.QtQml import QQmlApplicationEngine, qmlRegisterType
-from PySide6.QtCore import Qt, QObject, QTranslator, QLocale, Slot
+import sys
 from pathlib import Path
 
-from module.gui.utils import get_work_path
-from module.gui.Bridge import bridge
-from module.logger import logger
+from PySide6.QtCore import QObject, Qt, QTranslator, Slot
+from PySide6.QtGui import QGuiApplication, QIcon
+from PySide6.QtQml import QQmlApplicationEngine, qmlRegisterType
 
 # import module.gui.qml_rcc
-import module.gui.res_rcc
+from module.gui.utils import get_work_path
+from module.logger import logger
 
-class FluentApp():
+
+class FluentApp:
     app = None
     engine = None
     translator = None
@@ -33,7 +30,9 @@ class FluentApp():
         os.putenv("QT_QUICK_CONTROLS_STYLE", "Basic")
 
         FluentApp.app = QGuiApplication(sys.argv)
-        QGuiApplication.setWindowIcon(QIcon(os.fspath(Path(__file__).resolve().parent / "res/icon.ico")))
+        QGuiApplication.setWindowIcon(
+            QIcon(os.fspath(Path(__file__).resolve().parent / "res/icon.ico"))
+        )
         QGuiApplication.setApplicationName("oas")
         QGuiApplication.setOrganizationName("oas")
 
@@ -42,12 +41,14 @@ class FluentApp():
 
         FluentApp.translator = Translator(engine=FluentApp.engine, app=FluentApp.app)
         FluentApp.dpi = DpiScale()
-        self.set_context_property(context=FluentApp.translator, name='translator')
-        self.set_context_property(context=FluentApp.dpi, name='dpi')
+        self.set_context_property(context=FluentApp.translator, name="translator")
+        self.set_context_property(context=FluentApp.dpi, name="dpi")
 
     @classmethod
     def run(cls):
-        FluentApp.engine.load(os.fspath(Path(get_work_path() / 'module' / 'gui' / 'qml' / 'app.qml')))
+        FluentApp.engine.load(
+            os.fspath(Path(get_work_path() / "module" / "gui" / "qml" / "app.qml"))
+        )
         if not FluentApp.engine.rootObjects():
             sys.exit(-1)
         sys.exit(FluentApp.app.exec())
@@ -62,8 +63,6 @@ class FluentApp():
         """
         FluentApp.engine.rootContext().setContextProperty(name, context)
 
-
-
     def qml_register_type(self, Class, qml_class: str) -> None:
         """
         注册qml类型
@@ -75,7 +74,6 @@ class FluentApp():
 
 
 class Translator(QObject):
-
     def __init__(self, engine, app) -> None:
         super(Translator, self).__init__()
         self._engine = engine
@@ -106,6 +104,7 @@ class Translator(QObject):
             self._engine.retranslate()
             return
 
+
 class DpiScale(QObject):
     def __init__(self) -> None:
         super().__init__()
@@ -118,12 +117,27 @@ class DpiScale(QObject):
         :return:
         """
         match strategy:
-            case "default": QGuiApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)  # 不缩放
-            case "round": QGuiApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.Round)  # 设备像素比0.5及以上的，进行缩放
-            case "floor": QGuiApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.Floor)  # 始终不缩放
-            case "ceil": QGuiApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.Ceil)  # 始终缩放
-            case "round_prefer_floor": QGuiApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.RoundPreferFloor)  # 设备像素比0.75及以上的，进行缩放
-            case _: QGuiApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
-
-
-
+            case "default":
+                QGuiApplication.setHighDpiScaleFactorRoundingPolicy(
+                    Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
+                )  # 不缩放
+            case "round":
+                QGuiApplication.setHighDpiScaleFactorRoundingPolicy(
+                    Qt.HighDpiScaleFactorRoundingPolicy.Round
+                )  # 设备像素比0.5及以上的，进行缩放
+            case "floor":
+                QGuiApplication.setHighDpiScaleFactorRoundingPolicy(
+                    Qt.HighDpiScaleFactorRoundingPolicy.Floor
+                )  # 始终不缩放
+            case "ceil":
+                QGuiApplication.setHighDpiScaleFactorRoundingPolicy(
+                    Qt.HighDpiScaleFactorRoundingPolicy.Ceil
+                )  # 始终缩放
+            case "round_prefer_floor":
+                QGuiApplication.setHighDpiScaleFactorRoundingPolicy(
+                    Qt.HighDpiScaleFactorRoundingPolicy.RoundPreferFloor
+                )  # 设备像素比0.75及以上的，进行缩放
+            case _:
+                QGuiApplication.setHighDpiScaleFactorRoundingPolicy(
+                    Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
+                )

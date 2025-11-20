@@ -1,23 +1,22 @@
+from module.logger import logger
+from tasks.base_task import BaseTask
 from tasks.Component.SwitchOnmyoji.assets import SwitchOnmyojiAssets
 from tasks.Component.SwitchOnmyoji.config import Onmyoji
-from tasks.base_task import BaseTask
-from module.logger import logger
 
 
 class SwitchOnmyoji(BaseTask, SwitchOnmyojiAssets):
-
     def switch_onmyoji(self, onmyoji: Onmyoji):
         """
         切换阴阳师, 要求已经进入阴阳术界面, 最后会留在阴阳术界面
         :param onmyoji: 阴阳师
         """
-        logger.hr('Switch onmyoji', 2)
+        logger.hr("Switch onmyoji", 2)
         hero = [Onmyoji.YORIMITSU]
         if onmyoji in hero:
             self._switch_hero(onmyoji)
         else:
             self._switch_onmyoji(onmyoji)
-        logger.info(f'Switch onmyoji: {onmyoji.name}[{onmyoji.value}]')
+        logger.info(f"Switch onmyoji: {onmyoji.name}[{onmyoji.value}]")
 
     def _switch_onmyoji(self, onmyoji: Onmyoji):
         """切换阴阳师"""
@@ -29,13 +28,17 @@ class SwitchOnmyoji(BaseTask, SwitchOnmyojiAssets):
         }
         self.ui_click(self.I_HERO_CHECK, self.I_ONMYOJI_CHECK, interval=0.8)
         # 进入阴阳师替换页面
-        while not (self.appear(self.I_SEIMI_BATTLE) or self.appear(self.I_KAGURA_BATTLE)
-                   or self.appear(self.I_HIROMASA_BATTLE) or self.appear(self.I_YAO_BIKUNI_BATTLE)):
+        while not (
+            self.appear(self.I_SEIMI_BATTLE)
+            or self.appear(self.I_KAGURA_BATTLE)
+            or self.appear(self.I_HIROMASA_BATTLE)
+            or self.appear(self.I_YAO_BIKUNI_BATTLE)
+        ):
             self.appear_then_click(self.I_ONMYOJI_SWITCH, interval=0.8)
             self.screenshot()
-        onmyoji_battle = onmyoji_battle_dict.get(onmyoji, None)
+        onmyoji_battle = onmyoji_battle_dict.get(onmyoji)
         if not onmyoji_battle:
-            raise ValueError('Incorrect onmyoji type')
+            raise ValueError("Incorrect onmyoji type")
         while True:
             self.screenshot()
             # 回到阴阳术页面则退出
@@ -52,11 +55,11 @@ class SwitchOnmyoji(BaseTask, SwitchOnmyojiAssets):
         self.ui_click(self.I_ONMYOJI_CHECK, self.I_HERO_CHECK, interval=0.8)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from module.config.config import Config
     from module.device.device import Device
 
-    c = Config('oas3')
+    c = Config("oas3")
     d = Device(c)
     t = SwitchOnmyoji(c, d)
 

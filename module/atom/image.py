@@ -1,21 +1,22 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
-import cv2
-import numpy as np
-
-from numpy import float32, int32, uint8, fromfile
 from pathlib import Path
 
+import cv2
+import numpy as np
+from numpy import float32, fromfile, int32, uint8
+
 from module.base.decorator import cached_property
-from module.logger import logger
 from module.base.utils import is_approx_rectangle
+from module.logger import logger
 
 
 class RuleImage:
     debug_mode: bool = False
 
-    def __init__(self, roi_front: tuple, roi_back: tuple, method: str, threshold: float, file: str) -> None:
+    def __init__(
+        self, roi_front: tuple, roi_back: tuple, method: str, threshold: float, file: str
+    ) -> None:
         """
         初始化
         :param roi_front: 前置roi
@@ -34,8 +35,6 @@ class RuleImage:
         self.roi_back = roi_back
         self.threshold = threshold
         self.file = file
-
-
 
     @cached_property
     def name(self) -> str:
@@ -59,8 +58,6 @@ class RuleImage:
     def __bool__(self):
         return True
 
-
-
     def load_image(self) -> None:
         """
         加载图片
@@ -82,7 +79,6 @@ class RuleImage:
         if self._kp is not None and self._des is not None:
             return
         self._kp, self._des = self.sift.detectAndCompute(self.image, None)
-
 
     @property
     def image(self):
@@ -134,7 +130,7 @@ class RuleImage:
         else:
             x, y, w, h = roi
         x, y, w, h = int(x), int(y), int(w), int(h)
-        return image[y:y + h, x:x + w]
+        return image[y : y + h, x : x + w]
 
     def match(self, image: np.array, threshold: float = None) -> bool:
         """
@@ -153,13 +149,17 @@ class RuleImage:
         mat = self.image
 
         if mat is None or mat.shape[0] == 0 or mat.shape[1] == 0:
-            logger.error(f"Template image is invalid: {mat.shape}") #检测模板尺寸，不合法则不进行匹配，避免两次截图画面完全相同造成模板不合法
+            logger.error(
+                f"Template image is invalid: {mat.shape}"
+            )  # 检测模板尺寸，不合法则不进行匹配，避免两次截图画面完全相同造成模板不合法
             return True  # 如果模板图像无效，直接返回 True
 
         res = cv2.matchTemplate(source, mat, cv2.TM_CCOEFF_NORMED)
-        min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)  # 最小匹配度，最大匹配度，最小匹配度的坐标，最大匹配度的坐标
+        min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(
+            res
+        )  # 最小匹配度，最大匹配度，最小匹配度的坐标，最大匹配度的坐标
         if self.debug_mode:
-            logger.attr(self.name, f'matching score {max_val:.5f}')
+            logger.attr(self.name, f"matching score {max_val:.5f}")
 
         if max_val > threshold:
             self.roi_front[0] = max_loc[0] + self.roi_back[0]
@@ -195,7 +195,9 @@ class RuleImage:
             matches.append((score, x, y, mat.shape[1], mat.shape[0]))
         return matches
 
-    def match_all_any(self, image: np.array, threshold: float = None, roi: list = None, nms_threshold: float = 0.3) -> list[tuple]:
+    def match_all_any(
+        self, image: np.array, threshold: float = None, roi: list = None, nms_threshold: float = 0.3
+    ) -> list[tuple]:
         """
         区别于match，这个是返回所有的匹配结果，去除冗余匹配项（例如：多个框选区域重叠的情况）时使用。
         :param roi:
@@ -224,7 +226,12 @@ class RuleImage:
             scores = np.array([m[0] for m in matches])
             boxes = np.array([[m[1], m[2], m[3], m[4]] for m in matches])
             # 使用OpenCV的NMSBoxes
-            indices = cv2.dnn.NMSBoxes(boxes.tolist(), scores.tolist(), score_threshold=threshold, nms_threshold=nms_threshold)
+            indices = cv2.dnn.NMSBoxes(
+                boxes.tolist(),
+                scores.tolist(),
+                score_threshold=threshold,
+                nms_threshold=nms_threshold,
+            )
             filtered_matches = [matches[i] for i in indices]
             return filtered_matches
         return matches
@@ -251,7 +258,7 @@ class RuleImage:
         :return:
         """
         x, y, w, h = self.roi_front
-        return int(x + w//2), int(y + h//2)
+        return int(x + w // 2), int(y + h // 2)
 
     def test_match(self, image: np.array):
         self.debug_mode = True
@@ -319,10 +326,19 @@ class RuleImage:
             for i, (m, n) in enumerate(matches):
                 if m.distance < 0.6 * n.distance:  # 理论上0.7最好
                     mask_matches[i] = [1, 0]
-            img_matches = cv2.drawMatchesKnn(self.image, self.kp, source, kp, matches, None,
-                                             matchColor=(0, 255, 0), singlePointColor=(255, 0, 0),
-                                             matchesMask=mask_matches, flags=0)
-            cv2.imshow(f'Sift Flann: {self.name}', img_matches)
+            img_matches = cv2.drawMatchesKnn(
+                self.image,
+                self.kp,
+                source,
+                kp,
+                matches,
+                None,
+                matchColor=(0, 255, 0),
+                singlePointColor=(255, 0, 0),
+                matchesMask=mask_matches,
+                flags=0,
+            )
+            cv2.imshow(f"Sift Flann: {self.name}", img_matches)
             cv2.waitKey(0)
             cv2.destroyAllWindows()
         return result
@@ -347,15 +363,15 @@ class RuleImage:
 if __name__ == "__main__":
     from dev_tools.assets_test import detect_image
 
-    IMAGE_FILE = './log/test/QQ截图20240223151924.png'
+    IMAGE_FILE = "./log/test/QQ截图20240223151924.png"
     from tasks.Restart.assets import RestartAssets
+
     jade = RestartAssets.I_HARVEST_JADE
-    jade.method = 'Sift Flann'
+    jade.method = "Sift Flann"
     sign = RestartAssets.I_HARVEST_SIGN
-    sign.method = 'Sift Flann'
+    sign.method = "Sift Flann"
     print(jade.roi_front)
 
     detect_image(IMAGE_FILE, jade)
     detect_image(IMAGE_FILE, sign)
     print(jade.roi_front)
-

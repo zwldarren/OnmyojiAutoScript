@@ -1,20 +1,17 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
-import time
 
+from module.base.timer import Timer
+from module.exception import TaskEnd
+from module.logger import logger
+from tasks.FloatParade.assets import FloatParadeAssets
+from tasks.FloatParade.config import FloatParadeConfig, LevelReward
 from tasks.GameUi.game_ui import GameUi
 from tasks.GameUi.page import page_main
 from tasks.TalismanPass.assets import TalismanPassAssets
-from tasks.FloatParade.assets import FloatParadeAssets
-from tasks.FloatParade.config import FloatParadeConfig, LevelReward
 
-from module.logger import logger
-from module.exception import TaskEnd
-from module.base.timer import Timer
 
 class ScriptTask(GameUi, FloatParadeAssets, TalismanPassAssets):
-
     def run(self):
         self.ui_get_current_page()
         self.ui_goto(page_main)
@@ -29,16 +26,15 @@ class ScriptTask(GameUi, FloatParadeAssets, TalismanPassAssets):
                 break
             if self.appear_then_click(self.I_BACK_Y, interval=3):
                 continue
-        logger.info('Goback to float parade main page')
+        logger.info("Goback to float parade main page")
         # 收取花车等级奖励
-        self.get_flower(con.level_reward1, con.level_reward2) # 第一种
+        self.get_flower(con.level_reward1, con.level_reward2)  # 第一种
         # main page
         self.ui_get_current_page()
         self.ui_goto(page_main)
 
-        self.set_next_run(task='FloatParade', success=True, finish=True)
-        raise TaskEnd('FloatParade')
-
+        self.set_next_run(task="FloatParade", success=True, finish=True)
+        raise TaskEnd("FloatParade")
 
     def get_all(self):
         """
@@ -59,15 +55,17 @@ class ScriptTask(GameUi, FloatParadeAssets, TalismanPassAssets):
                 continue
             if self.appear_then_click(self.I_TOGGLE_BUTTON, interval=3):
                 continue
-        logger.info('Enter float parade')
-        logger.info('Click get all reward')
+        logger.info("Enter float parade")
+        logger.info("Click get all reward")
         if not self.appear(self.I_FP_GETALL1):
-            logger.info('No appear get all button')
+            logger.info("No appear get all button")
             return
         self.ui_get_reward(self.I_FP_GETALL1)
-        logger.info('Got all reward')
+        logger.info("Got all reward")
 
-    def get_flower(self, level1: LevelReward = LevelReward.TWO, level2: LevelReward = LevelReward.TWO):
+    def get_flower(
+        self, level1: LevelReward = LevelReward.TWO, level2: LevelReward = LevelReward.TWO
+    ):
         """
         收取花合战等级奖励
         :return:
@@ -79,11 +77,11 @@ class ScriptTask(GameUi, FloatParadeAssets, TalismanPassAssets):
         }
         self.screenshot()
         if not self.appear(self.I_FP_GETALL0):
-            logger.info('No any level reward')
+            logger.info("No any level reward")
             return
-        logger.info('Appear level reward')
+        logger.info("Appear level reward")
         # self.ui_click(self.I_FP_GETALL0, self.I_TP_GET_ALL)
-        logger.info('Click level reward')
+        logger.info("Click level reward")
         check_timer = Timer(2)
         check_timer.start()
         while 1:
@@ -94,37 +92,42 @@ class ScriptTask(GameUi, FloatParadeAssets, TalismanPassAssets):
             if self.appear_then_click(self.I_BATCH_SELECTION_CONFIRM, interval=0.8):
                 continue
 
-            if self.appear(self.I_FP_GIFT_FLAG1) and self.appear_then_click(match_level[level1], interval=0.8):
-                logger.info(f'Select {level1} reward')
+            if self.appear(self.I_FP_GIFT_FLAG1) and self.appear_then_click(
+                match_level[level1], interval=0.8
+            ):
+                logger.info(f"Select {level1} reward")
                 if self.appear_then_click(self.I_OVERFLOW_CONFIRME, interval=0.8):
                     pass
                 check_timer.reset()
                 continue
 
-            if self.appear(self.I_FP_GIFT_FLAG2) and self.appear_then_click(match_level[level2], interval=0.8):
-                logger.info(f'Select {level2} reward')
+            if self.appear(self.I_FP_GIFT_FLAG2) and self.appear_then_click(
+                match_level[level2], interval=0.8
+            ):
+                logger.info(f"Select {level2} reward")
                 if self.appear_then_click(self.I_OVERFLOW_CONFIRME, interval=0.8):
                     pass
                 check_timer.reset()
                 continue
 
             if self.ui_reward_appear_click(False):
-                logger.info('Get reward')
+                logger.info("Get reward")
                 check_timer.reset()
                 continue
             if check_timer.reached():
-                logger.warning('No reward and break')
+                logger.warning("No reward and break")
                 break
             if self.appear_then_click(self.I_FP_GETALL0, interval=2.1):
-                logger.info('Get all reward')
+                logger.info("Get all reward")
                 check_timer.reset()
                 continue
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from module.config.config import Config
     from module.device.device import Device
-    c = Config('oas1')
+
+    c = Config("oas1")
     d = Device(c)
     t = ScriptTask(c, d)
     t.screenshot()

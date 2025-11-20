@@ -1,27 +1,19 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
+from datetime import datetime, time, timedelta
 from time import sleep
-from datetime import time, datetime, timedelta
 
-import cv2
-import numpy as np
-from module.atom.ocr import RuleOcr
-
-from module.logger import logger
-from module.exception import TaskEnd
 from module.base.timer import Timer
-
-from tasks.Component.GeneralBattle.general_battle import GeneralBattle
+from module.exception import TaskEnd
+from module.logger import logger
 from tasks.Component.GeneralBattle.config_general_battle import GreenMarkType
-from tasks.GameUi.game_ui import GameUi
-from tasks.GameUi.page import page_main, page_duel
-from tasks.Duel.config import Duel, Onmyoji
-from tasks.Duel.assets import DuelAssets
+from tasks.Component.GeneralBattle.general_battle import GeneralBattle
 from tasks.Component.SwitchSoul.switch_soul import SwitchSoul
-from tasks.GameUi.page import page_main, page_team, page_shikigami_records
-import os
-from module.atom.image import RuleImage
+from tasks.Duel.assets import DuelAssets
+from tasks.Duel.config import Onmyoji
+from tasks.GameUi.game_ui import GameUi
+from tasks.GameUi.page import page_duel, page_main, page_shikigami_records
+
 """ 斗技 """
 
 
@@ -30,14 +22,14 @@ class ScriptTask(GameUi, GeneralBattle, SwitchSoul, DuelAssets):
     battle_win_count = 0
     battle_lose_count = 0
     current_score = 0
-    battle_win_copy=battle_win_count
-    battle_lose_copy=battle_lose_count
-    def run(self):
+    battle_win_copy = battle_win_count
+    battle_lose_copy = battle_lose_count
 
+    def run(self):
         current_time = datetime.now().time()
         if not (time(12, 00) <= current_time < time(23, 00)):
-            self.set_next_run(task='Duel', success=True, finish=False)
-            raise TaskEnd('Duel')
+            self.set_next_run(task="Duel", success=True, finish=False)
+            raise TaskEnd("Duel")
 
         con = self.config.duel
         # 切换御魂
@@ -49,14 +41,15 @@ class ScriptTask(GameUi, GeneralBattle, SwitchSoul, DuelAssets):
         if con.switch_soul.enable_switch_by_name:
             self.ui_get_current_page()
             self.ui_goto(page_shikigami_records)
-            self.run_switch_soul_by_name(con.switch_soul.group_name,con.switch_soul.team_name)
+            self.run_switch_soul_by_name(con.switch_soul.group_name, con.switch_soul.team_name)
 
         con = self.config.duel.duel_config
         celeb_con = self.config.duel.duel_celeb_config
         self.current_score = celeb_con.initial_score
         limit_time = con.limit_time
-        self.limit_time: timedelta = timedelta(hours=limit_time.hour, minutes=limit_time.minute,
-                                               seconds=limit_time.second)
+        self.limit_time: timedelta = timedelta(
+            hours=limit_time.hour, minutes=limit_time.minute, seconds=limit_time.second
+        )
 
         self.ui_get_current_page()
         self.ui_goto(page_main)
@@ -103,13 +96,13 @@ class ScriptTask(GameUi, GeneralBattle, SwitchSoul, DuelAssets):
 
             if datetime.now() - self.start_time >= self.limit_time:
                 # 任务执行时间超过限制时间，退出
-                logger.info('Duel task is over time')
+                logger.info("Duel task is over time")
                 break
 
             # 不开启名仕战斗,到达名士直接退出
             if not celeb_con.celeb_battle:
                 if self.appear(self.I_D_CELEB_STAR) or self.appear(self.I_D_CELEB_HONOR):
-                    logger.info('You are already a celeb（名仕）')
+                    logger.info("You are already a celeb（名仕）")
                     current_score = "名仕"
                     duel_week_over = True
                     break
@@ -119,30 +112,30 @@ class ScriptTask(GameUi, GeneralBattle, SwitchSoul, DuelAssets):
 
             if con.honor_full_exit and self.check_honor():
                 # 荣誉满了，退出
-                logger.info('Duel task is over honor')
+                logger.info("Duel task is over honor")
                 break
 
             # 当前分数跟目标分数比较
             if current_score >= con.target_score:
                 # 分数够了
-                logger.info('Duel task is over score')
+                logger.info("Duel task is over score")
                 break
 
             # 进行一次斗技
             self.duel_one(current_score, con.green_enable, con.green_mark, celeb_con.ban_name)
 
-        logger.info('Duel battle end')
+        logger.info("Duel battle end")
         # 记得退回去到町中
         self.ui_click(self.I_UI_BACK_YELLOW, self.I_CHECK_TOWN)
 
         if duel_week_over:
-            self.set_next_run(task='Duel', success=True, finish=True)
+            self.set_next_run(task="Duel", success=True, finish=True)
         else:
-            self.set_next_run(task='Duel', success=True, finish=False)
+            self.set_next_run(task="Duel", success=True, finish=False)
 
         # 调起花合战
-        self.set_next_run(task='TalismanPass', target=datetime.now())
-        raise TaskEnd('Duel')
+        self.set_next_run(task="TalismanPass", target=datetime.now())
+        raise TaskEnd("Duel")
 
     def duel_main(self, screenshot=False) -> bool:
         """
@@ -151,7 +144,11 @@ class ScriptTask(GameUi, GeneralBattle, SwitchSoul, DuelAssets):
         """
         if screenshot:
             self.screenshot()
-        return self.appear(self.I_D_HELP) or self.appear(self.I_D_CELEB_STAR) or self.appear(self.I_D_CELEB_HONOR)
+        return (
+            self.appear(self.I_D_HELP)
+            or self.appear(self.I_D_CELEB_STAR)
+            or self.appear(self.I_D_CELEB_HONOR)
+        )
 
     def switch_all_soul(self):
         """
@@ -171,10 +168,10 @@ class ScriptTask(GameUi, GeneralBattle, SwitchSoul, DuelAssets):
             if self.appear_then_click(self.I_D_TEAM_SWTICH, interval=1):
                 click_count += 1
                 continue
-        logger.info('Souls Switch is complete')
+        logger.info("Souls Switch is complete")
         self.ui_click(self.I_UI_BACK_YELLOW, self.I_D_TEAM)
 
-    def switch_kagura(self,con, target1, target2):
+    def switch_kagura(self, con, target1, target2):
         click_count = 0  # 计数
         while 1:
             self.screenshot()
@@ -267,13 +264,18 @@ class ScriptTask(GameUi, GeneralBattle, SwitchSoul, DuelAssets):
                 self.current_score = self.O_D_SCORE.ocr(self.device.image)
                 if self.current_score > 10000:
                     # 识别错误分数超过一万, 去掉最高位
-                    logger.warning('Recognition error, score is too high')
+                    logger.warning("Recognition error, score is too high")
                     self.current_score = int(str(self.current_score)[1:])
-            logger.info(f'battle score: {self.current_score}')
+            logger.info(f"battle score: {self.current_score}")
             return self.current_score
 
-    def duel_one(self, current_score: int, enable: bool = False,
-                 mark_mode: GreenMarkType = GreenMarkType.GREEN_MAIN, ban_name: str = '') -> bool:
+    def duel_one(
+        self,
+        current_score: int,
+        enable: bool = False,
+        mark_mode: GreenMarkType = GreenMarkType.GREEN_MAIN,
+        ban_name: str = "",
+    ) -> bool:
         """
         进行一次斗技， 返回输赢结果
         :param mark_mode:
@@ -281,7 +283,7 @@ class ScriptTask(GameUi, GeneralBattle, SwitchSoul, DuelAssets):
         :param current_score: 当前分数, 不同的分数有不同的战斗界面
         :return:
         """
-        logger.hr('Duel battle', 2)
+        logger.hr("Duel battle", 2)
         self.battle_count += 1
         # 是否名士
         celeb_status = False
@@ -300,7 +302,9 @@ class ScriptTask(GameUi, GeneralBattle, SwitchSoul, DuelAssets):
                 celeb_status = True
                 continue
             # 战斗按钮
-            if self.appear_then_click(self.I_D_BATTLE, interval=1) or self.appear_then_click(self.I_D_BATTLE2, interval=1):
+            if self.appear_then_click(self.I_D_BATTLE, interval=1) or self.appear_then_click(
+                self.I_D_BATTLE2, interval=1
+            ):
                 continue
             # 战斗带保护的按钮
             if self.appear_then_click(self.I_D_BATTLE_PROTECT, interval=1.6):
@@ -313,7 +317,7 @@ class ScriptTask(GameUi, GeneralBattle, SwitchSoul, DuelAssets):
             #     continue
 
         # 点击斗技 开始匹配对手
-        logger.hr('Duel start match')
+        logger.hr("Duel start match")
         while 1:
             self.screenshot()
             # 出现自动上阵
@@ -337,7 +341,7 @@ class ScriptTask(GameUi, GeneralBattle, SwitchSoul, DuelAssets):
                             self.battle_win_count += 1
                             return
                         ocr_ban_name = self.O_D_BAN_NAME.ocr(self.device.image)
-                        if ocr_ban_name == '':
+                        if ocr_ban_name == "":
                             continue
                         if any(char in ocr_ban_name for char in ban_name):
                             ban_check_success = True
@@ -358,13 +362,13 @@ class ScriptTask(GameUi, GeneralBattle, SwitchSoul, DuelAssets):
                 # 等待自动上阵消失
                 self.ui_click_until_disappear(self.I_D_AUTO_ENTRY)
                 self.device.stuck_record_clear()
-                self.device.stuck_record_add('BATTLE_STATUS_S')
+                self.device.stuck_record_add("BATTLE_STATUS_S")
                 self.wait_until_disappear(self.I_D_WORD_BATTLE)
                 break
             if self.appear(self.I_D_PREPARE):
                 # 低段位有的准备
                 self.ui_click_until_disappear(self.I_D_PREPARE)
-                logger.info('Duel prepare')
+                logger.info("Duel prepare")
                 break
             # 如果对方直接秒退，那自己就是赢的
             if self.appear(self.I_D_VICTORY):
@@ -401,8 +405,8 @@ class ScriptTask(GameUi, GeneralBattle, SwitchSoul, DuelAssets):
         # 绿标
         self.green_mark(enable, mark_mode)
         # 等待结果
-        logger.info('Duel wait result')
-        self.device.stuck_record_add('BATTLE_STATUS_S')
+        logger.info("Duel wait result")
+        self.device.stuck_record_add("BATTLE_STATUS_S")
         self.device.click_record_clear()
         battle_win = True
         swipe_count = 0
@@ -410,7 +414,9 @@ class ScriptTask(GameUi, GeneralBattle, SwitchSoul, DuelAssets):
         swipe_timer.start()
         while 1:
             self.screenshot()
-            if self.appear_then_click(self.I_D_BATTLE_DATA, action=self.C_D_BATTLE_DATA, interval=0.6):
+            if self.appear_then_click(
+                self.I_D_BATTLE_DATA, action=self.C_D_BATTLE_DATA, interval=0.6
+            ):
                 continue
             if self.appear(self.I_FALSE):
                 # 打输了
@@ -437,13 +443,13 @@ class ScriptTask(GameUi, GeneralBattle, SwitchSoul, DuelAssets):
                 swipe_timer.reset()
                 if swipe_count >= 2:
                     # 记三次，十五分钟没有结束也没谁了
-                    logger.info('Duel battle timeout')
+                    logger.info("Duel battle timeout")
                     battle_win = False
                     break
                 swipe_count += 1
-                logger.warning('Duel battle stuck, swipe')
+                logger.warning("Duel battle stuck, swipe")
                 self.device.stuck_record_clear()
-                self.device.stuck_record_add('BATTLE_STATUS_S')
+                self.device.stuck_record_add("BATTLE_STATUS_S")
 
         if battle_win:
             self.battle_win_copy = self.battle_win_count
@@ -456,9 +462,11 @@ class ScriptTask(GameUi, GeneralBattle, SwitchSoul, DuelAssets):
         # 格式化时间，只保留整数部分的秒
         task_run_time_seconds = timedelta(seconds=int(task_run_time.total_seconds()))
 
-        logger.info(f'battle result: {battle_win}')
-        logger.info(f'battle count: {self.battle_count} | win: {self.battle_win_count} failure: {self.battle_lose_count}')
-        logger.info(f'battle time: {task_run_time_seconds} / {self.limit_time}')
+        logger.info(f"battle result: {battle_win}")
+        logger.info(
+            f"battle count: {self.battle_count} | win: {self.battle_win_count} failure: {self.battle_lose_count}"
+        )
+        logger.info(f"battle time: {task_run_time_seconds} / {self.limit_time}")
         return battle_win
 
     def duel_exit_battle(self):
@@ -471,11 +479,12 @@ class ScriptTask(GameUi, GeneralBattle, SwitchSoul, DuelAssets):
             if self.appear_then_click(self.I_DUEL_EXIT, interval=1):
                 continue
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     from module.config.config import Config
     from module.device.device import Device
 
-    c = Config('mi')
+    c = Config("mi")
     d = Device(c)
     t = ScriptTask(c, d)
 

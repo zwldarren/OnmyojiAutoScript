@@ -1,22 +1,17 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
-import time
 import random
-from time import sleep
+import time
 
 import cv2
-from module.base.timer import Timer
 
-from module.base.utils import get_color, color_similar
-from tasks.base_task import BaseTask
-from tasks.Component.GeneralBattle.config_general_battle import GreenMarkType, GeneralBattleConfig
+from module.base.timer import Timer
+from module.base.utils import color_similar, get_color
+from module.logger import logger
 from tasks.Component.GeneralBattle.assets import GeneralBattleAssets
-from tasks.Component.GeneralBattle.config_general_battle import GreenMarkType, GeneralBattleConfig
+from tasks.Component.GeneralBattle.config_general_battle import GeneralBattleConfig, GreenMarkType
 from tasks.Component.GeneralBuff.config_buff import BuffClass
 from tasks.Component.GeneralBuff.general_buff import GeneralBuff
-
-from module.logger import logger
 
 
 class GeneralBattle(GeneralBuff, GeneralBattleAssets):
@@ -24,7 +19,9 @@ class GeneralBattle(GeneralBuff, GeneralBattleAssets):
     使用这个通用的战斗必须要求这个任务的config有config_general_battle
     """
 
-    def run_general_battle(self, config: GeneralBattleConfig = None, buff: BuffClass or list[BuffClass] = None) -> bool:
+    def run_general_battle(
+        self, config: GeneralBattleConfig = None, buff: BuffClass or list[BuffClass] = None
+    ) -> bool:
         """
         运行脚本
         :return:
@@ -55,7 +52,7 @@ class GeneralBattle(GeneralBuff, GeneralBattleAssets):
         # 用于ui加载,防止还在加载过程中导致准备界面识别失败,最多等待2秒
         wait_in_prepare_timer = Timer(2).start()
         while not self.is_in_prepare() and not wait_in_prepare_timer.reached():
-            logger.info('Wait to enter the preparation page')
+            logger.info("Wait to enter the preparation page")
             time.sleep(0.5)
         confed = False
         need_battle_timer = Timer(2)
@@ -69,7 +66,9 @@ class GeneralBattle(GeneralBuff, GeneralBattleAssets):
                 logger.info("Lock team is not enable")
                 # 第一次进则切换预设
                 if self.current_count == 1:
-                    self.switch_preset_team(config.preset_enable, config.preset_group, config.preset_team)
+                    self.switch_preset_team(
+                        config.preset_enable, config.preset_group, config.preset_team
+                    )
                 # 判断是否开启buff并开启
                 self.check_and_open_buff(buff)
                 # 配置过了不再配置
@@ -83,7 +82,9 @@ class GeneralBattle(GeneralBuff, GeneralBattleAssets):
             # 照顾一下某些模拟器慢的
             time.sleep(0.2)
 
-    def run_general_battle_back(self, config: GeneralBattleConfig = None, exit_four: bool = False) -> bool:
+    def run_general_battle_back(
+        self, config: GeneralBattleConfig = None, exit_four: bool = False
+    ) -> bool:
         """
         进入挑战然后直接返回
         :param config:
@@ -172,7 +173,7 @@ class GeneralBattle(GeneralBuff, GeneralBattleAssets):
         """
         # 有的时候是长战斗，需要在设置stuck检测为长战斗
         # 但是无需取消设置，因为如果有点击或者滑动的话 handle_control_check会自行取消掉
-        self.device.stuck_record_add('BATTLE_STATUS_S')
+        self.device.stuck_record_add("BATTLE_STATUS_S")
         self.device.click_record_clear()
         # 战斗过程 随机点击和滑动 防封
         logger.info("Start battle process")
@@ -233,25 +234,28 @@ class GeneralBattle(GeneralBuff, GeneralBattleAssets):
             self.screenshot()
             # 如果出现领奖励
             action_click = random.choice([self.C_REWARD_1, self.C_REWARD_2, self.C_REWARD_3])
-            if (self.appear_then_click(self.I_REWARD, action=action_click, interval=1.5) or
-                self.appear_then_click(self.I_REWARD_GOLD, action=action_click, interval=1.5)#  or
+            if (
+                self.appear_then_click(self.I_REWARD, action=action_click, interval=1.5)
+                or self.appear_then_click(
+                    self.I_REWARD_GOLD, action=action_click, interval=1.5
+                )  #  or
                 # self.appear_then_click(self.I_REWARD_STATISTICS, action=action_click, interval=1.5) or
                 # self.appear_then_click(self.I_REWARD_PURPLE_SNAKE_SKIN, action=action_click, interval=1.5) or
                 # self.appear_then_click(self.I_REWARD_GOLD_SNAKE_SKIN, action=action_click, interval=1.5) or
                 # self.appear_then_click(self.I_REWARD_EXP_SOUL_4, action=action_click, interval=1.5) or
                 # self.appear_then_click(self.I_REWARD_SOUL_5, action=action_click, interval=1.5) or
                 # self.appear_then_click(self.I_REWARD_SOUL_6, action=action_click, interval=1.5)
-                ):
+            ):
                 continue
-            if (not self.appear(self.I_REWARD) and
-                not self.appear(self.I_REWARD_GOLD)#  and
+            if (
+                not self.appear(self.I_REWARD) and not self.appear(self.I_REWARD_GOLD)  #  and
                 # not self.appear(self.I_REWARD_STATISTICS) and
                 # not self.appear(self.I_REWARD_PURPLE_SNAKE_SKIN) and
                 # not self.appear(self.I_REWARD_GOLD_SNAKE_SKIN) and
                 # not self.appear(self.I_REWARD_EXP_SOUL_4) and
                 # not self.appear(self.I_REWARD_SOUL_5) and
                 # not self.appear(self.I_REWARD_SOUL_6)
-                ):
+            ):
                 break
 
         return win
@@ -335,15 +339,33 @@ class GeneralBattle(GeneralBuff, GeneralBattleAssets):
         def get_unselect_color(tmp1, tmp2, tmp3, size):
             # 获取未选择分组的颜色，3组之中必定存在两个颜色相似
             # area 参数格式是（x1,y1,x2,y2）
-            color_1 = get_color(self.device.image,
-                                (tmp1.roi_back[0], tmp1.roi_back[1],
-                                 tmp1.roi_back[0] + size[0], tmp1.roi_back[1] + size[1]))
-            color_2 = get_color(self.device.image,
-                                (tmp2.roi_back[0], tmp2.roi_back[1],
-                                 tmp2.roi_back[0] + size[0], tmp2.roi_back[1] + size[1]))
-            color_3 = get_color(self.device.image,
-                                (tmp3.roi_back[0], tmp3.roi_back[1],
-                                 tmp3.roi_back[0] + size[0], tmp3.roi_back[1] + size[1]))
+            color_1 = get_color(
+                self.device.image,
+                (
+                    tmp1.roi_back[0],
+                    tmp1.roi_back[1],
+                    tmp1.roi_back[0] + size[0],
+                    tmp1.roi_back[1] + size[1],
+                ),
+            )
+            color_2 = get_color(
+                self.device.image,
+                (
+                    tmp2.roi_back[0],
+                    tmp2.roi_back[1],
+                    tmp2.roi_back[0] + size[0],
+                    tmp2.roi_back[1] + size[1],
+                ),
+            )
+            color_3 = get_color(
+                self.device.image,
+                (
+                    tmp3.roi_back[0],
+                    tmp3.roi_back[1],
+                    tmp3.roi_back[0] + size[0],
+                    tmp3.roi_back[1] + size[1],
+                ),
+            )
 
             if color_similar(color_1, color_2):
                 return color_1
@@ -355,16 +377,21 @@ class GeneralBattle(GeneralBuff, GeneralBattleAssets):
         tmp = self.__getattribute__("C_PRESET_GROUP_" + str(preset_group))
         if tmp is None:
             tmp = self.C_PRESET_GROUP_1
-        color_size = [self.C_PRESET_GROUP_1.roi_back[2],
-                      self.C_PRESET_GROUP_1.roi_back[3]]
+        color_size = [self.C_PRESET_GROUP_1.roi_back[2], self.C_PRESET_GROUP_1.roi_back[3]]
         # unselected_color = get_unselect_color(self.C_PRESET_GROUP_1, self.C_PRESET_GROUP_2, self.C_PRESET_GROUP_3, size=color_size)
         # 考虑到有些预设组没有预设，所以这里取一个比较固定的颜色
         unselected_color = (224.9, 208.3, 187.4)
         while True:
             self.screenshot()
-            color_tmp = get_color(self.device.image,
-                                  (tmp.roi_back[0], tmp.roi_back[1], tmp.roi_back[0] + color_size[0],
-                                   tmp.roi_back[1] + color_size[1]))
+            color_tmp = get_color(
+                self.device.image,
+                (
+                    tmp.roi_back[0],
+                    tmp.roi_back[1],
+                    tmp.roi_back[0] + color_size[0],
+                    tmp.roi_back[1] + color_size[1],
+                ),
+            )
             if color_similar(color_tmp, unselected_color):
                 self.click(tmp, interval=0.2)
                 continue
@@ -382,9 +409,15 @@ class GeneralBattle(GeneralBuff, GeneralBattleAssets):
         unselected_color = (216.8, 185.0, 146.8)
         while True:
             self.screenshot()
-            color_tmp = get_color(self.device.image,
-                                  (tmp.roi_back[0], tmp.roi_back[1], tmp.roi_back[0] + color_size[0],
-                                   tmp.roi_back[1] + color_size[1]))
+            color_tmp = get_color(
+                self.device.image,
+                (
+                    tmp.roi_back[0],
+                    tmp.roi_back[1],
+                    tmp.roi_back[0] + color_size[0],
+                    tmp.roi_back[1] + color_size[1],
+                ),
+            )
             if color_similar(color_tmp, unselected_color):
                 self.click(tmp, interval=0.2)
                 continue
@@ -427,11 +460,13 @@ class GeneralBattle(GeneralBuff, GeneralBattleAssets):
         """
         if is_screenshot:
             self.screenshot()
-        if self.appear(self.I_BATTLE_INFO) or \
-                self.appear(self.I_FRIENDS) or \
-                self.appear(self.I_WIN) or \
-                self.appear(self.I_FALSE) or \
-                self.appear(self.I_REWARD):
+        if (
+            self.appear(self.I_BATTLE_INFO)
+            or self.appear(self.I_FRIENDS)
+            or self.appear(self.I_WIN)
+            or self.appear(self.I_FALSE)
+            or self.appear(self.I_REWARD)
+        ):
             return True
         else:
             return False
@@ -453,18 +488,20 @@ class GeneralBattle(GeneralBuff, GeneralBattleAssets):
         """
         if is_screenshot:
             self.screenshot()
-        if self.appear(self.I_BUFF):
-            return True
-        elif self.appear(self.I_PREPARE_HIGHLIGHT):
-            return True
-        elif self.appear(self.I_PREPARE_DARK):
-            return True
-        elif self.appear(self.I_PRESET) or self.appear(self.I_PRESET_WIT_NUMBER):
+        if (
+            self.appear(self.I_BUFF)
+            or self.appear(self.I_PREPARE_HIGHLIGHT)
+            or self.appear(self.I_PREPARE_DARK)
+            or self.appear(self.I_PRESET)
+            or self.appear(self.I_PRESET_WIT_NUMBER)
+        ):
             return True
         else:
             return False
 
-    def check_take_over_battle(self, is_screenshot: bool, config: GeneralBattleConfig) -> bool or None:
+    def check_take_over_battle(
+        self, is_screenshot: bool, config: GeneralBattleConfig
+    ) -> bool or None:
         """
         中途接入战斗，并且接管
         :return:  赢了返回True， 输了返回False, 不是在战斗中返回None
@@ -509,7 +546,7 @@ class GeneralBattle(GeneralBuff, GeneralBattleAssets):
         """
         if not buff:
             return
-        logger.info(f'Open buff {buff}')
+        logger.info(f"Open buff {buff}")
         self.ui_click(self.I_BUFF, self.I_CLOUD, interval=2)
         if isinstance(buff, BuffClass):
             buff = [buff]
@@ -531,7 +568,7 @@ class GeneralBattle(GeneralBuff, GeneralBattleAssets):
             func, is_open = match_method[b]
             func(is_open)
             time.sleep(0.1)
-        logger.info(f'Open buff success')
+        logger.info("Open buff success")
         while 1:
             self.screenshot()
             if not self.appear(self.I_CLOUD):
@@ -540,11 +577,11 @@ class GeneralBattle(GeneralBuff, GeneralBattleAssets):
                 continue
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from module.config.config import Config
     from module.device.device import Device
 
-    c = Config('oas1')
+    c = Config("oas1")
     d = Device(c)
     t = GeneralBattle(c, d)
     self = t
@@ -554,19 +591,36 @@ if __name__ == '__main__':
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     self.device.image = img
 
-
     def get_unselect_color(tmp1, tmp2, tmp3, size):
         # 获取未选择分组的颜色，3组之中必定存在两个颜色相似
         # area 参数格式是（x1,y1,x2,y2）
-        color_1 = get_color(self.device.image,
-                            (tmp1.roi_back[0], tmp1.roi_back[1],
-                             tmp1.roi_back[0] + size[0], tmp1.roi_back[1] + size[1]))
-        color_2 = get_color(self.device.image,
-                            (tmp2.roi_back[0], tmp2.roi_back[1],
-                             tmp2.roi_back[0] + size[0], tmp2.roi_back[1] + size[1]))
-        color_3 = get_color(self.device.image,
-                            (tmp3.roi_back[0], tmp3.roi_back[1],
-                             tmp3.roi_back[0] + size[0], tmp3.roi_back[1] + size[1]))
+        color_1 = get_color(
+            self.device.image,
+            (
+                tmp1.roi_back[0],
+                tmp1.roi_back[1],
+                tmp1.roi_back[0] + size[0],
+                tmp1.roi_back[1] + size[1],
+            ),
+        )
+        color_2 = get_color(
+            self.device.image,
+            (
+                tmp2.roi_back[0],
+                tmp2.roi_back[1],
+                tmp2.roi_back[0] + size[0],
+                tmp2.roi_back[1] + size[1],
+            ),
+        )
+        color_3 = get_color(
+            self.device.image,
+            (
+                tmp3.roi_back[0],
+                tmp3.roi_back[1],
+                tmp3.roi_back[0] + size[0],
+                tmp3.roi_back[1] + size[1],
+            ),
+        )
 
         if color_similar(color_1, color_2):
             return color_1
@@ -574,14 +628,13 @@ if __name__ == '__main__':
             return color_2
         return color_3
 
-
-    color_size = [self.C_PRESET_GROUP_1.roi_back[2],
-                  self.C_PRESET_GROUP_1.roi_back[3]]
-    unselected_color = get_unselect_color(self.C_PRESET_GROUP_1, self.C_PRESET_GROUP_2, self.C_PRESET_GROUP_3,
-                                          size=color_size)
+    color_size = [self.C_PRESET_GROUP_1.roi_back[2], self.C_PRESET_GROUP_1.roi_back[3]]
+    unselected_color = get_unselect_color(
+        self.C_PRESET_GROUP_1, self.C_PRESET_GROUP_2, self.C_PRESET_GROUP_3, size=color_size
+    )
     print("")
     color_size = [5, 5]
-    unselected_color = get_unselect_color(self.C_PRESET_TEAM_1, self.C_PRESET_TEAM_2, self.C_PRESET_TEAM_3,
-                                          size=color_size
-                                          )
+    unselected_color = get_unselect_color(
+        self.C_PRESET_TEAM_1, self.C_PRESET_TEAM_2, self.C_PRESET_TEAM_3, size=color_size
+    )
     print("")

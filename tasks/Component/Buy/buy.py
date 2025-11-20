@@ -1,24 +1,19 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
 import time
 
-from tasks.GameUi.page import random_click
-from typing import Union
-
+from module.atom.click import RuleClick
 from module.atom.image import RuleImage
 from module.atom.ocr import RuleOcr
-from module.atom.click import RuleClick
-from module.logger import logger
 from module.base.timer import Timer
-
+from module.logger import logger
 from tasks.base_task import BaseTask
 from tasks.Component.Buy.assets import BuyAssets
+from tasks.GameUi.page import random_click
+
 
 class Buy(BaseTask, BuyAssets):
-
-    def buy_one(self, start_click: Union[RuleImage, RuleOcr, RuleClick],
-                check_image: RuleImage):
+    def buy_one(self, start_click: RuleImage | RuleOcr | RuleClick, check_image: RuleImage):
         """
         购买一个物品
         :param check_image: 购买确认时候的图片
@@ -45,7 +40,7 @@ class Buy(BaseTask, BuyAssets):
 
             if self.appear(self.I_BUY_RMB):
                 # 用人民币购买的，就取消
-                logger.warning('OAS do not support buy with RMB')
+                logger.warning("OAS do not support buy with RMB")
                 while 1:
                     self.screenshot()
                     if not self.appear(self.I_BUY_RMB):
@@ -56,7 +51,7 @@ class Buy(BaseTask, BuyAssets):
 
             if self.appear(self.I_BUY_SUCCESS):
                 self.ui_click_until_smt_disappear(random_click(), self.I_BUY_SUCCESS, interval=0.8)
-                logger.info('Get reward success')
+                logger.info("Get reward success")
                 break
 
             if self.ui_reward_appear_click():
@@ -64,7 +59,7 @@ class Buy(BaseTask, BuyAssets):
                     self.screenshot()
                     # 等待动画结束
                     if not self.appear(self.I_UI_REWARD, threshold=0.6):
-                        logger.info('Get reward success')
+                        logger.info("Get reward success")
                         break
                     # 一直点击
                     if self.ui_reward_appear_click():
@@ -76,8 +71,7 @@ class Buy(BaseTask, BuyAssets):
 
         return True
 
-    def buy_more(self, start_click: Union[RuleImage, RuleOcr, RuleClick],
-                 number: int = None):
+    def buy_more(self, start_click: RuleImage | RuleOcr | RuleClick, number: int = None):
         """
         购买多个物品
         :param start_click:
@@ -91,8 +85,8 @@ class Buy(BaseTask, BuyAssets):
             if self.appear(self.I_BUY_PLUS):
                 break
             if try_click_count >= 5:
-                logger.warning(f'Buy_more failed, try_click_count: {try_click_count}')
-                logger.warning('Close the purchase')
+                logger.warning(f"Buy_more failed, try_click_count: {try_click_count}")
+                logger.warning("Close the purchase")
                 return
 
             if isinstance(start_click, RuleImage):
@@ -130,7 +124,7 @@ class Buy(BaseTask, BuyAssets):
                 if current >= number:
                     break
                 if current == 0:
-                    logger.warning(f'OCR current number failed {current}')
+                    logger.warning(f"OCR current number failed {current}")
                 number_record.append(current)
                 if len(number_record) >= 4:
                     if number_record[0] == number_record[1] == number_record[2] == number_record[3]:
@@ -147,7 +141,7 @@ class Buy(BaseTask, BuyAssets):
                     self.screenshot()
                     # 等待动画结束
                     if not self.appear(self.I_UI_REWARD, threshold=0.6):
-                        logger.info('Get reward success')
+                        logger.info("Get reward success")
                         break
                     # 一直点击
                     if self.ui_reward_appear_click():
@@ -157,7 +151,7 @@ class Buy(BaseTask, BuyAssets):
             # 如果这个购买已达上限
             if self.appear(self.I_UI_CONFIRM_SAMLL):
                 self.ui_click_until_disappear(self.I_UI_CONFIRM_SAMLL, interval=1)
-                logger.warning('Buy number limit')
+                logger.warning("Buy number limit")
                 break
 
             if self.click(self.C_BUY_MORE, interval=2):
@@ -172,25 +166,23 @@ class Buy(BaseTask, BuyAssets):
         """
         self.screenshot()
         if not isinstance(target, RuleOcr):
-            logger.error('Target is not RuleOcr')
+            logger.error("Target is not RuleOcr")
             return False
         current = target.ocr(self.device.image)
         if not isinstance(current, int):
-            logger.warning('OCR current money failed')
+            logger.warning("OCR current money failed")
             return False
         if current >= minimum:
-            logger.info('Money is enough')
+            logger.info("Money is enough")
             return True
-        logger.info('Money is not enough')
+        logger.info("Money is not enough")
         return False
 
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     from module.config.config import Config
     from module.device.device import Device
 
-    c = Config('oas1')
+    c = Config("oas1")
     d = Device(c)
     t = Buy(c, d)
-

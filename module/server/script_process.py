@@ -1,14 +1,13 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # 脚本进程
 # github https://github.com/runhey
 import multiprocessing
-from asyncio import QueueEmpty, CancelledError, sleep
+from asyncio import CancelledError, QueueEmpty, sleep
 from enum import Enum
 
 from module.logger import logger
-
 from module.server.script_websocket import ScriptWSManager
+
 
 class ScriptState(int, Enum):
     INACTIVE = 0
@@ -16,8 +15,8 @@ class ScriptState(int, Enum):
     WARNING = 2
     UPDATING = 3
 
-class ScriptProcess(ScriptWSManager):
 
+class ScriptProcess(ScriptWSManager):
     def __init__(self, config_name: str) -> None:
         super().__init__()
         self.config_name = config_name  # config_name
@@ -26,32 +25,34 @@ class ScriptProcess(ScriptWSManager):
         self.state: ScriptState = ScriptState.INACTIVE
         self._process = None
 
-
-
-
     async def start(self):
         self.state = ScriptState.RUNNING
         await self.broadcast_state({"state": self.state})
         if self._process:
-            logger.warning(f'Script {self.config_name} is initialized')
+            logger.warning(f"Script {self.config_name} is initialized")
         if self._process and self._process.is_alive():
-            logger.warning(f'Script {self.config_name} is already running and first stop it')
+            logger.warning(f"Script {self.config_name} is already running and first stop it")
             self.stop()
-        self._process = multiprocessing.Process(target=func,
-                                                args=(self.config_name, self.state_queue, self.log_pipe_in,),
-                                                name=self.config_name,
-                                                daemon=True)
+        self._process = multiprocessing.Process(
+            target=func,
+            args=(
+                self.config_name,
+                self.state_queue,
+                self.log_pipe_in,
+            ),
+            name=self.config_name,
+            daemon=True,
+        )
         self._process.start()
-
 
     async def stop(self):
         self.state = ScriptState.INACTIVE
         await self.broadcast_state({"state": self.state})
         if self._process is None:
-            logger.warning(f'Script {self.config_name} process is removed')
+            logger.warning(f"Script {self.config_name} process is removed")
             return
         if not self._process.is_alive():
-            logger.warning(f'Script {self.config_name} is not running')
+            logger.warning(f"Script {self.config_name} is not running")
             return
         self._process.terminate()
         self._process = None
@@ -71,18 +72,18 @@ class ScriptProcess(ScriptWSManager):
                     if not data:
                         await sleep(0.5)
                         continue
-                    if 'state' in data and data['state'] == ScriptState.WARNING:
+                    if "state" in data and data["state"] == ScriptState.WARNING:
                         self.state = ScriptState.WARNING
                     await self.broadcast_state(data)
                 except QueueEmpty as e:
-                    logger.warning(f'QueueEmpty: {e}')
+                    logger.warning(f"QueueEmpty: {e}")
                     await sleep(0.5)
                     continue
                 except Exception as e:
-                    logger.error(f'Error: {e}')
+                    logger.error(f"Error: {e}")
                     continue
-        except CancelledError as e:
-            logger.warning(f'{self.config_name} state coroutine is cancelled')
+        except CancelledError:
+            logger.warning(f"{self.config_name} state coroutine is cancelled")
             return
 
     async def coroutine_broadcast_log(self):
@@ -103,55 +104,57 @@ class ScriptProcess(ScriptWSManager):
                     await self.broadcast_log(log)
                 except EOFError as e:
                     await sleep(0.5)
-                    logger.warning(f'EOFError: {e}')
+                    logger.warning(f"EOFError: {e}")
                     continue
                 except Exception as e:
-                    logger.error(f'Log Error: {e}')
+                    logger.error(f"Log Error: {e}")
                     continue
-        except CancelledError as e:
-            logger.warning(f'{self.config_name} log coroutine is cancelled')
+        except CancelledError:
+            logger.warning(f"{self.config_name} log coroutine is cancelled")
             return
 
 
 def func(config: str, state_queue: multiprocessing.Queue, log_pipe_in) -> None:
-
     def start_log() -> None:
         try:
             from module.logger import set_file_logger, set_func_logger
+
             set_file_logger(name=config)
             set_func_logger(log_pipe_in.send)
         except Exception as e:
-            logger.exception(f'Start log error')
-            logger.error(f'Error: {e}')
+            logger.exception("Start log error")
+            logger.error(f"Error: {e}")
             raise
+
     start_log()
     import time
+
     try:
         # while 1:
         #     time.sleep(1)
         #     logger.info(f'Script {config} is running')
         #     state_queue.put({"state": ScriptState.RUNNING})
         from script import Script
+
         script = Script(config_name=config)
         script.state_queue = state_queue
         script.loop()
     except SystemExit as e:
-        logger.info(f'Script {config} process exit')
-        logger.error(f'Error: {e}')
+        logger.info(f"Script {config} process exit")
+        logger.error(f"Error: {e}")
         state_queue.put({"state": ScriptState.WARNING})
         time.sleep(0.1)
         exit(-1)
     except Exception as e:
-        logger.exception(f'Run script {config} error')
-        logger.error(f'Error: {e}')
+        logger.exception(f"Run script {config} error")
+        logger.error(f"Error: {e}")
         raise
 
 
-if __name__ == '__main__':
-    p = ScriptProcess('oas1')
+if __name__ == "__main__":
+    p = ScriptProcess("oas1")
     p.start()
     from time import sleep
+
     sleep(10)
     logger.info(p._process.exitcode)
-
-

@@ -1,33 +1,28 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
-import time
-
 import random
 import re
-from cached_property import cached_property
+import time
 from datetime import datetime, timedelta
+
+from functools import cached_property
+
 from module.atom.click import RuleClick
-
-from module.base.timer import Timer
 from module.atom.image_grid import ImageGrid
-from module.atom.image import RuleImage
 from module.base.utils import point2str
+from module.exception import GameStuckError, TaskEnd
 from module.logger import logger
-from module.exception import TaskEnd, GameStuckError
-
+from tasks.GameUi.page import page_guild, page_main
+from tasks.KekkaiActivation.assets import KekkaiActivationAssets
+from tasks.KekkaiActivation.config import ActivationConfig, CardType
 from tasks.KekkaiUtilize.script_task import ScriptTask as KU
 from tasks.KekkaiUtilize.utils import CardClass
-from tasks.KekkaiActivation.assets import KekkaiActivationAssets
-from tasks.KekkaiActivation.utils import parse_rule
-from tasks.KekkaiActivation.config import ActivationConfig
 from tasks.Utils.config_enum import ShikigamiClass
-from tasks.GameUi.page import page_main, page_guild
-from tasks.KekkaiActivation.config import CardType
 
 """ 结界挂卡 """
-class ScriptTask(KU, KekkaiActivationAssets):
 
+
+class ScriptTask(KU, KekkaiActivationAssets):
     def run(self):
         con = self.config.kekkai_activation.activation_config
         self.ui_get_current_page()
@@ -61,7 +56,7 @@ class ScriptTask(KU, KekkaiActivationAssets):
         self.ui_get_current_page()
         self.ui_goto(page_main)
 
-        raise TaskEnd('KekkaiActivation')
+        raise TaskEnd("KekkaiActivation")
 
     @cached_property
     def dict_card_image(self) -> dict:
@@ -79,7 +74,7 @@ class ScriptTask(KU, KekkaiActivationAssets):
             CardClass.MOON4: self.I_CARDS_MOON_4,
             CardClass.MOON3: self.I_CARDS_MOON_3,
             CardClass.MOON2: self.I_CARDS_MOON_2,
-            CardClass.MOON1: self.I_CARDS_MOON_1
+            CardClass.MOON1: self.I_CARDS_MOON_1,
         }
         return match_targets
 
@@ -95,8 +90,8 @@ class ScriptTask(KU, KekkaiActivationAssets):
         elif rule == CardType.FISH:
             return ImageGrid([self.I_CARDS_FISH_6, self.I_CARDS_FISH_5])
         else:
-            logger.error('Unknown utilize rule')
-            raise ValueError('Unknown utilize rule')
+            logger.error("Unknown utilize rule")
+            raise ValueError("Unknown utilize rule")
 
     def run_activation(self, _config: ActivationConfig) -> bool:
         """
@@ -107,7 +102,7 @@ class ScriptTask(KU, KekkaiActivationAssets):
         """
         self.goto_cards()
         # 太诡异了 为什么有这么长的动画, 那么长的动画先休息一会
-        logger.hr('Start activation')
+        logger.hr("Start activation")
         time.sleep(0.5)
         while 1:
             self.screenshot()
@@ -121,33 +116,37 @@ class ScriptTask(KU, KekkaiActivationAssets):
                     continue
                 if self.appear(self.I_A_DEMOUNT):
                     # 现在在动画里面
-                    logger.info('Now in the animation')
-                    logger.info('Now there is no card')
+                    logger.info("Now in the animation")
+                    logger.info("Now there is no card")
                     continue
             # 如果这张卡生效着，在使用中
             if card_status and card_effect:
-                logger.info('Card is using')
+                logger.info("Card is using")
                 interval = self.ocr_time()
-                self.set_next_run("KekkaiActivation", success=False, finish=True, target=interval+datetime.now())
+                self.set_next_run(
+                    "KekkaiActivation", success=False, finish=True, target=interval + datetime.now()
+                )
                 return False
             # 如果已经选中这张卡了， 那就激活这张卡
             if card_status and not card_effect:
-                logger.info('Card is selected but not using')
+                logger.info("Card is selected but not using")
                 while 1:
                     self.screenshot()
                     if self.appear(self.I_A_INVITE, threshold=0.8):
-                        logger.info('Card is activated')
+                        logger.info("Card is activated")
                         break
                     if self.appear_then_click(self.I_UI_CONFIRM, interval=0.6):
                         continue
                     if self.appear_then_click(self.I_A_ACTIVATE_YELLOW, interval=1):
                         continue
                 interval = self.ocr_time(True)
-                self.set_next_run("KekkaiActivation", success=True, finish=True, target=interval + datetime.now())
+                self.set_next_run(
+                    "KekkaiActivation", success=True, finish=True, target=interval + datetime.now()
+                )
                 return True
             # 如果是什么都没有，那就是可以开始挂卡了
             if not card_status and not card_effect:
-                logger.info('Card is not selected also not using')
+                logger.info("Card is not selected also not using")
                 self.screening_card(_config.card_type)
 
     def goto_cards(self):
@@ -164,7 +163,7 @@ class ScriptTask(KU, KekkaiActivationAssets):
                 break
             if self.appear_then_click(self.I_SHI_CARD, interval=1):
                 continue
-        logger.info('Enter card page')
+        logger.info("Enter card page")
 
     def check_card_status(self, screenshot=False) -> bool:
         """
@@ -188,14 +187,12 @@ class ScriptTask(KU, KekkaiActivationAssets):
             return True
         elif self.appear(self.I_A_ACTIVATE_YELLOW):
             return False
-        logger.info('Unknown card effect')
+        logger.info("Unknown card effect")
         while 1:
             self.screenshot()
             if self.appear(self.I_A_INVITE, threshold=0.7):
                 return True
-            elif self.appear(self.I_A_ACTIVATE_YELLOW):
-                return False
-            elif self.appear(self.I_A_ACTIVATE_GRAY):
+            elif self.appear(self.I_A_ACTIVATE_YELLOW) or self.appear(self.I_A_ACTIVATE_GRAY):
                 return False
 
     def ocr_time(self, screenshot=False) -> timedelta or None:
@@ -203,11 +200,11 @@ class ScriptTask(KU, KekkaiActivationAssets):
             self.screenshot()
         delta = self.O_CARD_ALL_TIME.ocr_duration(self.device.image)
         if not isinstance(delta, timedelta):
-            logger.warning('OCR error')
+            logger.warning("OCR error")
             return None
         if delta == timedelta(0):
-            logger.error('The remaining time detected for this card is 0')
-            logger.error('This may be due to the fact that the card has not yet been collected')
+            logger.error("The remaining time detected for this card is 0")
+            logger.error("This may be due to the fact that the card has not yet been collected")
             raise GameStuckError
         return delta
 
@@ -224,8 +221,8 @@ class ScriptTask(KU, KekkaiActivationAssets):
             card_class = CardClass.FISH
             target_class = self.I_A_CARD_FISH
         else:
-            logger.warning('Unknown card rule')
-            self.push_notify(content='Unknown card rule')
+            logger.warning("Unknown card rule")
+            self.push_notify(content="Unknown card rule")
             return
 
         while 1:
@@ -238,14 +235,14 @@ class ScriptTask(KU, KekkaiActivationAssets):
                     break
             if self.click(self.C_A_SELECT_CARD_LIST, interval=2.5):
                 continue
-        logger.info('Appear card class: {}'.format(card_class))
+        logger.info(f"Appear card class: {card_class}")
         while 1:
             self.screenshot()
             if not self.appear(target_class):
                 break
             if self.appear_then_click(target_class, interval=1):
                 continue
-        logger.info('Selected card class: {}'.format(card_class))
+        logger.info(f"Selected card class: {card_class}")
 
         # 找最优卡
         while 1:
@@ -260,7 +257,7 @@ class ScriptTask(KU, KekkaiActivationAssets):
                     if not self.appear(self.I_A_EMPTY):
                         self.config.kekkai_activation.activation_config.card_not_found_count = 0
                         self.config.save()
-                        message = f'✅ 确认挂卡: {rule}'
+                        message = f"✅ 确认挂卡: {rule}"
                         self.save_image(content=message, push_flag=False, wait_time=0)
                         return
                     if self.click(target, interval=1):
@@ -275,8 +272,8 @@ class ScriptTask(KU, KekkaiActivationAssets):
             min_card_num = self.config.kekkai_activation.activation_config.min_fish_num
             check_card = "体力"
         else:
-            logger.error('Unknown utilize rule')
-            raise ValueError('Unknown utilize rule')
+            logger.error("Unknown utilize rule")
+            raise ValueError("Unknown utilize rule")
 
         ocr_count = 0
         while 1:
@@ -291,7 +288,7 @@ class ScriptTask(KU, KekkaiActivationAssets):
             numeric_results = []
             for result in filtered_results:
                 # 使用正则表达式提取所有数字
-                numbers = [int(num) for num in re.findall(r'\d+', result.ocr_text)]
+                numbers = [int(num) for num in re.findall(r"\d+", result.ocr_text)]
                 if numbers:  # 如果提取到数字
                     if numbers[0] < min_card_num:
                         continue
@@ -299,7 +296,10 @@ class ScriptTask(KU, KekkaiActivationAssets):
 
             if numeric_results:
                 # 按数字大到小排序
-                sorted_results = [result for _, result in sorted(numeric_results, key=lambda x: x[0], reverse=True)]
+                sorted_results = [
+                    result
+                    for _, result in sorted(numeric_results, key=lambda x: x[0], reverse=True)
+                ]
                 max_result = sorted_results[0]  # 获取数字最大的结果对象
 
                 box = max_result.box  # 获取边界框坐标
@@ -315,7 +315,7 @@ class ScriptTask(KU, KekkaiActivationAssets):
                 return target
             else:
                 if ocr_count > 3:
-                    logger.error('多次未找到符合条件的结果, 退出')
+                    logger.error("多次未找到符合条件的结果, 退出")
                     return None
                 logger.warning("未找到符合条件的结果, 准备往上滑动")
                 duration = 2
@@ -323,7 +323,7 @@ class ScriptTask(KU, KekkaiActivationAssets):
                 safe_pos_y = random.randint(580, 600)
                 p1 = (safe_pos_x, safe_pos_y)
                 p2 = (safe_pos_x, safe_pos_y - 410)
-                logger.info('Swipe %s -> %s, %sS ' % (point2str(*p1), point2str(*p2), duration))
+                logger.info("Swipe %s -> %s, %sS " % (point2str(*p1), point2str(*p2), duration))
                 self.device.swipe_adb(p1, p2, duration=duration)
                 time.sleep(1)
                 continue
@@ -345,9 +345,7 @@ class ScriptTask(KU, KekkaiActivationAssets):
         else:
             # # 未达上限切换卡类型
             new_type = (
-                CardType.FISH
-                if activation_config.card_type == CardType.TAIKO
-                else CardType.TAIKO
+                CardType.FISH if activation_config.card_type == CardType.TAIKO else CardType.TAIKO
             )
             log_msg = f"🔄{activation_config.card_type}卡未检出 → 切换{new_type}"
             activation_config.card_type = new_type
@@ -370,14 +368,14 @@ class ScriptTask(KU, KekkaiActivationAssets):
         self.realm_goto_grown()
         if self.appear(self.I_RS_LEVEL_MAX):
             # 存在满级的式神
-            logger.info('Exist max level shikigami and replace it')
+            logger.info("Exist max level shikigami and replace it")
             self.unset_shikigami_max_lv()
             self.switch_shikigami_class(shikigami_class)
             self.set_shikigami(shikigami_order=7, stop_image=self.I_RS_NO_ADD)
         else:
-            logger.info('No max level shikigami')
+            logger.info("No max level shikigami")
         if self.detect_no_shikigami():
-            logger.warning('There are no any shikigami grow room')
+            logger.warning("There are no any shikigami grow room")
             self.switch_shikigami_class(shikigami_class)
             self.set_shikigami(shikigami_order=7, stop_image=self.I_RS_NO_ADD)
 
@@ -411,9 +409,8 @@ class ScriptTask(KU, KekkaiActivationAssets):
 if __name__ == "__main__":
     from module.config.config import Config
     from module.device.device import Device
-    import cv2
 
-    c = Config('switch')
+    c = Config("switch")
     d = Device(c)
 
     t = ScriptTask(c, d)

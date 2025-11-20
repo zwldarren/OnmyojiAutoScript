@@ -1,28 +1,22 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
 import copy
-from time import sleep
-from datetime import time, datetime, timedelta
-
-from exceptiongroup import catch
-from tasks.DailyTrifles.page import page_store_gift_room
-from winerror import NOERROR
-
-from tasks.GameUi.game_ui import GameUi
-from tasks.GameUi.page import page_main, page_summon, page_guild, page_mall, page_friends
-from tasks.DailyTrifles.config import DailyTriflesConfig
-from tasks.DailyTrifles.assets import DailyTriflesAssets
-from tasks.Component.Summon.summon import Summon
-
-from module.logger import logger
-from module.exception import TaskEnd
-from module.base.timer import Timer
-from tasks.DailyTrifles.config import SummonType
 import re
+from datetime import datetime
+from time import sleep
+
+from module.base.timer import Timer
+from module.exception import TaskEnd
+from module.logger import logger
+from tasks.Component.Summon.summon import Summon
+from tasks.DailyTrifles.assets import DailyTriflesAssets
+from tasks.DailyTrifles.config import SummonType
+from tasks.DailyTrifles.page import page_store_gift_room
+from tasks.GameUi.game_ui import GameUi
+from tasks.GameUi.page import page_friends, page_main, page_mall, page_summon
+
 
 class ScriptTask(GameUi, Summon, DailyTriflesAssets):
-
     def run(self):
         con = self.config.daily_trifles.trifles_config
         # 每日召唤
@@ -39,13 +33,13 @@ class ScriptTask(GameUi, Summon, DailyTriflesAssets):
         # 商店签到 or 购买寿司
         if con.store_sign or con.buy_sushi_count > 0:
             self.run_store()
-        self.set_next_run('DailyTrifles', success=True, finish=False)
-        raise TaskEnd('DailyTrifles')
+        self.set_next_run("DailyTrifles", success=True, finish=False)
+        raise TaskEnd("DailyTrifles")
 
     def run_one_summon(self):
         self.ui_get_current_page()
         self.ui_goto(page_summon)
-        config=self.config.daily_trifles.trifles_config
+        config = self.config.daily_trifles.trifles_config
         if config.summon_type == SummonType.default:
             self.summon_one(draw_mystery_pattern=config.draw_mystery_pattern)
             self.check_time()
@@ -62,8 +56,7 @@ class ScriptTask(GameUi, Summon, DailyTriflesAssets):
             # 跨月重置神秘图案触发状态
             if not config.draw_mystery_pattern:
                 config.draw_mystery_pattern = True
-                logger.info(
-                    f"reset draw_mystery_pattern to True, next_run: {next_run}")
+                logger.info(f"reset draw_mystery_pattern to True, next_run: {next_run}")
         else:
             # 如果还是在同一月份，则没必要再绘制神秘图案
             config.draw_mystery_pattern = False
@@ -99,32 +92,36 @@ class ScriptTask(GameUi, Summon, DailyTriflesAssets):
             if self.appear(self.I_RECALL_TICKET):
                 break
             if count >= 3:
-                self.config.notifier.push(title='今忆召唤抽卡失败', content='每日任务,今忆召唤抽卡失败!!!')
+                self.config.notifier.push(
+                    title="今忆召唤抽卡失败", content="每日任务,今忆召唤抽卡失败!!!"
+                )
                 return
 
-        logger.info('Summon one RECALL')
+        logger.info("Summon one RECALL")
         self.wait_until_appear(self.I_RECALL_TICKET)
         while True:
             ticket_info = self.O_RECALL_TICKET_AREA.ocr(self.device.image)
             # 处理 None 和空字符串
-            if ticket_info is None or ticket_info == '':
+            if ticket_info is None or ticket_info == "":
                 ticket_info = 0
             else:
                 # 使用正则表达式提取字符串中的数字
-                match = re.search(r'\d+', ticket_info)
+                match = re.search(r"\d+", ticket_info)
                 if match:
                     ticket_info = int(match.group())
                 else:
-                    logger.warning(f'Invalid ticket_info value: {ticket_info}, expected a numeric string')
+                    logger.warning(
+                        f"Invalid ticket_info value: {ticket_info}, expected a numeric string"
+                    )
                     ticket_info = 0  # 将无效值设置为默认值 0
             if ticket_info <= 0:
-                logger.warning('There is no any one RECALL ticket')
+                logger.warning("There is no any one RECALL ticket")
                 return
             # 某些情况下滑动异常
-            self.S_RANDOM_SWIPE_1.name = 'S_RANDOM_SWIPE'
-            self.S_RANDOM_SWIPE_2.name = 'S_RANDOM_SWIPE'
-            self.S_RANDOM_SWIPE_3.name = 'S_RANDOM_SWIPE'
-            self.S_RANDOM_SWIPE_4.name = 'S_RANDOM_SWIPE'
+            self.S_RANDOM_SWIPE_1.name = "S_RANDOM_SWIPE"
+            self.S_RANDOM_SWIPE_2.name = "S_RANDOM_SWIPE"
+            self.S_RANDOM_SWIPE_3.name = "S_RANDOM_SWIPE"
+            self.S_RANDOM_SWIPE_4.name = "S_RANDOM_SWIPE"
             while 1:
                 self.screenshot()
                 if self.appear(self.I_RECALL_ONE_TICKET):
@@ -148,7 +145,7 @@ class ScriptTask(GameUi, Summon, DailyTriflesAssets):
                         continue
                     self.summon()
                     continue
-            logger.info('Summon one success')
+            logger.info("Summon one success")
 
     def run_guild_wish(self):
         pass
@@ -164,7 +161,7 @@ class ScriptTask(GameUi, Summon, DailyTriflesAssets):
                 continue
             if self.appear_then_click(self.I_LUCK_MSG, interval=1):
                 continue
-        logger.info('Start luck msg')
+        logger.info("Start luck msg")
         check_timer = Timer(2)
         check_timer.start()
         while 1:
@@ -175,10 +172,10 @@ class ScriptTask(GameUi, Summon, DailyTriflesAssets):
             if self.appear_then_click(self.I_ONE_CLICK_BLESS, interval=1):
                 continue
             if self.ui_reward_appear_click():
-                logger.info('Get reward of luck msg')
+                logger.info("Get reward of luck msg")
                 break
             if check_timer.reached():
-                logger.warning('There is no any luck msg')
+                logger.warning("There is no any luck msg")
                 break
 
         self.ui_click(self.I_UI_BACK_RED, self.I_CHECK_MAIN)
@@ -194,7 +191,7 @@ class ScriptTask(GameUi, Summon, DailyTriflesAssets):
                 continue
             if self.appear_then_click(self.I_L_FRIENDS, interval=1):
                 continue
-        logger.info('Start friend love')
+        logger.info("Start friend love")
         check_timer = Timer(2)
         check_timer.start()
         while 1:
@@ -203,10 +200,10 @@ class ScriptTask(GameUi, Summon, DailyTriflesAssets):
             if self.appear_then_click(self.I_L_COLLECT, interval=1):
                 continue
             if self.ui_reward_appear_click():
-                logger.info('Get reward of friend love')
+                logger.info("Get reward of friend love")
                 break
             if check_timer.reached():
-                logger.warning('There is no any love')
+                logger.warning("There is no any love")
                 break
 
         self.ui_click(self.I_UI_BACK_RED, self.I_CHECK_MAIN)
@@ -225,25 +222,24 @@ class ScriptTask(GameUi, Summon, DailyTriflesAssets):
         self.ui_goto(page_main)
 
     def run_store_sign(self):
-
         self.ui_goto_page(page_store_gift_room)
         self.screenshot()
         self.appear_then_click(self.I_GIFT_RECOMMEND, interval=1)
-        logger.info('Enter store sign')
+        logger.info("Enter store sign")
         sleep(1)  # 等个动画
         self.screenshot()
         if not self.appear(self.I_GIFT_SIGN):
-            logger.warning('There is no gift sign')
+            logger.warning("There is no gift sign")
             return
 
         if self.ui_get_reward(self.I_GIFT_SIGN, click_interval=2.5):
-            logger.info('Get reward of gift sign')
+            logger.info("Get reward of gift sign")
 
     def run_buy_sushi(self):
-
         # 进入Special
         while 1:
             from tasks.RichMan.assets import RichManAssets
+
             self.screenshot()
             if self.appear(RichManAssets.I_SIDE_CHECK_SPECIAL):
                 break
@@ -266,7 +262,7 @@ class ScriptTask(GameUi, Summon, DailyTriflesAssets):
             # 保守策略，避免OCR错误购买
             try:
                 _price = int(_price)
-            except Exception as e:
+            except Exception:
                 _price = MAX_PRICE
 
             if _price < 60:
@@ -299,11 +295,11 @@ class ScriptTask(GameUi, Summon, DailyTriflesAssets):
         return
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from module.config.config import Config
     from module.device.device import Device
 
-    c = Config('oas1')
+    c = Config("oas1")
     d = Device(c)
     t = ScriptTask(c, d)
 

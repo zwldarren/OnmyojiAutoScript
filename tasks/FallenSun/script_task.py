@@ -1,24 +1,25 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
 import random
+from datetime import datetime, timedelta
 from time import sleep
-from datetime import time, datetime, timedelta
 
+from module.exception import TaskEnd
+from module.logger import logger
 from tasks.Component.GeneralBattle.general_battle import GeneralBattle
-from tasks.Component.GeneralInvite.general_invite import GeneralInvite
 from tasks.Component.GeneralBuff.general_buff import GeneralBuff
+from tasks.Component.GeneralInvite.general_invite import GeneralInvite
 from tasks.Component.GeneralRoom.general_room import GeneralRoom
 from tasks.Component.SwitchSoul.switch_soul import SwitchSoul
-from tasks.GameUi.game_ui import GameUi
-from tasks.GameUi.page import page_main, page_soul_zones, page_shikigami_records
 from tasks.FallenSun.assets import FallenSunAssets
 from tasks.FallenSun.config import FallenSun, UserStatus
-from module.logger import logger
-from module.exception import TaskEnd
+from tasks.GameUi.game_ui import GameUi
+from tasks.GameUi.page import page_main, page_shikigami_records, page_soul_zones
 
-class ScriptTask(GeneralBattle, GeneralInvite, GeneralBuff, GeneralRoom, GameUi, SwitchSoul, FallenSunAssets):
 
+class ScriptTask(
+    GeneralBattle, GeneralInvite, GeneralBuff, GeneralRoom, GameUi, SwitchSoul, FallenSunAssets
+):
     def run(self) -> bool:
         # 御魂切换方式一
         if self.config.fallen_sun.switch_soul.enable:
@@ -30,14 +31,18 @@ class ScriptTask(GeneralBattle, GeneralInvite, GeneralBuff, GeneralRoom, GameUi,
         if self.config.fallen_sun.switch_soul.enable_switch_by_name:
             self.ui_get_current_page()
             self.ui_goto(page_shikigami_records)
-            self.run_switch_soul_by_name(self.config.fallen_sun.switch_soul.group_name,
-                                         self.config.fallen_sun.switch_soul.team_name)
+            self.run_switch_soul_by_name(
+                self.config.fallen_sun.switch_soul.group_name,
+                self.config.fallen_sun.switch_soul.team_name,
+            )
 
         limit_count = self.config.fallen_sun.fallen_sun_config.limit_count
         limit_time = self.config.fallen_sun.fallen_sun_config.limit_time
         self.current_count = 0
         self.limit_count: int = limit_count
-        self.limit_time: timedelta = timedelta(hours=limit_time.hour, minutes=limit_time.minute, seconds=limit_time.second)
+        self.limit_time: timedelta = timedelta(
+            hours=limit_time.hour, minutes=limit_time.minute, seconds=limit_time.second
+        )
 
         self.ui_get_current_page()
         self.ui_goto(page_main)
@@ -45,22 +50,27 @@ class ScriptTask(GeneralBattle, GeneralInvite, GeneralBuff, GeneralRoom, GameUi,
 
         success = True
         match config.fallen_sun_config.user_status:
-            case UserStatus.LEADER: success = self.run_leader()
-            case UserStatus.MEMBER: success = self.run_member()
-            case UserStatus.ALONE: self.run_alone()
-            case UserStatus.WILD: self.run_wild()
-            case _: logger.error('Unknown user status')
+            case UserStatus.LEADER:
+                success = self.run_leader()
+            case UserStatus.MEMBER:
+                success = self.run_member()
+            case UserStatus.ALONE:
+                self.run_alone()
+            case UserStatus.WILD:
+                self.run_wild()
+            case _:
+                logger.error("Unknown user status")
 
         # 下一次运行时间
         if success:
-            self.set_next_run('FallenSun', finish=True, success=True)
+            self.set_next_run("FallenSun", finish=True, success=True)
         else:
-            self.set_next_run('FallenSun', finish=False, success=False)
+            self.set_next_run("FallenSun", finish=False, success=False)
 
         raise TaskEnd
 
     def fallen_sun_enter(self) -> bool:
-        logger.info('Enter fallen_sun')
+        logger.info("Enter fallen_sun")
         while True:
             self.screenshot()
             if self.appear(self.I_FORM_TEAM):
@@ -84,7 +94,7 @@ class ScriptTask(GeneralBattle, GeneralInvite, GeneralBuff, GeneralRoom, GameUi,
         :param lock:
         :return:
         """
-        logger.info('Check lock: %s', lock)
+        logger.info("Check lock: %s", lock)
         if lock:
             while 1:
                 self.screenshot()
@@ -101,7 +111,7 @@ class ScriptTask(GeneralBattle, GeneralInvite, GeneralBuff, GeneralRoom, GameUi,
                     continue
 
     def run_leader(self):
-        logger.info('Start run leader')
+        logger.info("Start run leader")
         self.ui_get_current_page()
         self.ui_goto(page_soul_zones)
         self.fallen_sun_enter()
@@ -109,7 +119,7 @@ class ScriptTask(GeneralBattle, GeneralInvite, GeneralBuff, GeneralRoom, GameUi,
         self.check_layer(layer)
         self.check_lock(self.config.fallen_sun.general_battle_config.lock_team_enable)
         # 创建队伍
-        logger.info('Create team')
+        logger.info("Create team")
         while 1:
             self.screenshot()
             if self.appear(self.I_CHECK_TEAM):
@@ -138,12 +148,12 @@ class ScriptTask(GeneralBattle, GeneralInvite, GeneralBuff, GeneralRoom, GameUi,
 
             if self.current_count >= self.limit_count:
                 if self.is_in_room():
-                    logger.info('FallenSun count limit out')
+                    logger.info("FallenSun count limit out")
                     break
 
             if datetime.now() - self.start_time >= self.limit_time:
                 if self.is_in_room():
-                    logger.info('FallenSun time limit out')
+                    logger.info("FallenSun time limit out")
                     break
 
             # 如果没有进入房间那就不需要后面的邀请
@@ -154,7 +164,7 @@ class ScriptTask(GeneralBattle, GeneralInvite, GeneralBuff, GeneralRoom, GameUi,
                 if self.appear(self.I_MATCHING) or self.appear(self.I_CHECK_EXPLORATION):
                     sleep(0.5)
                     if self.appear(self.I_MATCHING) or self.appear(self.I_CHECK_EXPLORATION):
-                        logger.warning('FallenSun task failed')
+                        logger.warning("FallenSun task failed")
                         success = False
                         break
                 continue
@@ -165,14 +175,14 @@ class ScriptTask(GeneralBattle, GeneralInvite, GeneralBuff, GeneralRoom, GameUi,
                     self.run_general_battle(config=self.config.fallen_sun.general_battle_config)
                 else:
                     # 邀请失败，退出任务
-                    logger.warning('Invite failed and exit this fallen_sun task')
+                    logger.warning("Invite failed and exit this fallen_sun task")
                     success = False
                     break
 
             # 第一次会邀请队友
             if is_first:
                 if not self.run_invite(config=self.config.fallen_sun.invite_config, is_first=True):
-                    logger.warning('Invite failed and exit this fallen_sun task')
+                    logger.warning("Invite failed and exit this fallen_sun task")
                     success = False
                     break
                 else:
@@ -195,14 +205,14 @@ class ScriptTask(GeneralBattle, GeneralInvite, GeneralBuff, GeneralRoom, GameUi,
         return True
 
     def run_member(self):
-        logger.info('Start run member')
+        logger.info("Start run member")
         self.ui_get_current_page()
         # self.ui_goto(page_soul_zones)
         # self.fallen_sun_enter()
         # self.check_lock(self.config.fallen_sun.general_battle_config.lock_team_enable)
 
         # 进入战斗流程
-        self.device.stuck_record_add('BATTLE_STATUS_S')
+        self.device.stuck_record_add("BATTLE_STATUS_S")
         while 1:
             self.screenshot()
 
@@ -211,10 +221,10 @@ class ScriptTask(GeneralBattle, GeneralInvite, GeneralBuff, GeneralRoom, GameUi,
                 continue
 
             if self.current_count >= self.limit_count:
-                logger.info('FallenSun count limit out')
+                logger.info("FallenSun count limit out")
                 break
             if datetime.now() - self.start_time >= self.limit_time:
-                logger.info('FallenSun time limit out')
+                logger.info("FallenSun time limit out")
                 break
 
             if self.check_then_accept():
@@ -227,7 +237,9 @@ class ScriptTask(GeneralBattle, GeneralInvite, GeneralBuff, GeneralRoom, GameUi,
                 else:
                     break
             # 队长秒开的时候，检测是否进入到战斗中
-            elif self.check_take_over_battle(False, config=self.config.fallen_sun.general_battle_config):
+            elif self.check_take_over_battle(
+                False, config=self.config.fallen_sun.general_battle_config
+            ):
                 continue
 
         while 1:
@@ -241,13 +253,12 @@ class ScriptTask(GeneralBattle, GeneralInvite, GeneralBuff, GeneralRoom, GameUi,
             if self.exit_battle():
                 pass
 
-
         self.ui_get_current_page()
         self.ui_goto(page_main)
         return True
 
     def run_alone(self):
-        logger.info('Start run alone')
+        logger.info("Start run alone")
         self.ui_get_current_page()
         self.ui_goto(page_soul_zones)
         self.fallen_sun_enter()
@@ -271,10 +282,10 @@ class ScriptTask(GeneralBattle, GeneralInvite, GeneralBuff, GeneralRoom, GameUi,
                 continue
 
             if self.current_count >= self.limit_count:
-                logger.info('FallenSun count limit out')
+                logger.info("FallenSun count limit out")
                 break
             if datetime.now() - self.start_time >= self.limit_time:
-                logger.info('FallenSun time limit out')
+                logger.info("FallenSun time limit out")
                 break
 
             # 点击挑战
@@ -299,7 +310,7 @@ class ScriptTask(GeneralBattle, GeneralInvite, GeneralBuff, GeneralRoom, GameUi,
         self.ui_goto(page_main)
 
     def run_wild(self):
-        logger.error('Wild mode is not implemented')
+        logger.error("Wild mode is not implemented")
         pass
 
     def battle_wait(self, random_click_swipt_enable: bool) -> bool:
@@ -310,30 +321,32 @@ class ScriptTask(GeneralBattle, GeneralInvite, GeneralBuff, GeneralRoom, GameUi,
         :return:
         """
         # 重写
-        self.device.stuck_record_add('BATTLE_STATUS_S')
+        self.device.stuck_record_add("BATTLE_STATUS_S")
         self.device.click_record_clear()
-        self.C_REWARD_1.name = 'C_REWARD'
-        self.C_REWARD_2.name = 'C_REWARD'
-        self.C_REWARD_3.name = 'C_REWARD'
+        self.C_REWARD_1.name = "C_REWARD"
+        self.C_REWARD_2.name = "C_REWARD"
+        self.C_REWARD_3.name = "C_REWARD"
         # 战斗过程 随机点击和滑动 防封
         logger.info("Start battle process")
         while 1:
             self.screenshot()
             action_click = random.choice([self.C_WIN_1, self.C_WIN_2, self.C_WIN_3])
-            if self.appear_then_click(self.I_WIN, action=action_click ,interval=0.8):
+            if self.appear_then_click(self.I_WIN, action=action_click, interval=0.8):
                 # 赢的那个鼓
                 continue
             if self.appear(self.I_GREED_GHOST):
                 # 贪吃鬼
-                logger.info('Win battle')
+                logger.info("Win battle")
                 self.wait_until_appear(self.I_REWARD, wait_time=1.5)
                 self.screenshot()
                 if not self.appear(self.I_GREED_GHOST):
-                    logger.warning('Greedy ghost disappear. Maybe it is a false battle')
+                    logger.warning("Greedy ghost disappear. Maybe it is a false battle")
                     continue
                 while 1:
                     self.screenshot()
-                    action_click = random.choice([self.C_REWARD_1, self.C_REWARD_2, self.C_REWARD_3])
+                    action_click = random.choice(
+                        [self.C_REWARD_1, self.C_REWARD_2, self.C_REWARD_3]
+                    )
                     if not self.appear(self.I_GREED_GHOST):
                         break
                     if self.click(action_click, interval=1.5):
@@ -341,10 +354,12 @@ class ScriptTask(GeneralBattle, GeneralInvite, GeneralBuff, GeneralRoom, GameUi,
                 return True
             if self.appear(self.I_REWARD):
                 # 魂
-                logger.info('Win battle')
+                logger.info("Win battle")
                 while 1:
                     self.screenshot()
-                    action_click = random.choice([self.C_REWARD_1, self.C_REWARD_2, self.C_REWARD_3])
+                    action_click = random.choice(
+                        [self.C_REWARD_1, self.C_REWARD_2, self.C_REWARD_3]
+                    )
                     if self.appear_then_click(self.I_REWARD, action=action_click, interval=1.5):
                         continue
                     if not self.appear(self.I_REWARD):
@@ -352,7 +367,7 @@ class ScriptTask(GeneralBattle, GeneralInvite, GeneralBuff, GeneralRoom, GameUi,
                 return True
 
             if self.appear(self.I_FALSE):
-                logger.warning('False battle')
+                logger.warning("False battle")
                 self.ui_click_until_disappear(self.I_FALSE)
                 return False
 
@@ -361,20 +376,13 @@ class ScriptTask(GeneralBattle, GeneralInvite, GeneralBuff, GeneralRoom, GameUi,
                 self.random_click_swipt()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from module.config.config import Config
     from module.device.device import Device
-    c = Config('oas1')
+
+    c = Config("oas1")
     d = Device(c)
     t = ScriptTask(c, d)
 
     t.run()
     # t.check_layer('日蚀')
-
-
-
-
-
-
-
-

@@ -1,24 +1,24 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
+import json
+from queue import Queue
+from random import randint
+from threading import Thread
 from time import sleep
 
-import json
-from random import randint
 from paho.mqtt import client as mqtt_client
-from threading import Thread
-from queue import Queue
 
-from tasks.GlobalGame.config import TeamFlow, Transport
-
-from module.logger import logger
 from module.base.timer import Timer
+from module.logger import logger
+from tasks.GlobalGame.config import TeamFlow, Transport
 
 
 def on_message(client, userdata, msg):
-    if msg.topic == 'FirstNotice':
+    if msg.topic == "FirstNotice":
         return
     logger.info(f"Received `{msg.payload}` from `{userdata}` ")
+
+
 # ----------------------------------------------------------------------------------------------------------------------
 # 使用MQTT是为了做广播，自己手撸的话太麻烦了
 # 0. 所有玩家更新自己的策略后必须广播出去, 可以延迟一下
@@ -50,6 +50,7 @@ class Mqtt:
                 logger.error(f"Connection refused - not authorised. return code: {rc}")
             else:
                 logger.info("Failed to connect, return code %d\n", rc)
+
         self.q_publish = Queue()
         self.broker = team_flow.broker
         self.port = team_flow.port
@@ -57,7 +58,7 @@ class Mqtt:
         self.ca = team_flow.ca
         self.username = team_flow.username
         self.password = team_flow.password
-        self.client_id = f'{self.username}-{randint(0, 1000)}'
+        self.client_id = f"{self.username}-{randint(0, 1000)}"
         # 连接服务器
         self.client = mqtt_client.Client(self.client_id, clean_session=True, userdata=self)
         if self.protocol == Transport.SSL_TLS:
@@ -65,22 +66,20 @@ class Mqtt:
         self.client.username_pw_set(self.username, self.password)
         self.client.on_connect = on_connect
         self.client.on_message = on_message
-        self.client.will_set(topic='LastWill', payload=json.dumps({self.username: ""}), qos=2)
+        self.client.will_set(topic="LastWill", payload=json.dumps({self.username: ""}), qos=2)
         self.client.connect(self.broker, self.port)
         # 订阅主题: FirstNotice LastWill TaskStart Strategy
-        self.client.subscribe(topic='FirstNotice', qos=2)
-        self.client.subscribe(topic='LastWill', qos=2)
-        self.client.subscribe(topic='TaskStart', qos=0)
-        self.client.subscribe(topic='Strategy', qos=0)
+        self.client.subscribe(topic="FirstNotice", qos=2)
+        self.client.subscribe(topic="LastWill", qos=2)
+        self.client.subscribe(topic="TaskStart", qos=0)
+        self.client.subscribe(topic="Strategy", qos=0)
         # publish FirstNotice
         self.publish("FirstNotice", {"type": "join"})
         # 开启一个线程来处理消息
         self.mqtt_timer = Timer(30)
         self.mqtt_timer.start()
-        self.mqtt_thread = Thread(target=self.mqtt_loop, name='mqtt_loop', daemon=True)
+        self.mqtt_thread = Thread(target=self.mqtt_loop, name="mqtt_loop", daemon=True)
         self.mqtt_thread.start()
-
-
 
     def set_on_message(self, on_msg):
         self.client.on_message = on_msg
@@ -107,10 +106,10 @@ class Mqtt:
             return False
 
     def TaskStart(self, msg):
-        self.publish('TaskStart', msg)
+        self.publish("TaskStart", msg)
 
     def Strategy(self, msg):
-        self.publish('Strategy', msg)
+        self.publish("Strategy", msg)
 
     def mqtt_loop(self):
         while True:
@@ -128,29 +127,24 @@ class Mqtt:
             while not self.q_publish.empty():
                 try:
                     topic, msg = self.q_publish.get(block=False)
-                except Exception as e:
+                except Exception:
                     continue
-                if topic == 'Strategy':
+                if topic == "Strategy":
                     publish_strategy_msg = msg
                     continue
                 self.publish(topic, msg)
             if publish_strategy_msg:
                 # 先进先出 保证只发送一次最新的
-                self.publish('Strategy', publish_strategy_msg)
+                self.publish("Strategy", publish_strategy_msg)
 
 
-
-
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     team_flow = TeamFlow()
-    team_flow.broker = 'v96bb091.ala.cn-hangzhou.emqxsl.cn'
+    team_flow.broker = "v96bb091.ala.cn-hangzhou.emqxsl.cn"
     team_flow.port = 8883
     team_flow.transport = Transport.SSL_TLS
-    team_flow.ca = './config/emqxsl-ca.crt'
-    team_flow.username = 'test-publish'
-    team_flow.password = '12345678'
+    team_flow.ca = "./config/emqxsl-ca.crt"
+    team_flow.username = "test-publish"
+    team_flow.password = "12345678"
     mqtt = Mqtt(team_flow)
     sleep(20)
-
-

@@ -1,31 +1,28 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
 import time
+from datetime import datetime, timedelta
+from random import choice
 
 import cv2
 import numpy as np
+from functools import cached_property
+from oashya.labels import label2id
 
-from datetime import datetime, timedelta
-from numpy import uint8, fromfile
-from random import choice
-from cached_property import cached_property
 # Use cmd to install: ./toolkit/python.exe -m pip install -i https://pypi.org/simple/ oashya --trusted-host pypi.org
 # update oashya:  ./toolkit/python.exe -m pip install --upgrade oashya
 from oashya.tracker import Tracker
-from oashya.labels import label2id
 from oashya.utils import draw_tracks
 
-from module.exception import TaskEnd
+from module.exception import RequestHumanTakeover, TaskEnd
 from module.logger import logger
-from module.exception import RequestHumanTakeover
 from tasks.Component.SwitchOnmyoji.switch_onmyoji import SwitchOnmyoji
 from tasks.GameUi.game_ui import GameUi
-from tasks.GameUi.page import page_hyakkiyakou, page_main, page_onmyodo
-from tasks.Hyakkiyakou.config import InferenceEngine, ModelPrecision
+from tasks.GameUi.page import page_hyakkiyakou, page_onmyodo
 from tasks.Hyakkiyakou.agent.agent import Agent
-from tasks.Hyakkiyakou.slave.hya_slave import HyaSlave
+from tasks.Hyakkiyakou.config import InferenceEngine, ModelPrecision
 from tasks.Hyakkiyakou.debugger import Debugger
+from tasks.Hyakkiyakou.slave.hya_slave import HyaSlave
 
 
 def plot_save(image, boxes):
@@ -40,14 +37,20 @@ def plot_save(image, boxes):
         y2 = int(_y + _h / 2)
         cv2.rectangle(image, (x1, y1), (x2, y2), color_palette[_cls], 2)
         #
-        cv2.putText(image, f'{_cls} {_scores:.2f}', (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color_palette[_cls],
-                    2)
-    save_file = './tasks/Hyakkiyakou/temp/image.png'
+        cv2.putText(
+            image,
+            f"{_cls} {_scores:.2f}",
+            (x1, y1 - 10),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            color_palette[_cls],
+            2,
+        )
+    save_file = "./tasks/Hyakkiyakou/temp/image.png"
     cv2.imwrite(save_file, image)
 
 
 class ScriptTask(GameUi, HyaSlave, SwitchOnmyoji):
-
     @property
     def _config(self):
         return self.config.hyakkiyakou
@@ -58,21 +61,25 @@ class ScriptTask(GameUi, HyaSlave, SwitchOnmyoji):
         conf = hyakkiyakou_models.conf_threshold
         nms = hyakkiyakou_models.iou_threshold
         if conf < 0.2 or conf > 1:
-            raise RequestHumanTakeover('conf_threshold should be in [0.2, 1]')
+            raise RequestHumanTakeover("conf_threshold should be in [0.2, 1]")
         if nms < 0.2 or nms > 1:
-            raise RequestHumanTakeover('iou_threshold should be in [0.2, 1]')
-        inf_en = 'onnxruntime' if hyakkiyakou_models.inference_engine == InferenceEngine.ONNXRUNTIME else 'tensorrt'
-        precision = 'fp32' if hyakkiyakou_models.model_precision == ModelPrecision.FP32 else 'int8'
+            raise RequestHumanTakeover("iou_threshold should be in [0.2, 1]")
+        inf_en = (
+            "onnxruntime"
+            if hyakkiyakou_models.inference_engine == InferenceEngine.ONNXRUNTIME
+            else "tensorrt"
+        )
+        precision = "fp32" if hyakkiyakou_models.model_precision == ModelPrecision.FP32 else "int8"
         # 这个坑后面在补
-        if inf_en == 'tensorrt' or precision == 'int8':
-            raise RequestHumanTakeover('Only support onnxruntime')
+        if inf_en == "tensorrt" or precision == "int8":
+            raise RequestHumanTakeover("Only support onnxruntime")
         debug_info: bool = self._config.debug_config.hya_info
         args = {
-            'conf_threshold': conf,
-            'iou_threshold': nms,
-            'precision': precision,
-            'inference_engine': inf_en,
-            'debug': debug_info,
+            "conf_threshold": conf,
+            "iou_threshold": nms,
+            "precision": precision,
+            "inference_engine": inf_en,
+            "debug": debug_info,
         }
         return Tracker(args=args)
 
@@ -87,21 +94,21 @@ class ScriptTask(GameUi, HyaSlave, SwitchOnmyoji):
         g = hya_config.hya_g
         weights: list = [sp, ssr, sr, r, n, g]
         str_priorities: str = hya_config.hya_priorities
-        if str_priorities == '':
+        if str_priorities == "":
             priorities = []
         else:
-            str_priorities = str_priorities.replace(' ', '').replace('，', ',')
+            str_priorities = str_priorities.replace(" ", "").replace("，", ",")
             try:
-                priorities = [label2id(s) for s in str_priorities.split(',')]
+                priorities = [label2id(s) for s in str_priorities.split(",")]
             except Exception as e:
-                logger.error(f'Priority error: {str_priorities}')
+                logger.error(f"Priority error: {str_priorities}")
                 logger.error(e)
                 raise RequestHumanTakeover
         strategy: dict = {
-            'weights': weights,
-            'priorities': priorities,
-            'invite_friend': hya_config.hya_invite_friend,
-            'auto_bean': hya_config.hya_auto_bean
+            "weights": weights,
+            "priorities": priorities,
+            "invite_friend": hya_config.hya_invite_friend,
+            "auto_bean": hya_config.hya_auto_bean,
         }
         return Agent(strategy=strategy)
 
@@ -111,34 +118,39 @@ class ScriptTask(GameUi, HyaSlave, SwitchOnmyoji):
         hya_interval = debug_config.hya_interval
         hya_save_result = debug_config.hya_save_result
         if hya_interval <= 100 or hya_interval >= 1000:
-            raise RequestHumanTakeover('screenshot_interval must be between 1000 and 10000')
+            raise RequestHumanTakeover("screenshot_interval must be between 1000 and 10000")
         self.set_fast_screenshot_interval(hya_interval)
-        return Debugger(info_enable=debug_config.hya_info, 
-                        continuous_learning=debug_config.continuous_learning,
-                        hya_save_result=hya_save_result)
+        return Debugger(
+            info_enable=debug_config.hya_info,
+            continuous_learning=debug_config.continuous_learning,
+            hya_save_result=hya_save_result,
+        )
 
     def run(self):
         hya_count: int = 0
         self.limit_count: int = self._config.hyakkiyakou_config.hya_limit_count
         limit_time = self._config.hyakkiyakou_config.hya_limit_time
-        self.limit_time: timedelta = timedelta(hours=limit_time.hour, minutes=limit_time.minute,
-                                               seconds=limit_time.second)
+        self.limit_time: timedelta = timedelta(
+            hours=limit_time.hour, minutes=limit_time.minute, seconds=limit_time.second
+        )
         self.ui_goto_page(page_onmyodo)
         self.switch_onmyoji(self._config.hyakkiyakou_config.hya_onmyoji)
         self.ui_goto_page(page_hyakkiyakou)
 
         while 1:
             if hya_count >= self.limit_count:
-                logger.info('Hyakkiyakou count limit out')
+                logger.info("Hyakkiyakou count limit out")
                 break
             if datetime.now() - self.start_time >= self.limit_time:
-                logger.info('Hyakkiyakou time limit out')
+                logger.info("Hyakkiyakou time limit out")
                 break
 
             self.one()
             hya_count += 1
-            logger.info(f'count: {hya_count}/{self.limit_count}')
-            logger.info(f'time: {(datetime.now() - self.start_time).total_seconds():.1f}s/{self.limit_time.total_seconds()}s')
+            logger.info(f"count: {hya_count}/{self.limit_count}")
+            logger.info(
+                f"time: {(datetime.now() - self.start_time).total_seconds():.1f}s/{self.limit_time.total_seconds()}s"
+            )
 
         while 1:
             self.screenshot()
@@ -148,13 +160,13 @@ class ScriptTask(GameUi, HyaSlave, SwitchOnmyoji):
             if self.appear(self.I_HCLOSE_RED):
                 break
         self.ui_click_until_disappear(self.I_HCLOSE_RED)
-        self.set_next_run(task='Hyakkiyakou', success=True, finish=False)
+        self.set_next_run(task="Hyakkiyakou", success=True, finish=False)
         raise TaskEnd
 
     def one(self):
         self.reset_state()
         if not self.appear(self.I_HACCESS):
-            logger.warning('Page Error')
+            logger.warning("Page Error")
         if self._config.hyakkiyakou_config.hya_invite_friend:
             self.invite_friend()
         # start
@@ -170,9 +182,9 @@ class ScriptTask(GameUi, HyaSlave, SwitchOnmyoji):
                 continue
             if not self.appear(self.I_HSELECTED):
                 self.click(click_button, interval=2)
-        self.device.stuck_record_add('BATTLE_STATUS_S')
+        self.device.stuck_record_add("BATTLE_STATUS_S")
         # 正式开始
-        logger.hr('Start Hyakkiyakou')
+        logger.hr("Start Hyakkiyakou")
         init_bean_flag: bool = False
         last_action = [0, 0, False, 10]
         self.hya_fs_check_timer.reset()
@@ -206,7 +218,7 @@ class ScriptTask(GameUi, HyaSlave, SwitchOnmyoji):
             if self._config.debug_config.hya_info:
                 self.debugger.show_info(tracker=self.tracker, f=self.agent.focus)
 
-        logger.info('Hyakkiyakou End')
+        logger.info("Hyakkiyakou End")
         if self._config.debug_config.hya_show:
             self.debugger.show_stop()
         if self._config.debug_config.hya_save_result:
@@ -228,11 +240,11 @@ class ScriptTask(GameUi, HyaSlave, SwitchOnmyoji):
         self.fast_click(x=x, y=y, control_method=self._config.debug_config.hya_control_method)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from module.config.config import Config
     from module.device.device import Device
 
-    c = Config('oas1')
+    c = Config("oas1")
     d = Device(c)
 
     t = ScriptTask(c, d)
@@ -243,4 +255,3 @@ if __name__ == '__main__':
     # from debugger import test_track
     # test_track(show=False)
     pass
-

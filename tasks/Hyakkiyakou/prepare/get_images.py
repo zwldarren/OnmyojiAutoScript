@@ -1,14 +1,13 @@
-import cv2
 import time
-from datetime import timedelta, datetime
-from cached_property import cached_property
-from random import choice
+from datetime import datetime
 from pathlib import Path
+from random import choice
 
-from module.exception import TaskEnd
-from module.logger import logger
+import cv2
+from functools import cached_property
+
 from module.base.timer import Timer
-
+from module.logger import logger
 from tasks.GameUi.game_ui import GameUi
 from tasks.GameUi.page import page_hyakkiyakou
 from tasks.Hyakkiyakou.assets import HyakkiyakouAssets
@@ -17,8 +16,8 @@ from tasks.Hyakkiyakou.assets import HyakkiyakouAssets
 class GenerateImages(GameUi, HyakkiyakouAssets):
     @cached_property
     def save_folder(self) -> Path:
-        save_time = datetime.now().strftime('%Y%m%dT%H%M%S')
-        save_folder = Path(f'./tasks/Hyakkiyakou/temp/{save_time}')
+        save_time = datetime.now().strftime("%Y%m%dT%H%M%S")
+        save_folder = Path(f"./tasks/Hyakkiyakou/temp/{save_time}")
         save_folder.mkdir(parents=True, exist_ok=True)
         return save_folder
 
@@ -34,7 +33,7 @@ class GenerateImages(GameUi, HyakkiyakouAssets):
         @return:
         """
         if not self.appear(self.I_HACCESS):
-            logger.warning('Page Error')
+            logger.warning("Page Error")
         self.ui_click(self.I_HACCESS, self.I_HSTART, interval=2)
         # 随机选一个
         click_button = choice([self.C_HSELECT_1, self.C_HSELECT_2, self.C_HSELECT_3])
@@ -47,14 +46,14 @@ class GenerateImages(GameUi, HyakkiyakouAssets):
                 continue
             if not self.appear(self.I_HSELECTED):
                 self.click(click_button, interval=1)
-        self.device.stuck_record_add('BATTLE_STATUS_S')
+        self.device.stuck_record_add("BATTLE_STATUS_S")
         # 保存图片
         save_img_timer = Timer(0.35)
         save_img_timer.start()
         while 1:
             self.screenshot()
             if self.appear(self.I_HEND):
-                logger.info('Generate a time Images Success')
+                logger.info("Generate a time Images Success")
                 break
             if not self.appear(self.I_CHECK_RUN):
                 continue
@@ -76,17 +75,16 @@ class GenerateImages(GameUi, HyakkiyakouAssets):
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         # cv2.imwrite(str(self.save_folder / f'{time_now1}.png'), img1)
         # cv2.imwrite(str(self.save_folder / f'{time_now2}.png'), img2)
-        cv2.imwrite(str(self.save_folder / f'all{time_now1}.png'), image)
+        cv2.imwrite(str(self.save_folder / f"all{time_now1}.png"), image)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from module.config.config import Config
     from module.device.device import Device
-    c = Config('oas1')
+
+    c = Config("oas1")
     d = Device(c)
     t = GenerateImages(c, d)
     t.screenshot()
 
     t.run()
-
-

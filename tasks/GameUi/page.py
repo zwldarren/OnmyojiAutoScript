@@ -1,14 +1,12 @@
+import random
+import traceback
 from itertools import compress
 
-import random
-
-import traceback
 from module.atom.click import RuleClick
-from tasks.GlobalGame.assets import GlobalGameAssets as GGA
 from tasks.GameUi.assets import GameUiAssets as G
+from tasks.GlobalGame.assets import GlobalGameAssets as GGA
 from tasks.KekkaiUtilize.assets import KekkaiUtilizeAssets
 from tasks.Restart.assets import RestartAssets
-from tasks.base_task import BaseTask as BT
 from tasks.RyouToppa.assets import RyouToppaAssets
 
 
@@ -32,7 +30,7 @@ class Page:
         self.links = links
         self.additional: list = None  # 附加按钮或者是ocr检测按钮
         (filename, line_number, function_name, text) = traceback.extract_stack()[-2]
-        self.name = text[:text.find('=')].strip()
+        self.name = text[: text.find("=")].strip()
         PageRegistry.register(self)
 
     def __eq__(self, other):
@@ -48,12 +46,16 @@ class Page:
         self.links[destination] = button
 
 
-#登录login
+# 登录login
 page_login = Page(G.I_CHECK_LOGIN_FORM)
 # Main Home 主页
 page_main = Page(G.I_CHECK_MAIN)
-page_main.additional = [G.I_AD_CLOSE_RED, G.I_BACK_FRIENDS, RestartAssets.I_CANCEL_BATTLE,
-                        RestartAssets.I_LOGIN_SCROOLL_CLOSE]
+page_main.additional = [
+    G.I_AD_CLOSE_RED,
+    G.I_BACK_FRIENDS,
+    RestartAssets.I_CANCEL_BATTLE,
+    RestartAssets.I_LOGIN_SCROOLL_CLOSE,
+]
 # 召唤summon
 page_summon = Page(G.I_CHECK_SUMMON)
 page_summon.link(button=G.I_SUMMON_GOTO_MAIN, destination=page_main)
@@ -112,7 +114,9 @@ page_exploration.link(button=G.I_EXPLORATION_GOTO_SIX_GATES, destination=page_si
 # 契灵之境 bondling fairyland
 page_bondling_fairyland = Page(G.I_CHECK_BONDLING_FAIRYLAND)
 page_bondling_fairyland.link(button=G.I_BACK_YOLLOW, destination=page_exploration)
-page_exploration.link(button=G.I_EXPLORATION_GOTO_BONDLING_FAIRYLAND, destination=page_bondling_fairyland)
+page_exploration.link(
+    button=G.I_EXPLORATION_GOTO_BONDLING_FAIRYLAND, destination=page_bondling_fairyland
+)
 
 # ************************************* 町中部分 *****************************************#
 # 斗技 duel
@@ -198,7 +202,11 @@ from tasks.Component.GeneralBattle.assets import GeneralBattleAssets
 from tasks.Dokan.assets import DokanAssets
 
 page_dokan = Page(DokanAssets.I_RYOU_DOKAN_CHECK)
-page_dokan.additional = [GeneralBattleAssets.I_EXIT, DokanAssets.I_RYOU_DOKAN_EXIT_ENSURE, G.I_BACK_BLUE]
+page_dokan.additional = [
+    GeneralBattleAssets.I_EXIT,
+    DokanAssets.I_RYOU_DOKAN_EXIT_ENSURE,
+    G.I_BACK_BLUE,
+]
 page_dokan.link(button=G.I_BACK_Y, destination=page_main)
 
 # ************************************* 活动部分 *****************************************#
@@ -214,7 +222,9 @@ page_act_list_climb_act.link(button=G.I_BACK_ACT_LIST, destination=page_main)
 page_battle = Page(GeneralBattleAssets.I_BATTLE_INFO)
 
 
-def random_click(low: int = None, high: int = None, ltrb: tuple = (True, False, True, False)) -> RuleClick | list[RuleClick]:
+def random_click(
+    low: int = None, high: int = None, ltrb: tuple = (True, False, True, False)
+) -> RuleClick | list[RuleClick]:
     """
     随机生成RuleClick, 不传入参数则返回1个RuleClick, 传入参数则生成范围内的click数组
     :return: RuleClick或者RuleClick的数组
@@ -228,11 +238,19 @@ def random_click(low: int = None, high: int = None, ltrb: tuple = (True, False, 
 
 
 # 奖励界面
-page_reward = Page(check_button=[GeneralBattleAssets.I_REWARD_PURPLE_SNAKE_SKIN, GeneralBattleAssets.I_REWARD,
-                                 GeneralBattleAssets.I_REWARD_EXP_SOUL_4, GeneralBattleAssets.I_WIN,
-                                 GeneralBattleAssets.I_REWARD_GOLD, GeneralBattleAssets.I_REWARD_GOLD_SNAKE_SKIN,
-                                 GeneralBattleAssets.I_REWARD_SOUL_5, GeneralBattleAssets.I_REWARD_SOUL_6,
-                                 GGA.I_UI_REWARD, ])
+page_reward = Page(
+    check_button=[
+        GeneralBattleAssets.I_REWARD_PURPLE_SNAKE_SKIN,
+        GeneralBattleAssets.I_REWARD,
+        GeneralBattleAssets.I_REWARD_EXP_SOUL_4,
+        GeneralBattleAssets.I_WIN,
+        GeneralBattleAssets.I_REWARD_GOLD,
+        GeneralBattleAssets.I_REWARD_GOLD_SNAKE_SKIN,
+        GeneralBattleAssets.I_REWARD_SOUL_5,
+        GeneralBattleAssets.I_REWARD_SOUL_6,
+        GGA.I_UI_REWARD,
+    ]
+)
 page_reward.additional = [random_click()]
 # 失败界面
 page_failed = Page(GeneralBattleAssets.I_FALSE)

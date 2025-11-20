@@ -1,18 +1,19 @@
 from pathlib import Path
-from module.logger import logger
 
-from module.atom.image import RuleImage
 from module.atom.click import RuleClick
+from module.atom.image import RuleImage
 from module.atom.long_click import RuleLongClick
 from module.atom.ocr import RuleOcr
+from module.logger import logger
 
 
 class RuleAnimate(RuleImage):
-
-    def __init__(self,
-                 rule: RuleImage | RuleClick | RuleLongClick | RuleOcr,
-                 threshold: float = 0.75,
-                 name: str = None):
+    def __init__(
+        self,
+        rule: RuleImage | RuleClick | RuleLongClick | RuleOcr,
+        threshold: float = 0.75,
+        name: str = None,
+    ):
         if isinstance(rule, RuleImage):
             roi_front = rule.roi_front
             roi_back = rule.roi_back
@@ -29,14 +30,14 @@ class RuleAnimate(RuleImage):
         else:
             roi_front = None
             roi_back = None
-            self._name = 'RuleAnimate'
+            self._name = "RuleAnimate"
 
         super().__init__(
             roi_front=list(roi_front),
             roi_back=list(roi_back),
-            method='Template matching',
+            method="Template matching",
             threshold=threshold,
-            file=''
+            file="",
         )
 
         if name is not None:
@@ -65,7 +66,7 @@ class RuleAnimate(RuleImage):
         if matched:
             if refresh_after_stable:
                 self.refresh()
-            logger.info(f'Animation Stable @ {self.name}')
+            logger.info(f"Animation Stable @ {self.name}")
             return True
         return False
 
@@ -73,16 +74,16 @@ class RuleAnimate(RuleImage):
         self._last_image = None
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from module.base.utils import load_image
     from tasks.SixRealms.assets import SixRealmsAssets
+
     ttt = RuleAnimate(SixRealmsAssets.C_MAIN_ANIMATE_KEEP, threshold=0.5)
-    imga = r'C:\Users\Ryland\Desktop\Desktop\37.png'
-    imgb = r'C:\Users\Ryland\Desktop\Desktop\38.png'
+    imga = r"C:\Users\Ryland\Desktop\Desktop\37.png"
+    imgb = r"C:\Users\Ryland\Desktop\Desktop\38.png"
     imga = load_image(imga)
     imgb = load_image(imgb)
 
     print(ttt.stable(imga))
     print(ttt.stable(imgb))
     print(ttt.stable(imgb))
-

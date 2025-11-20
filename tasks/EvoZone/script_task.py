@@ -1,32 +1,32 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
+from datetime import datetime, timedelta
 from time import sleep
-from datetime import time, datetime, timedelta
 
+from module.exception import TaskEnd
+from module.logger import logger
 from tasks.Component.GeneralBattle.general_battle import GeneralBattle
-from tasks.Component.GeneralInvite.general_invite import GeneralInvite
 from tasks.Component.GeneralBuff.general_buff import GeneralBuff
+from tasks.Component.GeneralInvite.general_invite import GeneralInvite
 from tasks.Component.GeneralRoom.general_room import GeneralRoom
 from tasks.Component.SwitchSoul.switch_soul import SwitchSoul
-from tasks.GameUi.game_ui import GameUi
-from tasks.GameUi.page import page_main, page_awake_zones, page_shikigami_records
 from tasks.EvoZone.assets import EvoZoneAssets
-from tasks.EvoZone.config import EvoZone, UserStatus, KirinType
-from module.logger import logger
-from module.exception import TaskEnd
+from tasks.EvoZone.config import EvoZone, KirinType, UserStatus
+from tasks.GameUi.game_ui import GameUi
+from tasks.GameUi.page import page_awake_zones, page_main, page_shikigami_records
 
 
-class ScriptTask(GeneralBattle, GeneralInvite, GeneralBuff, GeneralRoom, GameUi, EvoZoneAssets, SwitchSoul):
-
+class ScriptTask(
+    GeneralBattle, GeneralInvite, GeneralBuff, GeneralRoom, GameUi, EvoZoneAssets, SwitchSoul
+):
     def run(self) -> bool:
-
         limit_count = self.config.evo_zone.evo_zone_config.limit_count
         limit_time = self.config.evo_zone.evo_zone_config.limit_time
         self.current_count = 0
         self.limit_count: int = limit_count
-        self.limit_time: timedelta = timedelta(hours=limit_time.hour, minutes=limit_time.minute,
-                                               seconds=limit_time.second)
+        self.limit_time: timedelta = timedelta(
+            hours=limit_time.hour, minutes=limit_time.minute, seconds=limit_time.second
+        )
         con = self.config.evo_zone
         if con.switch_soul_config.enable:
             self.ui_get_current_page()
@@ -35,7 +35,9 @@ class ScriptTask(GeneralBattle, GeneralInvite, GeneralBuff, GeneralRoom, GameUi,
         if con.switch_soul_config.enable_switch_by_name:
             self.ui_get_current_page()
             self.ui_goto(page_shikigami_records)
-            self.run_switch_soul_by_name(con.switch_soul_config.group_name, con.switch_soul_config.team_name)
+            self.run_switch_soul_by_name(
+                con.switch_soul_config.group_name, con.switch_soul_config.team_name
+            )
 
         self.ui_get_current_page()
         self.ui_goto(page_main)
@@ -56,7 +58,7 @@ class ScriptTask(GeneralBattle, GeneralInvite, GeneralBuff, GeneralRoom, GameUi,
             case UserStatus.WILD:
                 self.run_wild()
             case _:
-                logger.error('Unknown user status')
+                logger.error("Unknown user status")
 
         # 记得关掉
         if config.evo_zone_config.soul_buff_enable:
@@ -65,14 +67,14 @@ class ScriptTask(GeneralBattle, GeneralInvite, GeneralBuff, GeneralRoom, GameUi,
             self.close_buff()
         # 下一次运行时间
         if success:
-            self.set_next_run('EvoZone', finish=True, success=True)
+            self.set_next_run("EvoZone", finish=True, success=True)
         else:
-            self.set_next_run('EvoZone', finish=False, success=False)
+            self.set_next_run("EvoZone", finish=False, success=False)
 
         raise TaskEnd
 
     def evozone_enter(self) -> bool:
-        logger.info('Enter evozone')
+        logger.info("Enter evozone")
         kirintype = self.I_LIGHTNING_KIRIN
         match self.config.evo_zone.evo_zone_config.kirin_type:
             case KirinType.FIREKIRIN:
@@ -106,7 +108,7 @@ class ScriptTask(GeneralBattle, GeneralInvite, GeneralBuff, GeneralRoom, GameUi,
         :param lock:
         :return:
         """
-        logger.info('Check lock: %s', lock)
+        logger.info("Check lock: %s", lock)
         if lock:
             while 1:
                 self.screenshot()
@@ -123,7 +125,7 @@ class ScriptTask(GeneralBattle, GeneralInvite, GeneralBuff, GeneralRoom, GameUi,
                     continue
 
     def run_leader(self):
-        logger.info('Start run leader')
+        logger.info("Start run leader")
         self.ui_get_current_page()
         # self.ui_goto(page_soul_zones)
         self.ui_goto(page_awake_zones)
@@ -135,7 +137,7 @@ class ScriptTask(GeneralBattle, GeneralInvite, GeneralBuff, GeneralRoom, GameUi,
         self.check_lock(self.config.evo_zone.general_battle_config.lock_team_enable)
         logger.info("test2")
         # 创建队伍
-        logger.info('Create team')
+        logger.info("Create team")
         while 1:
             self.screenshot()
             if self.appear(self.I_CHECK_TEAM):
@@ -164,12 +166,12 @@ class ScriptTask(GeneralBattle, GeneralInvite, GeneralBuff, GeneralRoom, GameUi,
 
             if self.current_count >= self.limit_count:
                 if self.is_in_room():
-                    logger.info('EvoZone count limit out')
+                    logger.info("EvoZone count limit out")
                     break
 
             if datetime.now() - self.start_time >= self.limit_time:
                 if self.is_in_room():
-                    logger.info('EvoZone time limit out')
+                    logger.info("EvoZone time limit out")
                     break
 
             # 如果没有进入房间那就不需要后面的邀请
@@ -180,7 +182,7 @@ class ScriptTask(GeneralBattle, GeneralInvite, GeneralBuff, GeneralRoom, GameUi,
                 if self.appear(self.I_MATCHING) or self.appear(self.I_CHECK_EXPLORATION):
                     sleep(0.5)
                     if self.appear(self.I_MATCHING) or self.appear(self.I_CHECK_EXPLORATION):
-                        logger.warning('EvoZone task failed')
+                        logger.warning("EvoZone task failed")
                         success = False
                         break
                 continue
@@ -191,14 +193,14 @@ class ScriptTask(GeneralBattle, GeneralInvite, GeneralBuff, GeneralRoom, GameUi,
                     self.run_general_battle(config=self.config.evo_zone.general_battle_config)
                 else:
                     # 邀请失败，退出任务
-                    logger.warning('Invite failed and exit this EvoZone task')
+                    logger.warning("Invite failed and exit this EvoZone task")
                     success = False
                     break
 
             # 第一次会邀请队友
             if is_first:
                 if not self.run_invite(config=self.config.evo_zone.invite_config, is_first=True):
-                    logger.warning('Invite failed and exit this evozone task')
+                    logger.warning("Invite failed and exit this evozone task")
                     success = False
                     break
                 else:
@@ -221,14 +223,14 @@ class ScriptTask(GeneralBattle, GeneralInvite, GeneralBuff, GeneralRoom, GameUi,
         return True
 
     def run_member(self):
-        logger.info('Start run member')
+        logger.info("Start run member")
         self.ui_get_current_page()
         # self.ui_goto(page_soul_zones)
         # self.evozone_enter()
         # self.check_lock(self.config.evo_zone.general_battle_config.lock_team_enable)
 
         # 进入战斗流程
-        self.device.stuck_record_add('BATTLE_STATUS_S')
+        self.device.stuck_record_add("BATTLE_STATUS_S")
         while 1:
             self.screenshot()
 
@@ -237,10 +239,10 @@ class ScriptTask(GeneralBattle, GeneralInvite, GeneralBuff, GeneralRoom, GameUi,
                 continue
 
             if self.current_count >= self.limit_count:
-                logger.info('EvoZone count limit out')
+                logger.info("EvoZone count limit out")
                 break
             if datetime.now() - self.start_time >= self.limit_time:
-                logger.info('EvoZone time limit out')
+                logger.info("EvoZone time limit out")
                 break
 
             if self.check_then_accept():
@@ -253,7 +255,9 @@ class ScriptTask(GeneralBattle, GeneralInvite, GeneralBuff, GeneralRoom, GameUi,
                 else:
                     break
             # 队长秒开的时候，检测是否进入到战斗中
-            elif self.check_take_over_battle(False, config=self.config.evo_zone.general_battle_config):
+            elif self.check_take_over_battle(
+                False, config=self.config.evo_zone.general_battle_config
+            ):
                 continue
 
         while 1:
@@ -272,7 +276,7 @@ class ScriptTask(GeneralBattle, GeneralInvite, GeneralBuff, GeneralRoom, GameUi,
         return True
 
     def run_alone(self):
-        logger.info('Start run alone')
+        logger.info("Start run alone")
         self.ui_get_current_page()
         self.ui_goto(page_awake_zones)
         self.evozone_enter()
@@ -296,10 +300,10 @@ class ScriptTask(GeneralBattle, GeneralInvite, GeneralBuff, GeneralRoom, GameUi,
                 continue
 
             if self.current_count >= self.limit_count:
-                logger.info('EvoZone count limit out')
+                logger.info("EvoZone count limit out")
                 break
             if datetime.now() - self.start_time >= self.limit_time:
-                logger.info('EvoZone time limit out')
+                logger.info("EvoZone time limit out")
                 break
 
             # 点击挑战
@@ -324,20 +328,18 @@ class ScriptTask(GeneralBattle, GeneralInvite, GeneralBuff, GeneralRoom, GameUi,
         self.ui_goto(page_main)
 
     def run_wild(self):
-        logger.error('Wild mode is not implemented')
+        logger.error("Wild mode is not implemented")
         pass
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from module.config.config import Config
     from module.device.device import Device
 
-    c = Config('oas1')
+    c = Config("oas1")
     d = Device(c)
     t = ScriptTask(c, d)
 
     t.run()
 
     # t.check_layer('悲')
-
-    from module.base.timer import timer

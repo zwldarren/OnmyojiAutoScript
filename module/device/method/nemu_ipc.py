@@ -40,18 +40,18 @@ class CaptureStd:
     """
 
     def __init__(self):
-        self.stdout = b''
-        self.stderr = b''
+        self.stdout = b""
+        self.stderr = b""
 
     def _redirect_stdout(self, to):
         sys.stdout.close()
         os.dup2(to, self.fdout)
-        sys.stdout = os.fdopen(self.fdout, 'w')
+        sys.stdout = os.fdopen(self.fdout, "w")
 
     def _redirect_stderr(self, to):
         sys.stderr.close()
         os.dup2(to, self.fderr)
-        sys.stderr = os.fdopen(self.fderr, 'w')
+        sys.stderr = os.fdopen(self.fderr, "w")
 
     def __enter__(self):
         self.fdout = sys.stdout.fileno()
@@ -61,8 +61,8 @@ class CaptureStd:
         self.old_stdout = os.dup(self.fdout)
         self.old_stderr = os.dup(self.fderr)
 
-        file_out = os.fdopen(self.writer_out, 'w')
-        file_err = os.fdopen(self.writer_err, 'w')
+        file_out = os.fdopen(self.writer_out, "w")
+        file_err = os.fdopen(self.writer_err, "w")
         self._redirect_stdout(to=file_out.fileno())
         self._redirect_stderr(to=file_err.fileno())
         return self
@@ -87,7 +87,7 @@ class CaptureStd:
                 fragments.append(chunk)
             else:
                 break
-        output = b''.join(fragments)
+        output = b"".join(fragments)
         return output
 
 
@@ -123,32 +123,33 @@ class CaptureNemuIpc(CaptureStd):
     def check_stdout(self):
         if not self.stdout:
             return
-        logger.info(f'NemuIpc stdout: {self.stdout}')
+        logger.info(f"NemuIpc stdout: {self.stdout}")
 
     def check_stderr(self):
         if not self.stderr:
             return
-        logger.error(f'NemuIpc stderr: {self.stderr}')
+        logger.error(f"NemuIpc stderr: {self.stderr}")
 
         # Calling an old MuMu12 player
         # Tested on 3.4.0
         # b'nemu_capture_display rpc error: 1783\r\n'
         # Tested on 3.7.3
         # b'nemu_capture_display rpc error: 1745\r\n'
-        if b'error: 1783' in self.stderr or b'error: 1745' in self.stderr:
+        if b"error: 1783" in self.stderr or b"error: 1745" in self.stderr:
             raise NemuIpcIncompatible(
-                f'NemuIpc requires MuMu12 version >= 3.8.13, please check your version')
+                "NemuIpc requires MuMu12 version >= 3.8.13, please check your version"
+            )
         # contact_id incorrect
         # b'nemu_capture_display cannot find rpc connection\r\n'
-        if b'cannot find rpc connection' in self.stderr:
+        if b"cannot find rpc connection" in self.stderr:
             raise NemuIpcError(self.stderr)
         # Emulator died
         # b'nemu_capture_display rpc error: 1722\r\n'
         # MuMuVMMSVC.exe died
         # b'nemu_capture_display rpc error: 1726\r\n'
         # No idea how to handle yet
-        if b'error: 1722' in self.stderr or b'error: 1726' in self.stderr:
-            raise NemuIpcError('Emulator instance is probably dead')
+        if b"error: 1722" in self.stderr or b"error: 1726" in self.stderr:
+            raise NemuIpcError("Emulator instance is probably dead")
 
 
 def retry(func):
@@ -173,8 +174,8 @@ def retry(func):
                 logger.error(e)
                 break
             # Function call timeout
-            except asyncio.TimeoutError:
-                logger.warning(f'Func {func.__name__}() call timeout, retrying: {_}')
+            except TimeoutError:
+                logger.warning(f"Func {func.__name__}() call timeout, retrying: {_}")
 
                 def init():
                     self.reconnect()
@@ -191,7 +192,7 @@ def retry(func):
                 def init():
                     pass
 
-        logger.critical(f'Retry {func.__name__}() failed')
+        logger.critical(f"Retry {func.__name__}() failed")
         raise RequestHumanTakeover
 
     return retry_wrapper
@@ -211,9 +212,11 @@ class NemuIpcImpl:
 
         list_dll = [
             # MuMuPlayer12
-            os.path.abspath(os.path.join(nemu_folder, './shell/sdk/external_renderer_ipc.dll')),
+            os.path.abspath(os.path.join(nemu_folder, "./shell/sdk/external_renderer_ipc.dll")),
             # MuMuPlayer12 5.0
-            os.path.abspath(os.path.join(nemu_folder, './nx_device/12.0/shell/sdk/external_renderer_ipc.dll')),
+            os.path.abspath(
+                os.path.join(nemu_folder, "./nx_device/12.0/shell/sdk/external_renderer_ipc.dll")
+            ),
         ]
         self.lib = None
         for ipc_dll in list_dll:
@@ -224,20 +227,21 @@ class NemuIpcImpl:
                 break
             except OSError as e:
                 logger.error(e)
-                logger.error(f'ipc_dll={ipc_dll} exists, but cannot be loaded')
+                logger.error(f"ipc_dll={ipc_dll} exists, but cannot be loaded")
                 continue
         if self.lib is None:
             # not found
             raise NemuIpcIncompatible(
-                f'NemuIpc requires MuMu12 version >= 3.8.13, please check your version. '
-                f'None of the following path exists: {list_dll}')
+                f"NemuIpc requires MuMu12 version >= 3.8.13, please check your version. "
+                f"None of the following path exists: {list_dll}"
+            )
         # success
         logger.info(
-            f'NemuIpcImpl init, '
-            f'nemu_folder={nemu_folder}, '
-            f'ipc_dll={ipc_dll}, '
-            f'instance_id={instance_id}, '
-            f'display_id={display_id}'
+            f"NemuIpcImpl init, "
+            f"nemu_folder={nemu_folder}, "
+            f"ipc_dll={ipc_dll}, "
+            f"instance_id={instance_id}, "
+            f"display_id={display_id}"
         )
 
         self.connect_id: int = 0
@@ -248,13 +252,10 @@ class NemuIpcImpl:
         if self.connect_id > 0:
             return
 
-        connect_id = self.ev_run_sync(
-            self.lib.nemu_connect,
-            self.nemu_folder, self.instance_id
-        )
+        connect_id = self.ev_run_sync(self.lib.nemu_connect, self.nemu_folder, self.instance_id)
         if connect_id == 0:
             raise NemuIpcError(
-                'Connection failed, please check if nemu_folder is correct and emulator is running'
+                "Connection failed, please check if nemu_folder is correct and emulator is running"
             )
 
         self.connect_id = connect_id
@@ -264,10 +265,7 @@ class NemuIpcImpl:
         if self.connect_id == 0:
             return
 
-        self.ev_run_sync(
-            self.lib.nemu_disconnect,
-            self.connect_id
-        )
+        self.ev_run_sync(self.lib.nemu_disconnect, self.connect_id)
 
         # logger.info(f'NemuIpc disconnected: {self.connect_id}')
         self.connect_id = 0
@@ -318,7 +316,7 @@ class NemuIpcImpl:
         result = self._ev.run_until_complete(self.ev_run_async(func, *args, **kwargs))
 
         err = False
-        if func.__name__ == 'nemu_connect':
+        if func.__name__ == "nemu_connect":
             if result == 0:
                 err = True
         else:
@@ -326,7 +324,7 @@ class NemuIpcImpl:
                 err = True
         # Get to actual error message printed in std
         if err:
-            logger.warning(f'Failed to call {func.__name__}, result={result}')
+            logger.warning(f"Failed to call {func.__name__}, result={result}")
             with CaptureNemuIpc():
                 result = self._ev.run_until_complete(self.ev_run_async(func, *args, **kwargs))
 
@@ -345,10 +343,15 @@ class NemuIpcImpl:
 
         ret = self.ev_run_sync(
             self.lib.nemu_capture_display,
-            self.connect_id, self.display_id, 0, width_ptr, height_ptr, nullptr
+            self.connect_id,
+            self.display_id,
+            0,
+            width_ptr,
+            height_ptr,
+            nullptr,
         )
         if ret > 0:
-            raise NemuIpcError('nemu_capture_display failed during get_resolution()')
+            raise NemuIpcError("nemu_capture_display failed during get_resolution()")
         self.width = width_ptr.contents.value
         self.height = height_ptr.contents.value
 
@@ -371,10 +374,15 @@ class NemuIpcImpl:
 
         ret = self.ev_run_sync(
             self.lib.nemu_capture_display,
-            self.connect_id, self.display_id, length, width_ptr, height_ptr, pixels_pointer
+            self.connect_id,
+            self.display_id,
+            length,
+            width_ptr,
+            height_ptr,
+            pixels_pointer,
         )
         if ret > 0:
-            raise NemuIpcError('nemu_capture_display failed during screenshot()')
+            raise NemuIpcError("nemu_capture_display failed during screenshot()")
 
         # image = np.ctypeslib.as_array(pixels_pointer, shape=(self.height, self.width, 4))
         image = np.ctypeslib.as_array(pixels_pointer.contents).reshape((self.height, self.width, 4))
@@ -405,11 +413,10 @@ class NemuIpcImpl:
         x, y = self.convert_xy(x, y)
 
         ret = self.ev_run_sync(
-            self.lib.nemu_input_event_touch_down,
-            self.connect_id, self.display_id, x, y
+            self.lib.nemu_input_event_touch_down, self.connect_id, self.display_id, x, y
         )
         if ret > 0:
-            raise NemuIpcError('nemu_input_event_touch_down failed')
+            raise NemuIpcError("nemu_input_event_touch_down failed")
 
     @retry
     def up(self):
@@ -419,12 +426,9 @@ class NemuIpcImpl:
         if self.connect_id == 0:
             self.connect()
 
-        ret = self.ev_run_sync(
-            self.lib.nemu_input_event_touch_up,
-            self.connect_id, self.display_id
-        )
+        ret = self.ev_run_sync(self.lib.nemu_input_event_touch_up, self.connect_id, self.display_id)
         if ret > 0:
-            raise NemuIpcError('nemu_input_event_touch_up failed')
+            raise NemuIpcError("nemu_input_event_touch_up failed")
 
 
 def serial_to_id(serial: str):
@@ -438,7 +442,7 @@ def serial_to_id(serial: str):
         int: instance_id, or None if failed to predict
     """
     try:
-        port = int(serial.split(':')[1])
+        port = int(serial.split(":")[1])
     except (IndexError, ValueError):
         return None
     index, offset = divmod(port - 16384, 32)
@@ -448,7 +452,7 @@ def serial_to_id(serial: str):
         return None
 
 
-class NemuIpc():
+class NemuIpc:
     @cached_property
     def nemu_ipc(self) -> NemuIpcImpl:
         """
@@ -461,35 +465,33 @@ class NemuIpc():
             if index is not None:
                 try:
                     return NemuIpcImpl(
-                        nemu_folder=folder,
-                        instance_id=index,
-                        display_id=0
+                        nemu_folder=folder, instance_id=index, display_id=0
                     ).__enter__()
                 except (NemuIpcIncompatible, NemuIpcError) as e:
                     logger.error(e)
-                    logger.error('Emulator info incorrect')
+                    logger.error("Emulator info incorrect")
 
         # Search emulator instance
         # with E:\ProgramFiles\MuMuPlayer-12.0\shell\MuMuPlayer.exe
         # installation path is E:\ProgramFiles\MuMuPlayer-12.0
         if self.emulator_instance is None:
-            logger.error('Unable to use NemuIpc because emulator instance not found')
+            logger.error("Unable to use NemuIpc because emulator instance not found")
             raise RequestHumanTakeover
         try:
             return NemuIpcImpl(
-                nemu_folder=self.emulator_instance.emulator.abspath('../'),
+                nemu_folder=self.emulator_instance.emulator.abspath("../"),
                 instance_id=self.emulator_instance.MuMuPlayer12_id,
-                display_id=0
+                display_id=0,
             ).__enter__()
         except (NemuIpcIncompatible, NemuIpcError) as e:
             logger.error(e)
-            logger.error('Unable to initialize NemuIpc')
+            logger.error("Unable to initialize NemuIpc")
             raise RequestHumanTakeover
 
     def nemu_ipc_available(self) -> bool:
         if not self.is_mumu_family:
             return False
-        if self.nemud_app_keep_alive == '':
+        if self.nemud_app_keep_alive == "":
             return False
         try:
             _ = self.nemu_ipc
@@ -498,10 +500,10 @@ class NemuIpc():
         return True
 
     def nemu_ipc_release(self):
-        if has_cached_property(self, 'nemu_ipc'):
+        if has_cached_property(self, "nemu_ipc"):
             self.nemu_ipc.disconnect()
-        del_cached_property(self, 'nemu_ipc')
-        logger.info('nemu_ipc released')
+        del_cached_property(self, "nemu_ipc")
+        logger.info("nemu_ipc released")
 
     def screenshot_nemu_ipc(self):
         image = self.nemu_ipc.screenshot()

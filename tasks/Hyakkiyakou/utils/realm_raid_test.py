@@ -1,15 +1,11 @@
 import time
-from datetime import datetime, timedelta
-import random
 
 from module.logger import logger
-
-from tasks.RyouToppa.script_task import ScriptTask, area_map
 from tasks.RealmRaid.assets import RealmRaidAssets
+from tasks.RyouToppa.script_task import ScriptTask, area_map
 
 
 class RealmRaidTest(ScriptTask):
-
     def attack_area(self, index: int):
         """
         :return: 战斗成功(True) or 战斗失败(False) or 区域不可用（False） or 没有进攻机会（设定下次运行并退出）
@@ -31,7 +27,9 @@ class RealmRaidTest(ScriptTask):
                 if self.appear(self.I_TOPPA_RECORD, threshold=0.85):
                     continue
                 logger.info("Start attach area [%s]" % str(index + 1))
-                return self.run_general_battle_back(config=self.config.ryou_toppa.general_battle_config)
+                return self.run_general_battle_back(
+                    config=self.config.ryou_toppa.general_battle_config
+                )
 
             if self.appear_then_click(RealmRaidAssets.I_FIRE, interval=2, threshold=0.8):
                 click_failure_count += 1
@@ -46,11 +44,11 @@ class RealmRaidTest(ScriptTask):
             self.attack_area(index)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from module.config.config import Config
     from module.device.device import Device
 
-    c = Config('oas1')
+    c = Config("oas1")
     d = Device(c)
     t = RealmRaidTest(c, d)
     t.run30()

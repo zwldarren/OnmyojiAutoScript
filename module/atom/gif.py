@@ -1,10 +1,8 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
 import numpy as np
 
 from module.atom.image import RuleImage
-
 
 
 class RuleGif:
@@ -21,7 +19,6 @@ class RuleGif:
 
     def pre_process(self, image):
         return image
-
 
     def search(self, image, roi: list = None, threshold: float = None) -> tuple:
         """
@@ -47,11 +44,10 @@ class RuleGif:
     def match(self, image, threshold: float = None) -> bool:
         return self.search(image, threshold=threshold)[0]
 
-
     def coord(self) -> tuple:
         x, y, w, h = self.roi_front
         return x + np.random.randint(0, w), y + np.random.randint(0, h)
 
     def front_center(self) -> tuple:
         x, y, w, h = self.roi_front
-        return int(x + w//2), int(y + h//2)
+        return int(x + w // 2), int(y + h // 2)

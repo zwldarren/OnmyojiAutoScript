@@ -1,26 +1,26 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
+from datetime import datetime, timedelta
 from time import sleep
-from datetime import time, datetime, timedelta
 
-from tasks.Sougenbi.assets import SougenbiAssets
-from tasks.Sougenbi.config import SougenbiConfig, SougenbiClass
+from module.exception import TaskEnd
+from module.logger import logger
 from tasks.Component.GeneralBattle.general_battle import GeneralBattle
 from tasks.Component.SwitchSoul.switch_soul import SwitchSoul
 from tasks.GameUi.game_ui import GameUi
-from tasks.GameUi.page import page_main, page_soul_zones, page_shikigami_records
-from module.logger import logger
-from module.exception import TaskEnd
+from tasks.GameUi.page import page_main, page_shikigami_records, page_soul_zones
+from tasks.Sougenbi.assets import SougenbiAssets
+from tasks.Sougenbi.config import SougenbiClass, SougenbiConfig
+
 
 class ScriptTask(GeneralBattle, GameUi, SwitchSoul, SougenbiAssets):
-
     def run(self):
         con = self.config.sougenbi
         s_con: SougenbiConfig = con.sougenbi_config
         limit_time = con.sougenbi_config.limit_time
-        self.limit_time: timedelta = timedelta(hours=limit_time.hour, minutes=limit_time.minute,
-                                               seconds=limit_time.second)
+        self.limit_time: timedelta = timedelta(
+            hours=limit_time.hour, minutes=limit_time.minute, seconds=limit_time.second
+        )
         if s_con.buff_enable:
             self.ui_get_current_page()
             self.ui_goto(page_main)
@@ -42,7 +42,9 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, SougenbiAssets):
         if con.switch_soul_config.enable_switch_by_name:
             self.ui_get_current_page()
             self.ui_goto(page_shikigami_records)
-            self.run_switch_soul_by_name(con.switch_soul_config.group_name, con.switch_soul_config.team_name)
+            self.run_switch_soul_by_name(
+                con.switch_soul_config.group_name, con.switch_soul_config.team_name
+            )
 
         self.ui_get_current_page()
         self.ui_goto(page_soul_zones)
@@ -52,7 +54,7 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, SougenbiAssets):
                 break
             if self.appear_then_click(self.I_S_SOUGENBI, interval=1):
                 continue
-        logger.info('Click sougenbi in soul zones')
+        logger.info("Click sougenbi in soul zones")
         sleep(0.5)
         image_target = None
         click_target = None
@@ -71,8 +73,10 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, SougenbiAssets):
                 click_target = self.C_C_FOOLERY
                 number_target = self.O_S_FOOLERY
             case _:
-                raise ValueError('Sougenbi class error')
-        self.check_lock(con.general_battle_config.lock_team_enable, self.I_S_TEAM_LOCK, self.I_S_TEAM_UNLOCK)
+                raise ValueError("Sougenbi class error")
+        self.check_lock(
+            con.general_battle_config.lock_team_enable, self.I_S_TEAM_LOCK, self.I_S_TEAM_UNLOCK
+        )
         while 1:
             self.screenshot()
             if self.appear(image_target):
@@ -87,10 +91,10 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, SougenbiAssets):
             if not self.appear(self.I_S_CHECK_SOUGENBI):
                 continue
             if self.current_count >= con.sougenbi_config.limit_count:
-                logger.info('Sougenbi count limit out')
+                logger.info("Sougenbi count limit out")
                 break
             if datetime.now() - self.start_time >= self.limit_time:
-                logger.info('Sougenbi time limit out')
+                logger.info("Sougenbi time limit out")
                 break
             ticket = number_target.ocr(self.device.image)
             if ticket == 0:
@@ -112,7 +116,7 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, SougenbiAssets):
                 break
             if self.appear_then_click(self.I_UI_BACK_BLUE, interval=1):
                 continue
-        logger.info('Back to exploration')
+        logger.info("Back to exploration")
 
         if s_con.buff_enable:
             self.ui_get_current_page()
@@ -132,19 +136,14 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, SougenbiAssets):
         raise TaskEnd
 
 
-
-
-
-
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     from module.config.config import Config
     from module.device.device import Device
-    c = Config('test')
+
+    c = Config("test")
     d = Device(c)
     t = ScriptTask(c, d)
     t.screenshot()
 
     t.run()
     # print(t.appear(t.I_S_FOOLERY, threshold=0.97))
-

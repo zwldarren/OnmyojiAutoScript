@@ -1,19 +1,20 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
 
-from module.atom.image import RuleImage
 
-from tasks.GameUi.assets import GameUiAssets
-from tasks.GameUi.game_ui import GameUi
+from module.logger import logger
 from tasks.Component.GeneralBattle.general_battle import GeneralBattle
 from tasks.Component.SwitchSoul.switch_soul import SwitchSoul
+from tasks.GameUi.game_ui import GameUi
 from tasks.Pets.assets import PetsAssets
-from tasks.base_task import BaseTask
-from module.logger import logger
 
-class ScriptTask(GeneralBattle, GameUi, SwitchSoul, PetsAssets, ):
 
+class ScriptTask(
+    GeneralBattle,
+    GameUi,
+    SwitchSoul,
+    PetsAssets,
+):
     def run(self):
         # 町中测试
         self.ui_click(self.I_MAIN_GOTO_TOWN, self.I_CHECK_TOWN)
@@ -27,15 +28,14 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, PetsAssets, ):
         # 宠物屋测试
         self.ui_click(self.I_PET_HOUSE, self.I_PET_CLAW)
         self.ui_click(self.I_PET_EXIT, self.I_CHECK_MAIN)
-        logger.info('Test Success')
+        logger.info("Test Success")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from module.config.config import Config
     from module.device.device import Device
 
-    c = Config('oas1')
+    c = Config("oas1")
     d = Device(c)
     t = ScriptTask(c, d)
     t.run()
-

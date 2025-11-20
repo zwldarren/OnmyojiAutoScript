@@ -1,29 +1,35 @@
-'''
+"""
 author: cbb
 这个库基于贝塞尔曲线实现模拟人手动滑动的轨迹
 可以用于selenium轨迹的模拟，或者生成轨迹数组用于js加密通过网站服务器后端分控检测
 QQ群 134064772
 里面的人说话好听，个个都是人才
 copy from https://github.com/2833844911/gurs
-'''
+"""
 
-import numpy as np
 import math
 import random
 
-class BezierTrajectory:
+import numpy as np
 
+
+class BezierTrajectory:
     @classmethod
     def _bztsg(cls, dataTrajectory):
         lengthOfdata = len(dataTrajectory)
 
         def staer(x):
-            t = ((x - dataTrajectory[0][0]) / (dataTrajectory[-1][0] - dataTrajectory[0][0]))
+            t = (x - dataTrajectory[0][0]) / (dataTrajectory[-1][0] - dataTrajectory[0][0])
             y = np.array([0, 0], dtype=np.float64)
             for s in range(len(dataTrajectory)):
-                y += dataTrajectory[s] * ((math.factorial(lengthOfdata - 1) / (
-                            math.factorial(s) * math.factorial(lengthOfdata - 1 - s))) * math.pow(t, s) * math.pow(
-                    (1 - t), lengthOfdata - 1 - s))
+                y += dataTrajectory[s] * (
+                    (
+                        math.factorial(lengthOfdata - 1)
+                        / (math.factorial(s) * math.factorial(lengthOfdata - 1 - s))
+                    )
+                    * math.pow(t, s)
+                    * math.pow((1 - t), lengthOfdata - 1 - s)
+                )
             return y[1]
 
         return staer
@@ -46,27 +52,33 @@ class BezierTrajectory:
                 numberListre.append(1 * ((i * pin - x[1]) ** 2))
 
         elif type == 3:
-            dataTrajectory = [np.array([0,0]), np.array([(x[1]-x[0])*0.8, (x[1]-x[0])*0.6]), np.array([x[1]-x[0], 0])]
+            dataTrajectory = [
+                np.array([0, 0]),
+                np.array([(x[1] - x[0]) * 0.8, (x[1] - x[0]) * 0.6]),
+                np.array([x[1] - x[0], 0]),
+            ]
             fun = cls._bztsg(dataTrajectory)
             numberListre = [0]
-            for i in range(1,numberList):
+            for i in range(1, numberList):
                 numberListre.append(fun(i * pin) + numberListre[-1])
             if pin >= 0:
                 numberListre = numberListre[::-1]
         numberListre = np.abs(np.array(numberListre) - max(numberListre))
-        biaoNumberList = ((numberListre - numberListre[numberListre.argmin()]) / (
-                    numberListre[numberListre.argmax()] - numberListre[numberListre.argmin()])) * (x[1] - x[0]) + x[0]
+        biaoNumberList = (
+            (numberListre - numberListre[numberListre.argmin()])
+            / (numberListre[numberListre.argmax()] - numberListre[numberListre.argmin()])
+        ) * (x[1] - x[0]) + x[0]
         biaoNumberList[0] = x[0]
         biaoNumberList[-1] = x[1]
         return biaoNumberList
 
     @classmethod
     def getFun(cls, s):
-        '''
+        """
 
         :param s: 传入P点
         :return: 返回公式
-        '''
+        """
         dataTrajectory = []
         for i in s:
             dataTrajectory.append(np.array(i))
@@ -74,7 +86,7 @@ class BezierTrajectory:
 
     @classmethod
     def simulation(cls, start, end, le=1, deviation=0, bias=0.5):
-        '''
+        """
 
         :param start:开始点的坐标 如 start = [0, 0]
         :param end:结束点的坐标 如 end = [100, 100]
@@ -82,7 +94,7 @@ class BezierTrajectory:
         :param deviation:轨迹上下波动的范围 如 deviation = 10
         :param bias:波动范围的分布位置 如 bias = 0.5
         :return:返回一个字典equation对应该曲线的方程，P对应贝塞尔曲线的影响点
-        '''
+        """
         start = np.array(start)
         end = np.array(end)
         cbb = []
@@ -108,7 +120,7 @@ class BezierTrajectory:
 
     @classmethod
     def trackArray(cls, start, end, numberList, le=1, deviation=0, bias=0.5, type=0, cbb=0, yhh=10):
-        '''
+        """
 
         :param start:开始点的坐标 如 start = [0, 0]
         :param end:结束点的坐标 如 end = [100, 100]
@@ -120,34 +132,50 @@ class BezierTrajectory:
         :param cbb:在终点来回摆动的次数
         :param yhh:在终点来回摆动的范围
         :return:返回一个字典trackArray对应轨迹数组，P对应贝塞尔曲线的影响点
-        '''
+        """
         s = []
         fun = cls.simulation(start, end, le, deviation, bias)
-        w = fun['P']
+        w = fun["P"]
         fun = fun["equation"]
         if cbb != 0:
-            numberListOfcbb = round(numberList*0.2/(cbb+1))
-            numberList -= (numberListOfcbb*(cbb+1))
+            numberListOfcbb = round(numberList * 0.2 / (cbb + 1))
+            numberList -= numberListOfcbb * (cbb + 1)
 
             xTrackArray = cls._type(type, [start[0], end[0]], numberList)
             for i in xTrackArray:
                 s.append([i, fun(i)])
-            dq = yhh/cbb
+            dq = yhh / cbb
             kg = 0
             ends = np.copy(end)
             for i in range(cbb):
                 if kg == 0:
-                    d = np.array([end[0] + (yhh-dq*i), ((end[1]-start[1])/(end[0]-start[0]))*(end[0]+(yhh-dq*i)) +(end[1]-((end[1]-start[1])/(end[0]-start[0]))*end[0])   ])
+                    d = np.array(
+                        [
+                            end[0] + (yhh - dq * i),
+                            ((end[1] - start[1]) / (end[0] - start[0])) * (end[0] + (yhh - dq * i))
+                            + (end[1] - ((end[1] - start[1]) / (end[0] - start[0])) * end[0]),
+                        ]
+                    )
                     kg = 1
                 else:
-                    d = np.array([end[0] - (yhh - dq * i), ((end[1]-start[1])/(end[0]-start[0]))*(end[0]-(yhh-dq*i)) +(end[1]-((end[1]-start[1])/(end[0]-start[0]))*end[0])  ])
+                    d = np.array(
+                        [
+                            end[0] - (yhh - dq * i),
+                            ((end[1] - start[1]) / (end[0] - start[0])) * (end[0] - (yhh - dq * i))
+                            + (end[1] - ((end[1] - start[1]) / (end[0] - start[0])) * end[0]),
+                        ]
+                    )
                     kg = 0
                 print(d)
-                y = cls.trackArray(ends, d, numberListOfcbb, le=2, deviation=0, bias=0.5, type=0, cbb=0, yhh=10)
-                s += list(y['trackArray'])
+                y = cls.trackArray(
+                    ends, d, numberListOfcbb, le=2, deviation=0, bias=0.5, type=0, cbb=0, yhh=10
+                )
+                s += list(y["trackArray"])
                 ends = d
-            y = cls.trackArray(ends, end, numberListOfcbb, le=2, deviation=0, bias=0.5, type=0, cbb=0, yhh=10)
-            s += list(y['trackArray'])
+            y = cls.trackArray(
+                ends, end, numberListOfcbb, le=2, deviation=0, bias=0.5, type=0, cbb=0, yhh=10
+            )
+            s += list(y["trackArray"])
 
         else:
             xTrackArray = cls._type(type, [start[0], end[0]], numberList)
@@ -155,6 +183,7 @@ class BezierTrajectory:
                 s.append([i, fun(i)])
         # return {"trackArray": np.array(s), "P": w}
         return [[int(s[0]), int(s[1])] for s in s]
+
 
 # print(BezierTrajectory.trackArray(start=[0, 0], end=[100, 100], numberList=50, le=2,
 #                     deviation=0, bias=0.5, type=0, cbb=0, yhh=10))

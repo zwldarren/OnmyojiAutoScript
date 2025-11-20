@@ -1,13 +1,17 @@
 from datetime import datetime, timedelta
-from typing import Any, Dict
+from typing import Any
 
-from pydantic import Field, BaseModel, model_validator, model_serializer, ValidationError
+from pydantic import BaseModel, Field, ValidationError, model_serializer, model_validator
 
 from deploy.logger import logger
-from tasks.Component.SwitchAccount.switch_account_config import AccountInfo
 from tasks.Component.config_base import ConfigBase, DateTime
 from tasks.Component.config_scheduler import Scheduler
-from tasks.WantedQuests.config import CooperationSelectMaskDescription, CooperationSelectMask, CooperationType
+from tasks.Component.SwitchAccount.switch_account_config import AccountInfo
+from tasks.WantedQuests.config import (
+    CooperationSelectMask,
+    CooperationSelectMaskDescription,
+    CooperationType,
+)
 
 
 class InviteHistoryItem(BaseModel):
@@ -17,19 +21,24 @@ class InviteHistoryItem(BaseModel):
 
 class InviteInfo(BaseModel):
     # 被邀请人员昵称
-    name: str = Field(default="", description='name_help')
-    default_invite_type: CooperationSelectMaskDescription = Field(default=CooperationSelectMaskDescription.JadeAndFood,
-                                                                  description='default_invite_type_help')
+    name: str = Field(default="", description="name_help")
+    default_invite_type: CooperationSelectMaskDescription = Field(
+        default=CooperationSelectMaskDescription.JadeAndFood, description="default_invite_type_help"
+    )
 
     # 协作任务类型   上次邀请时间
-    invite_history_1: DateTime = Field(default=DateTime.fromisoformat("2023-01-01 00:00:00"),
-                                       description='invite_history_1_help')
-    invite_history_2: DateTime = Field(default=DateTime.fromisoformat("2023-01-01 00:00:00"),
-                                       description='invite_history_2_help')
-    invite_history_4: DateTime = Field(default=DateTime.fromisoformat("2023-01-01 00:00:00"),
-                                       description='invite_history_4_help')
-    invite_history_8: DateTime = Field(default=DateTime.fromisoformat("2023-01-01 00:00:00"),
-                                       description='invite_history_8_help')
+    invite_history_1: DateTime = Field(
+        default=DateTime.fromisoformat("2023-01-01 00:00:00"), description="invite_history_1_help"
+    )
+    invite_history_2: DateTime = Field(
+        default=DateTime.fromisoformat("2023-01-01 00:00:00"), description="invite_history_2_help"
+    )
+    invite_history_4: DateTime = Field(
+        default=DateTime.fromisoformat("2023-01-01 00:00:00"), description="invite_history_4_help"
+    )
+    invite_history_8: DateTime = Field(
+        default=DateTime.fromisoformat("2023-01-01 00:00:00"), description="invite_history_8_help"
+    )
 
     def need_invite(self, ctype: CooperationType):
         if not ctype & CooperationSelectMask[self.default_invite_type.value]:
@@ -54,11 +63,11 @@ class InviteInfo(BaseModel):
         return self.name != "" and self.name is not None
 
 
-class FindJadeConfig(ConfigBase, extra='allow'):
+class FindJadeConfig(ConfigBase, extra="allow"):
     # 被邀请人数
-    invite_info_count: int = Field(default=1, ge=1, description='invite_info_count_help')
+    invite_info_count: int = Field(default=1, ge=1, description="invite_info_count_help")
     # 小号数
-    sup_account_count: int = Field(default=1, ge=1, description='sup_account_count_help')
+    sup_account_count: int = Field(default=1, ge=1, description="sup_account_count_help")
 
 
 class FindJade(ConfigBase):
@@ -92,8 +101,8 @@ class FindJade(ConfigBase):
 
     def get_cooperation_type_mask(self) -> CooperationSelectMaskDescription:
         """
-            根据配置中各个邀请人 的邀请类型
-            综合得出该值
+        根据配置中各个邀请人 的邀请类型
+        综合得出该值
         """
         result = CooperationSelectMask.NoInvite
         for info in self.invite_info_list:
@@ -101,11 +110,11 @@ class FindJade(ConfigBase):
         name = CooperationSelectMask(result).name
         return CooperationSelectMaskDescription(name)
 
-    @model_validator(mode='before')
+    @model_validator(mode="before")
     @classmethod
     def validator_all(cls, v: dict) -> Any:
-        invite_info_count = v.get('find_jade_config', {}).get('invite_info_count', 1)
-        sup_account_count = v.get('find_jade_config', {}).get('sup_account_count', 1)
+        invite_info_count = v.get("find_jade_config", {}).get("invite_info_count", 1)
+        sup_account_count = v.get("find_jade_config", {}).get("sup_account_count", 1)
 
         def validator_list(list_name, data, item_type=None, list_size=1):
             if list_name not in data:
@@ -120,9 +129,9 @@ class FindJade(ConfigBase):
                     if item.is_valid():
                         data[list_name].append(item)
                     remove_keys.append(key)
-                except ValidationError as e:
+                except ValidationError:
                     pass
-                except TypeError as e:
+                except TypeError:
                     pass
 
             for key in remove_keys:
@@ -133,13 +142,13 @@ class FindJade(ConfigBase):
                     for i in range(list_size - len(data[list_name])):
                         data[list_name].append(item_type())
 
-        validator_list('invite_info_list', v, InviteInfo, invite_info_count)
-        validator_list('sup_account_list', v, AccountInfo, sup_account_count)
+        validator_list("invite_info_list", v, InviteInfo, invite_info_count)
+        validator_list("sup_account_list", v, AccountInfo, sup_account_count)
 
         return v
 
     @model_serializer()
-    def serializer_model(self, value: Any) -> Dict[str, Any]:
+    def serializer_model(self, value: Any) -> dict[str, Any]:
         properties = self.__dict__
         data = {}
 
@@ -153,7 +162,7 @@ class FindJade(ConfigBase):
         for key, value in properties.items():
             if isinstance(value, list):
                 for index, v in enumerate(value):
-                    data[f'{key}_{index + 1}'] = v_dump(v)
+                    data[f"{key}_{index + 1}"] = v_dump(v)
             else:
                 data[key] = v_dump(value)
         return data

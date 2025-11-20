@@ -1,41 +1,35 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
-from time import sleep
-from datetime import time, datetime, timedelta
 
-from module.logger import logger
-from module.exception import TaskEnd
 from module.base.timer import Timer
-
-from tasks.GameUi.game_ui import GameUi
-from tasks.GameUi.page import page_main, page_delegation
-from tasks.Delegation.config import DelegationConfig
+from module.exception import TaskEnd
+from module.logger import logger
 from tasks.Delegation.assets import DelegationAssets
+from tasks.Delegation.config import DelegationConfig
+from tasks.GameUi.game_ui import GameUi
+from tasks.GameUi.page import page_delegation
 
 
 class ScriptTask(GameUi, DelegationAssets):
-
     def run(self):
         self.ui_get_current_page()
         self.ui_goto(page_delegation)
         self.check_reward()
         con: DelegationConfig = self.config.delegation.delegation_config
         if con.miyoshino_painting:
-            self.delegate_one('画')
+            self.delegate_one("画")
         if con.bird_feather:
-            self.delegate_one('鸟羽')
+            self.delegate_one("鸟羽")
         if con.find_earring:
-            self.delegate_one('寻找耳环')
+            self.delegate_one("寻找耳环")
         if con.cat_boss:
-            self.delegate_one('猫老大')
+            self.delegate_one("猫老大")
         if con.miyoshino:
-            self.delegate_one('接送')
+            self.delegate_one("接送")
         if con.strange_trace:
-            self.delegate_one('痕迹')
+            self.delegate_one("痕迹")
 
-
-        self.set_next_run(task='Delegation', success=True, finish=True)
+        self.set_next_run(task="Delegation", success=True, finish=True)
         raise TaskEnd
 
     def delegate_one(self, name: str) -> bool:
@@ -44,6 +38,7 @@ class ScriptTask(GameUi, DelegationAssets):
         :param name:
         :return:
         """
+
         def ui_click(click, stop):
             while 1:
                 self.screenshot()
@@ -51,11 +46,12 @@ class ScriptTask(GameUi, DelegationAssets):
                     break
                 if self.click(click, interval=1.5):
                     continue
-        logger.hr('Delegation one', 2)
+
+        logger.hr("Delegation one", 2)
         self.O_D_NAME.keyword = name
         self.screenshot()
         if not self.ocr_appear(self.O_D_NAME):
-            logger.warning(f'Delegation: {name} not found')
+            logger.warning(f"Delegation: {name} not found")
             return False
         while 1:
             self.screenshot()
@@ -64,7 +60,7 @@ class ScriptTask(GameUi, DelegationAssets):
             # 如果出现’召回‘ ’返回‘ 说明这个是现在委派中
             # 需要退出
             if self.appear(self.I_D_BACK):
-                logger.warning(f'Delegation: {name} is in delegation')
+                logger.warning(f"Delegation: {name} is in delegation")
                 self.ui_click_until_disappear(self.I_D_BACK)
                 self.wait_until_appear(self.I_REWARDS_MIN)
                 return False
@@ -75,13 +71,13 @@ class ScriptTask(GameUi, DelegationAssets):
             if self.ocr_appear_click(self.O_D_NAME, interval=1):
                 continue
         # 进入委派  fefe e  fe
-        logger.info(f'Enter Delegation: {name}')
+        logger.info(f"Enter Delegation: {name}")
         ui_click(self.C_D_1, self.I_D_SELECT_1)
         ui_click(self.C_D_2, self.I_D_SELECT_2)
         ui_click(self.C_D_3, self.I_D_SELECT_3)
         ui_click(self.C_D_4, self.I_D_SELECT_4)
         # 委派开始
-        logger.info(f'Delegation: {name} start')
+        logger.info(f"Delegation: {name} start")
         while 1:
             self.screenshot()
             if not self.appear(self.I_D_START):
@@ -117,7 +113,6 @@ class ScriptTask(GameUi, DelegationAssets):
                 check_timer.reset()
                 continue
 
-
             if not self.appear(self.I_REWARDS_MIN):
                 continue
             if check_timer.reached():
@@ -127,16 +122,13 @@ class ScriptTask(GameUi, DelegationAssets):
                 continue
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from module.config.config import Config
     from module.device.device import Device
-    from memory_profiler import profile
-    c = Config('oas1')
+
+    c = Config("oas1")
     d = Device(c)
     t = ScriptTask(c, d)
 
     # t.delegate_one('弥助的画')
     t.run()
-
-
-

@@ -1,12 +1,12 @@
+import importlib
 import re
+import sys
 
 import cv2
-import sys
 import numpy as np
-import importlib
 from PIL import Image
 
-REGEX_NODE = re.compile(r'(-?[A-Za-z]+)(-?\d+)')
+REGEX_NODE = re.compile(r"(-?[A-Za-z]+)(-?\d+)")
 
 
 def random_normal_distribution_int(a, b, n=3):
@@ -66,7 +66,8 @@ def random_rectangle_vector(vector, box, random_range=(0, 0, 0, 0), padding=15):
 
 
 def random_rectangle_vector_opted(
-        vector, box, random_range=(0, 0, 0, 0), padding=15, whitelist_area=None, blacklist_area=None):
+    vector, box, random_range=(0, 0, 0, 0), padding=15, whitelist_area=None, blacklist_area=None
+):
     """
     Place a vector in a box randomly.
 
@@ -90,7 +91,9 @@ def random_rectangle_vector_opted(
     vector = np.array(vector) + random_rectangle_point(random_range)
     vector = np.round(vector).astype(np.int)
     half_vector = np.round(vector / 2).astype(np.int)
-    box_pad = np.array(box) + np.append(np.abs(half_vector) + padding, -np.abs(half_vector) - padding)
+    box_pad = np.array(box) + np.append(
+        np.abs(half_vector) + padding, -np.abs(half_vector) - padding
+    )
     box_pad = area_offset(box_pad, half_vector)
     segment = int(np.linalg.norm(vector) // 70) + 1
 
@@ -98,7 +101,7 @@ def random_rectangle_vector_opted(
         if not blacklist_area:
             return False
         for x in range(segment + 1):
-            point = - vector * x / segment + end
+            point = -vector * x / segment + end
             for area in blacklist_area:
                 if point_in_area(point, area, threshold=0):
                     return True
@@ -136,8 +139,12 @@ def random_line_segments(p1, p2, n, random_range=(0, 0, 0, 0)):
     Returns:
         list[tuple]: [(x0, y0), (x1, y1), (x2, y2)]
     """
-    return [tuple((((n - index) * p1 + index * p2) / n).astype(int) + random_rectangle_point(random_range))
-            for index in range(0, n + 1)]
+    return [
+        tuple(
+            (((n - index) * p1 + index * p2) / n).astype(int) + random_rectangle_point(random_range)
+        )
+        for index in range(0, n + 1)
+    ]
 
 
 def ensure_time(second, n=3, precision=3):
@@ -152,16 +159,18 @@ def ensure_time(second, n=3, precision=3):
         float:
     """
     if isinstance(second, tuple):
-        multiply = 10 ** precision
-        result = random_normal_distribution_int(second[0] * multiply, second[1] * multiply, n) / multiply
+        multiply = 10**precision
+        result = (
+            random_normal_distribution_int(second[0] * multiply, second[1] * multiply, n) / multiply
+        )
         return round(result, precision)
     elif isinstance(second, str):
-        if ',' in second:
-            lower, upper = second.replace(' ', '').split(',')
+        if "," in second:
+            lower, upper = second.replace(" ", "").split(",")
             lower, upper = int(lower), int(upper)
             return ensure_time((lower, upper), n=n, precision=precision)
-        if '-' in second:
-            lower, upper = second.replace(' ', '').split('-')
+        if "-" in second:
+            lower, upper = second.replace(" ", "").split("-")
             lower, upper = int(lower), int(upper)
             return ensure_time((lower, upper), n=n, precision=precision)
         else:
@@ -270,10 +279,7 @@ def area_size(area):
     Returns:
         tuple: (x, y).
     """
-    return (
-        max(area[2] - area[0], 0),
-        max(area[3] - area[1], 0)
-    )
+    return (max(area[2] - area[0], 0), max(area[3] - area[1], 0))
 
 
 def point_limit(point, area):
@@ -287,10 +293,7 @@ def point_limit(point, area):
     Returns:
         tuple: (x, y).
     """
-    return (
-        limit_in(point[0], area[0], area[2]),
-        limit_in(point[1], area[1], area[3])
-    )
+    return (limit_in(point[0], area[0], area[2]), limit_in(point[1], area[1], area[3]))
 
 
 def point_in_area(point, area, threshold=5):
@@ -304,7 +307,10 @@ def point_in_area(point, area, threshold=5):
     Returns:
         bool:
     """
-    return area[0] - threshold < point[0] < area[2] + threshold and area[1] - threshold < point[1] < area[3] + threshold
+    return (
+        area[0] - threshold < point[0] < area[2] + threshold
+        and area[1] - threshold < point[1] < area[3] + threshold
+    )
 
 
 def area_in_area(area1, area2, threshold=5):
@@ -318,10 +324,12 @@ def area_in_area(area1, area2, threshold=5):
     Returns:
         bool:
     """
-    return area2[0] - threshold <= area1[0] \
-           and area2[1] - threshold <= area1[1] \
-           and area1[2] <= area2[2] + threshold \
-           and area1[3] <= area2[3] + threshold
+    return (
+        area2[0] - threshold <= area1[0]
+        and area2[1] - threshold <= area1[1]
+        and area1[2] <= area2[2] + threshold
+        and area1[3] <= area2[3] + threshold
+    )
 
 
 def area_cross_area(area1, area2, threshold=5):
@@ -338,8 +346,10 @@ def area_cross_area(area1, area2, threshold=5):
     # https://www.yiiven.cn/rect-is-intersection.html
     xa1, ya1, xa2, ya2 = area1
     xb1, yb1, xb2, yb2 = area2
-    return abs(xb2 + xb1 - xa2 - xa1) <= xa2 - xa1 + xb2 - xb1 + threshold * 2 \
-           and abs(yb2 + yb1 - ya2 - ya1) <= ya2 - ya1 + yb2 - yb1 + threshold * 2
+    return (
+        abs(xb2 + xb1 - xa2 - xa1) <= xa2 - xa1 + xb2 - xb1 + threshold * 2
+        and abs(yb2 + yb1 - ya2 - ya1) <= ya2 - ya1 + yb2 - yb1 + threshold * 2
+    )
 
 
 def float2str(n, decimal=3):
@@ -364,7 +374,7 @@ def point2str(x, y, length=4):
     Returns:
         str: String with numbers right aligned, such as '( 100,  80)'.
     """
-    return '(%s, %s)' % (str(int(x)).rjust(length), str(int(y)).rjust(length))
+    return "(%s, %s)" % (str(int(x)).rjust(length), str(int(y)).rjust(length))
 
 
 def col2name(col):
@@ -386,7 +396,7 @@ def col2name(col):
         col_num = -col
     else:
         col_num = col + 1  # Change to 1-index.
-    col_str = ''
+    col_str = ""
 
     while col_num:
         # Set remainder from 1 .. 26
@@ -405,7 +415,7 @@ def col2name(col):
         col_num = int((col_num - 1) / 26)
 
     if col_neg:
-        return '-' + col_str
+        return "-" + col_str
     else:
         return col_str
 
@@ -423,11 +433,11 @@ def name2col(col_str):
     # Convert base26 column string to number.
     expn = 0
     col = 0
-    col_neg = col_str.startswith('-')
-    col_str = col_str.strip('-').upper()
+    col_neg = col_str.startswith("-")
+    col_str = col_str.strip("-").upper()
 
     for char in reversed(col_str):
-        col += (ord(char) - 64) * (26 ** expn)
+        col += (ord(char) - 64) * (26**expn)
         expn += 1
 
     if col_neg:
@@ -606,8 +616,7 @@ def rgb2gray(image):
     """
     r, g, b = cv2.split(image)
     return cv2.add(
-        cv2.multiply(cv2.max(cv2.max(r, g), b), 0.5),
-        cv2.multiply(cv2.min(cv2.min(r, g), b), 0.5)
+        cv2.multiply(cv2.max(cv2.max(r, g), b), 0.5), cv2.multiply(cv2.min(cv2.min(r, g), b), 0.5)
     )
 
 
@@ -885,10 +894,10 @@ def color_bar_percentage(image, area, prev_color, reverse=False, starter=0, thre
             return prev_index / length
         prev_color = np.mean(image[:, prev_index], axis=0)
 
-    return 0.
+    return 0.0
 
 
-def load_module(moduleName :str, moduleFile :str):
+def load_module(moduleName: str, moduleFile: str):
     """
     加载模块
     :param moduleName:
@@ -933,9 +942,8 @@ def is_approx_rectangle(points, tolerance=30):
         angle(points[0], points[1], points[2]),
         angle(points[1], points[2], points[3]),
         angle(points[2], points[3], points[0]),
-        angle(points[3], points[0], points[1])
+        angle(points[3], points[0], points[1]),
     ]
 
     # 判断角度是否接近90度
     return all(np.isclose(a, 90, atol=tolerance) for a in angles)
-

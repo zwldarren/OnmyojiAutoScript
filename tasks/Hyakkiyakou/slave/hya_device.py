@@ -1,14 +1,14 @@
-import timeit
-import numpy as np
 from datetime import datetime
 
-from module.base.timer import Timer
-from module.logger import logger
-from module.base.utils import point2str
-from module.exception import RequestHumanTakeover, GameStuckError
-from tasks.base_task import BaseTask
+import numpy as np
 
-from tasks.Hyakkiyakou.config import ScreenshotMethod, ControlMethod
+from module.base.timer import Timer
+from module.base.utils import point2str
+from module.exception import GameStuckError, RequestHumanTakeover
+from module.logger import logger
+from tasks.base_task import BaseTask
+from tasks.Hyakkiyakou.config import ControlMethod, ScreenshotMethod
+
 
 def image_black(img) -> bool:
     for y, x in [(0, 0), (719, 1279), (719, 0), (0, 1279)]:
@@ -25,28 +25,37 @@ class HyaDevice(BaseTask):
     3. 考虑JIT加速
     我宣布世界上最好的 Linux 系统是 Windows
     """
+
     hya_screenshot_interval = Timer(0.2)  # 300ms
     hya_fs_check_timer = Timer(3 * 60)  # 五分钟跑不完就应该是出问题了
 
     def fast_screenshot(self, screenshot: ScreenshotMethod):
         self.hya_screenshot_interval.wait()
         self.hya_screenshot_interval.reset()
-        self.device.image = self.device.screenshot_window_background() if screenshot == ScreenshotMethod.WINDOW_BACKGROUND else self.device.screenshot_nemu_ipc()
+        self.device.image = (
+            self.device.screenshot_window_background()
+            if screenshot == ScreenshotMethod.WINDOW_BACKGROUND
+            else self.device.screenshot_nemu_ipc()
+        )
         if image_black(self.device.image):
-            logger.error('Screenshot image is black, try again')
-            raise RequestHumanTakeover('Screenshot image is black, try again')
+            logger.error("Screenshot image is black, try again")
+            raise RequestHumanTakeover("Screenshot image is black, try again")
         if self.hya_fs_check_timer.reached():
-            logger.error('Fast screenshot check timer reached')
-            logger.error('Five minutes have not ended, the game is probably stuck, please check the game')
+            logger.error("Fast screenshot check timer reached")
+            logger.error(
+                "Five minutes have not ended, the game is probably stuck, please check the game"
+            )
             raise GameStuckError
         if self.config.script.error.save_error:
-            self.device.screenshot_deque.append({'time': datetime.now(), 'image': self.device.image})
+            self.device.screenshot_deque.append(
+                {"time": datetime.now(), "image": self.device.image}
+            )
         return self.device.image
 
-    def fast_click(self, x: int, y: int, control_method: ControlMethod = ControlMethod.WINDOW_MESSAGE) -> None:
-        logger.info(
-            'Click %s @ %s' % (point2str(x, y), 'Click')
-        )
+    def fast_click(
+        self, x: int, y: int, control_method: ControlMethod = ControlMethod.WINDOW_MESSAGE
+    ) -> None:
+        logger.info("Click %s @ %s" % (point2str(x, y), "Click"))
         if control_method == ControlMethod.MINITOUCH:
             self.device.click_minitouch(x=x, y=y)
         else:
@@ -58,14 +67,14 @@ class HyaDevice(BaseTask):
         @param interval: ms
         @return:
         """
-        self.hya_screenshot_interval = Timer(interval / 1000.)
+        self.hya_screenshot_interval = Timer(interval / 1000.0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from module.config.config import Config
     from module.device.device import Device
 
-    c = Config('oas1')
+    c = Config("oas1")
     d = Device(c)
     hd = HyaDevice(c, d)
 
@@ -78,4 +87,3 @@ if __name__ == '__main__':
     # print(f"执行总的时间: {execution_time * 1000} ms")
 
     hd.fast_screenshot()
-

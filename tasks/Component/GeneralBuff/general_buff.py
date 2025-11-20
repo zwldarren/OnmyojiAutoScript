@@ -1,26 +1,21 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
 import time
 
-import cv2
-import numpy as np
-
-from tasks.Component.GeneralBuff.assets import GeneralBuffAssets
-from module.atom.ocr import RuleOcr
 from module.atom.image import RuleImage
-from tasks.base_task import BaseTask
+from module.atom.ocr import RuleOcr
 from module.logger import logger
+from tasks.base_task import BaseTask
+from tasks.Component.GeneralBuff.assets import GeneralBuffAssets
 
 
 class GeneralBuff(BaseTask, GeneralBuffAssets):
-
     def open_buff(self):
         """
         打开buff的总界面
         :return:
         """
-        logger.info('Open buff')
+        logger.info("Open buff")
         while 1:
             self.screenshot()
             if self.appear(self.I_CLOUD):
@@ -41,7 +36,7 @@ class GeneralBuff(BaseTask, GeneralBuffAssets):
         关闭buff的总界面, 但是要确保buff界面已经打开了
         :return:
         """
-        logger.info('Close buff')
+        logger.info("Close buff")
         while 1:
             self.screenshot()
             if not self.appear(self.I_CLOUD):
@@ -62,7 +57,7 @@ class GeneralBuff(BaseTask, GeneralBuffAssets):
         self.screenshot()
         area = buff.ocr(self.device.image)
         if area == tuple([432.0, 143.0, 325.0, 21.0]):
-            logger.info('No gold 50 buff')
+            logger.info("No gold 50 buff")
             return None
 
         # 开始的x坐标就是文字的右边
@@ -87,11 +82,11 @@ class GeneralBuff(BaseTask, GeneralBuffAssets):
         :param is_open: 是否打开
         :return:
         """
-        logger.info('Gold 50 buff')
+        logger.info("Gold 50 buff")
         self.screenshot()
         area = self.get_area(self.O_GOLD_50)
         if not area:
-            logger.warning('No gold 50 buff')
+            logger.warning("No gold 50 buff")
             return None
         self.I_OPEN_YELLOW.roi_back = list(area)  # 动态设置roi
         self.I_CLOSE_RED.roi_back = list(area)
@@ -116,11 +111,11 @@ class GeneralBuff(BaseTask, GeneralBuffAssets):
         :param is_open: 是否打开
         :return:
         """
-        logger.info('Gold 100 buff')
+        logger.info("Gold 100 buff")
         self.screenshot()
         area = self.get_area(self.O_GOLD_100)
         if not area:
-            logger.warning('No gold 100 buff')
+            logger.warning("No gold 100 buff")
             return None
         self.I_OPEN_YELLOW.roi_back = list(area)
         self.I_CLOSE_RED.roi_back = list(area)
@@ -145,17 +140,17 @@ class GeneralBuff(BaseTask, GeneralBuffAssets):
         :param is_open: 是否打开
         :return:
         """
-        logger.info('Exp 50 buff')
+        logger.info("Exp 50 buff")
         while 1:
             self.screenshot()
             area = self.get_area(self.O_EXP_50)
             if not area:
-                logger.warning('No exp 50 buff')
+                logger.warning("No exp 50 buff")
                 continue
             self.set_switch_area(area)
 
             if not self.appear(self.I_OPEN_YELLOW) and not self.appear(self.I_CLOSE_RED):
-                logger.info('No exp 50 buff')
+                logger.info("No exp 50 buff")
                 self.device.swipe(p2=(530, 240), p1=(580, 320))
                 time.sleep(1)
             else:
@@ -182,17 +177,17 @@ class GeneralBuff(BaseTask, GeneralBuffAssets):
         :param is_open: 是否打开
         :return:
         """
-        logger.info('Exp 100 buff')
+        logger.info("Exp 100 buff")
         while 1:
             self.screenshot()
             area = self.get_area(self.O_EXP_100)
             if not area:
-                logger.warning('No exp 100 buff')
+                logger.warning("No exp 100 buff")
                 continue
             self.set_switch_area(area)
 
             if not self.appear(self.I_OPEN_YELLOW) and not self.appear(self.I_CLOSE_RED):
-                logger.info('No exp 100 buff')
+                logger.info("No exp 100 buff")
                 self.device.swipe(p2=(530, 240), p1=(580, 320))
                 time.sleep(1)
             else:
@@ -225,7 +220,7 @@ class GeneralBuff(BaseTask, GeneralBuffAssets):
         self.screenshot()
 
         if not target.match(self.device.image):
-            logger.warning(f'No {target.name} buff')
+            logger.warning(f"No {target.name} buff")
             return None
             # logger.info(f'front area: {target.roi_front}')
             # logger.info(f'front center: {target.front_center()}')
@@ -241,11 +236,11 @@ class GeneralBuff(BaseTask, GeneralBuffAssets):
         :param is_open: 是否打开
         :return:
         """
-        logger.info('Awake buff')
+        logger.info("Awake buff")
         self.screenshot()
         area = self.get_area_image(self.I_AWAKE)
         if not area:
-            logger.warning('No awake buff')
+            logger.warning("No awake buff")
             return None
         self.set_switch_area(area)
         if is_open:
@@ -269,11 +264,11 @@ class GeneralBuff(BaseTask, GeneralBuffAssets):
         :param is_open: 是否打开
         :return:
         """
-        logger.info('Soul buff')
+        logger.info("Soul buff")
         self.screenshot()
         area = self.get_area_image(self.I_SOUL)
         if not area:
-            logger.warning('No soul buff')
+            logger.warning("No soul buff")
             return None
         self.set_switch_area(area)
         if is_open:
@@ -293,9 +288,14 @@ class GeneralBuff(BaseTask, GeneralBuffAssets):
 
     def reject_invite(self):
         from tasks.Component.GeneralInvite.assets import GeneralInviteAssets as gia
+
         while 1:
             self.screenshot()
-            if not (self.appear(gia.I_I_REJECT_1) or self.appear(gia.I_I_REJECT_2) or self.appear(gia.I_I_REJECT_3)):
+            if not (
+                self.appear(gia.I_I_REJECT_1)
+                or self.appear(gia.I_I_REJECT_2)
+                or self.appear(gia.I_I_REJECT_3)
+            ):
                 break
             if self.appear(gia.I_I_REJECT_3):
                 self.click(gia.I_I_REJECT_3, 6)
@@ -308,11 +308,11 @@ class GeneralBuff(BaseTask, GeneralBuffAssets):
                 continue
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from module.config.config import Config
     from module.device.device import Device
 
-    c = Config('oas1')
+    c = Config("oas1")
     d = Device(c)
     t = GeneralBuff(c, d)
 

@@ -1,14 +1,12 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
-from queue import Queue
 from multiprocessing import Process
+from queue import Queue
 
 from module.logger import logger
 
 
 class ScriptProcess(Process):
-
     def __init__(self, config: str, port: int, log_queue: Queue, update_queue: Queue) -> None:
         """
 
@@ -23,8 +21,6 @@ class ScriptProcess(Process):
         self.log_queue = log_queue
         self.update_queue = update_queue
         self.daemon = True  # 设置为守护进程，主进程结束，子进程也结束
-
-
 
     @property
     def alive(self) -> bool:
@@ -42,12 +38,13 @@ class ScriptProcess(Process):
         self.start_log()
         try:
             from script import Script
+
             script = Script(config_name=self.config)
             script.gui_update_task = self.update_tasks
             script.init_server(self.port)
             script.run_server()
         except:
-            logger.exception(f'run script {self.config} error')
+            logger.exception(f"run script {self.config} error")
             raise
 
     def stop(self) -> None:
@@ -58,7 +55,7 @@ class ScriptProcess(Process):
         """
         self.terminate()
         self.join()
-        logger.info(f'stop script {self.config}')
+        logger.info(f"stop script {self.config}")
 
     # def restart(self) -> None:
     #     """
@@ -75,12 +72,12 @@ class ScriptProcess(Process):
         """
         try:
             from module.logger import set_file_logger, set_func_logger
+
             set_file_logger(name=self.config)
             set_func_logger(self.log_queue.put)
         except:
-            logger.exception(f'start log error')
+            logger.exception("start log error")
             raise
-
 
     def update_tasks(self, data) -> None:
         """
@@ -89,5 +86,4 @@ class ScriptProcess(Process):
         """
         msg = {self.config: data}
         self.update_queue.put(msg)
-        logger.info(f'Update tasks {self.config}')
-
+        logger.info(f"Update tasks {self.config}")

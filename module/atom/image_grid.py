@@ -1,4 +1,3 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
 import numpy as np
@@ -6,12 +5,9 @@ import numpy as np
 from module.atom.image import RuleImage
 
 
-
 class ImageGrid:
-
     def __init__(self, images: list[RuleImage]):
         self.images = images
-
 
     def find_anyone(self, img: np.array) -> RuleImage or None:
         """
@@ -34,13 +30,13 @@ class ImageGrid:
         # 收集匹配结果时保留来源image
         for image in self.images:
             matches = image.match_all_any(img, threshold=0.8, nms_threshold=0.3)
-            for (score, x, y, w, h) in matches:
-                matched.append( (image, score, (x, y, w, h)) )
+            for score, x, y, w, h in matches:
+                matched.append((image, score, (x, y, w, h)))
 
         # 按y坐标升序排列（屏幕坐标系从上到下）
         sorted_results = sorted(
             matched,
-            key=lambda item: item[2][1]  # item[1]是坐标元组，取y值
+            key=lambda item: item[2][1],  # item[1]是坐标元组，取y值
         )
 
         return sorted_results if sorted_results else None

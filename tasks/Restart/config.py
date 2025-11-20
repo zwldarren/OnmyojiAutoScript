@@ -1,17 +1,15 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
-import string
 
 from pydantic import BaseModel, Field
 
+from tasks.Component.config_base import ConfigBase, DateTime
 from tasks.Restart.config_scheduler import RestartScheduler
-from tasks.Component.config_base import ConfigBase, DateTime, MultiLine
 
 
 class HarvestConfig(BaseModel):
     # 默认启用
-    enable: bool = Field(default=True, description='harvest_enable_help')
+    enable: bool = Field(default=True, description="harvest_enable_help")
     # 永久勾玉卡
     enable_jade: bool = Field(default=True)
     # 签到
@@ -27,8 +25,12 @@ class HarvestConfig(BaseModel):
 
 
 class TasksReset(BaseModel):
-    reset_task_datetime_enable: bool = Field(default=False, description='reset_task_datetime_enable_help')
-    reset_task_datetime: DateTime = Field(default="2023-01-01 00:00:00", description='rest_task_datetime_help')
+    reset_task_datetime_enable: bool = Field(
+        default=False, description="reset_task_datetime_enable_help"
+    )
+    reset_task_datetime: DateTime = Field(
+        default="2023-01-01 00:00:00", description="rest_task_datetime_help"
+    )
 
 
 class LoginCharacterConfig(BaseModel):

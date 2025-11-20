@@ -1,19 +1,24 @@
-import typing as t
-import numpy as np
-import cv2
 from dataclasses import dataclass
 from functools import wraps
 from json.decoder import JSONDecodeError
 from subprocess import list2cmdline
 
+import cv2
+import numpy as np
 import uiautomator2 as u2
 from adbutils.errors import AdbError
 from lxml import etree
 
-from module.base.utils import point2str, random_rectangle_point, random_line_segments
+from module.base.utils import point2str, random_line_segments, random_rectangle_point
 from module.device.connection import Connection
-from module.device.method.utils import (RETRY_TRIES, retry_sleep, handle_adb_error,
-                                        ImageTruncated, PackageNotInstalled, possible_reasons)
+from module.device.method.utils import (
+    RETRY_TRIES,
+    ImageTruncated,
+    PackageNotInstalled,
+    handle_adb_error,
+    possible_reasons,
+    retry_sleep,
+)
 from module.exception import RequestHumanTakeover
 from module.logger import logger
 
@@ -51,6 +56,7 @@ def retry(func):
             # AdbError
             except AdbError as e:
                 if handle_adb_error(e):
+
                     def init():
                         self.adb_reconnect()
                 else:
@@ -58,6 +64,7 @@ def retry(func):
             # RuntimeError: USB device 127.0.0.1:5555 is offline
             except RuntimeError as e:
                 if handle_adb_error(e):
+
                     def init():
                         self.adb_reconnect()
                 else:
@@ -67,8 +74,8 @@ def retry(func):
             except AssertionError as e:
                 logger.exception(e)
                 possible_reasons(
-                    'If you are using BlueStacks or LD player or WSA, '
-                    'please enable ADB in the settings of your emulator'
+                    "If you are using BlueStacks or LD player or WSA, "
+                    "please enable ADB in the settings of your emulator"
                 )
                 break
             # Package not installed
@@ -90,7 +97,7 @@ def retry(func):
                 def init():
                     pass
 
-        logger.critical(f'Retry {func.__name__}() failed')
+        logger.critical(f"Retry {func.__name__}() failed")
         raise RequestHumanTakeover
 
     return retry_wrapper
@@ -115,18 +122,18 @@ class ShellBackgroundResponse:
 class Uiautomator2(Connection):
     @retry
     def screenshot_uiautomator2(self):
-        image = self.u2.screenshot(format='raw')
+        image = self.u2.screenshot(format="raw")
         image = np.frombuffer(image, np.uint8)
         if image is None:
-            raise ImageTruncated('Empty image after reading from buffer')
+            raise ImageTruncated("Empty image after reading from buffer")
 
         image = cv2.imdecode(image, cv2.IMREAD_COLOR)
         if image is None:
-            raise ImageTruncated('Empty image after cv2.imdecode')
+            raise ImageTruncated("Empty image after cv2.imdecode")
 
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         if image is None:
-            raise ImageTruncated('Empty image after cv2.cvtColor')
+            raise ImageTruncated("Empty image after cv2.cvtColor")
 
         return image
 
@@ -173,17 +180,26 @@ class Uiautomator2(Connection):
             x, y, second = data
             if index == 0:
                 self.u2.touch.down(x, y)
-                logger.info(point2str(x, y) + ' down')
+                logger.info(point2str(x, y) + " down")
             elif index - length == -1:
                 self.u2.touch.up(x, y)
-                logger.info(point2str(x, y) + ' up')
+                logger.info(point2str(x, y) + " up")
             else:
                 self.u2.touch.move(x, y)
-                logger.info(point2str(x, y) + ' move')
+                logger.info(point2str(x, y) + " move")
             self.sleep(second)
 
-    def drag_uiautomator2(self, p1, p2, segments=1, shake=(0, 15), point_random=(-10, -10, 10, 10),
-                          shake_random=(-5, -5, 5, 5), swipe_duration=0.25, shake_duration=0.1):
+    def drag_uiautomator2(
+        self,
+        p1,
+        p2,
+        segments=1,
+        shake=(0, 15),
+        point_random=(-10, -10, 10, 10),
+        shake_random=(-5, -5, 5, 5),
+        swipe_duration=0.25,
+        shake_duration=0.1,
+    ):
         """Drag and shake, like:
                      /\
         +-----------+  +  +
@@ -203,11 +219,14 @@ class Uiautomator2(Connection):
         """
         p1 = np.array(p1) - random_rectangle_point(point_random)
         p2 = np.array(p2) - random_rectangle_point(point_random)
-        path = [(x, y, swipe_duration) for x, y in random_line_segments(p1, p2, n=segments, random_range=point_random)]
+        path = [
+            (x, y, swipe_duration)
+            for x, y in random_line_segments(p1, p2, n=segments, random_range=point_random)
+        ]
         path += [
             (*p2 + shake + random_rectangle_point(shake_random), shake_duration),
             (*p2 - shake - random_rectangle_point(shake_random), shake_duration),
-            (*p2, shake_duration)
+            (*p2, shake_duration),
         ]
         path = [(int(x), int(y), d) for x, y, d in path]
         self._drag_along(path)
@@ -219,7 +238,7 @@ class Uiautomator2(Connection):
             str: Package name.
         """
         result = self.u2.app_current()
-        return result['package']
+        return result["package"]
 
     @retry
     def app_start_uiautomator2(self, package_name=None):
@@ -241,19 +260,19 @@ class Uiautomator2(Connection):
     @retry
     def dump_hierarchy_uiautomator2(self) -> etree._Element:
         content = self.u2.dump_hierarchy(compressed=True)
-        hierarchy = etree.fromstring(content.encode('utf-8'))
+        hierarchy = etree.fromstring(content.encode("utf-8"))
         return hierarchy
 
     @retry
-    def resolution_uiautomator2(self, cal_rotation=True) -> t.Tuple[int, int]:
+    def resolution_uiautomator2(self, cal_rotation=True) -> tuple[int, int]:
         """
         Faster u2.window_size(), cause that calls `dumpsys display` twice.
 
         Returns:
             (width, height)
         """
-        info = self.u2.http.get('/info').json()
-        w, h = info['display']['width'], info['display']['height']
+        info = self.u2.http.get("/info").json()
+        w, h = info["display"]["width"], info["display"]["height"]
         if cal_rotation:
             rotation = self.get_orientation()
             if (w > h) != (rotation % 2 == 1):
@@ -272,18 +291,18 @@ class Uiautomator2(Connection):
             RequestHumanTakeover: If resolution is not 1280x720
         """
         width, height = self.resolution_uiautomator2()
-        logger.attr('Screen_size', f'{width}x{height}')
+        logger.attr("Screen_size", f"{width}x{height}")
         if width == 1280 and height == 720:
             return (width, height)
         if width == 720 and height == 1280:
             return (width, height)
 
-        logger.critical(f'Resolution not supported: {width}x{height}')
-        logger.critical('Please set emulator resolution to 1280x720')
+        logger.critical(f"Resolution not supported: {width}x{height}")
+        logger.critical("Please set emulator resolution to 1280x720")
         raise RequestHumanTakeover
 
     @retry
-    def proc_list_uiautomator2(self) -> t.List[ProcessInfo]:
+    def proc_list_uiautomator2(self) -> list[ProcessInfo]:
         """
         Get info about current processes.
         """
@@ -291,12 +310,13 @@ class Uiautomator2(Connection):
         resp.raise_for_status()
         result = [
             ProcessInfo(
-                pid=proc['pid'],
-                ppid=proc['ppid'],
-                thread_count=proc['threadCount'],
-                cmdline=' '.join(proc['cmdline']) if proc['cmdline'] is not None else '',
-                name=proc['name'],
-            ) for proc in resp.json()
+                pid=proc["pid"],
+                ppid=proc["ppid"],
+                thread_count=proc["threadCount"],
+                cmdline=" ".join(proc["cmdline"]) if proc["cmdline"] is not None else "",
+                name=proc["name"],
+            )
+            for proc in resp.json()
         ]
         return result
 
@@ -321,13 +341,14 @@ class Uiautomator2(Connection):
 
         resp = ret.json()
         resp = ShellBackgroundResponse(
-            success=bool(resp.get('success', False)),
-            pid=resp.get('pid', 0),
-            description=resp.get('description', '')
+            success=bool(resp.get("success", False)),
+            pid=resp.get("pid", 0),
+            description=resp.get("description", ""),
         )
         return resp
 
-if __name__ == '__main__':
-    ui2 = Uiautomator2(config='oas1')
+
+if __name__ == "__main__":
+    ui2 = Uiautomator2(config="oas1")
     cv2.imshow("iiii", ui2.screenshot_uiautomator2())
     cv2.waitKey(0)

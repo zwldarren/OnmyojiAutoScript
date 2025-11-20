@@ -1,4 +1,4 @@
-from cached_property import cached_property
+from functools import cached_property
 
 from module.atom.animate import RuleAnimate
 from module.atom.image import RuleImage
@@ -21,7 +21,7 @@ class WQExplore(BaseExploration, HighLight):
         return RuleAnimate(self.I_SWIPE_END)
 
     def explore(self, goto: RuleImage, num: int):
-        logger.info(f'Start exploring with number: {num}')
+        logger.info(f"Start exploring with number: {num}")
         explore_init = False
         explore_only_boss: bool = True
         _cnt_exploration = 0
@@ -38,7 +38,7 @@ class WQExplore(BaseExploration, HighLight):
             # 进入探索
             if scene == Scene.ENTRANCE:
                 if _cnt_exploration >= num:
-                    logger.info('Execution exploration end')
+                    logger.info("Execution exploration end")
                     self.ui_click_until_disappear(self.I_UI_BACK_RED)
                     if explore_only_boss:
                         raise ExploreWantedBoss
@@ -51,11 +51,11 @@ class WQExplore(BaseExploration, HighLight):
                 self.wait_until_stable(
                     self.I_CHECK_EXPLORATION,
                     timer=Timer(limit=0.5, count=2),
-                    timeout=Timer(2, count=10)
+                    timeout=Timer(2, count=10),
                 )
                 curr_scene = self.get_current_scene(reuse_screenshot=False)
                 if curr_scene == Scene.WORLD and _cnt_exploration >= num:
-                    logger.info('All Done')
+                    logger.info("All Done")
                     break
                 continue
             # 探索里面
@@ -77,14 +77,14 @@ class WQExplore(BaseExploration, HighLight):
                 # boss
                 if self.appear(self.I_BOSS_BATTLE_BUTTON):
                     if self.fire(self.I_BOSS_BATTLE_BUTTON):
-                        logger.info(f'Boss battle, minions cnt {self.minions_cnt}')
+                        logger.info(f"Boss battle, minions cnt {self.minions_cnt}")
                         _cnt_exploration += 1
                         explore_only_boss = False
                     continue
                 # 小怪
                 if self.appear(self.TEMPLATE_GIF) and self.fire(self.TEMPLATE_GIF):
                     explore_only_boss = False
-                    logger.info(f'Fight, minions cnt {self.minions_cnt}')
+                    logger.info(f"Fight, minions cnt {self.minions_cnt}")
                     continue
                 # 向后拉,寻找怪
                 if search_fail_cnt >= 4:
@@ -97,18 +97,18 @@ class WQExplore(BaseExploration, HighLight):
                         continue
                 else:
                     search_fail_cnt += 1
-            elif scene==Scene.BATTLE_PREPARE:
+            elif scene == Scene.BATTLE_PREPARE:
                 self.ui_click_until_disappear(self.I_PREPARE_HIGHLIGHT, interval=0.5)
             elif scene == Scene.UNKNOWN:
                 continue
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from module.config.config import Config
     from module.device.device import Device
     from tasks.WantedQuests.assets import WantedQuestsAssets
 
-    config = Config('oas1')
+    config = Config("oas1")
     device = Device(config)
     t = WQExplore(config, device)
     t.explore(goto=WantedQuestsAssets.I_GOTO_1, num=2)

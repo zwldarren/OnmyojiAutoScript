@@ -1,27 +1,22 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
 from datetime import datetime, timedelta
-
-from module.exception import TaskEnd
-from module.logger import logger
-
-from tasks.GameUi.game_ui import GameUi, Page
-from tasks.GameUi.page import page_soul_zones, page_shikigami_records
-from tasks.Component.GeneralBattle.general_battle import GeneralBattle
-from tasks.Component.GeneralRoom.general_room import GeneralRoom
-from tasks.Component.GeneralInvite.general_invite import GeneralInvite
-from tasks.Component.SwitchSoul.switch_soul import SwitchSoul
-from tasks.EternitySea.assets import EternitySeaAssets
-from tasks.Orochi.config import UserStatus
-from tasks.EternitySea.config import EternitySea
-from module.exception import RequestHumanTakeover
-from tasks.GameUi.page import page_main, page_soul_zones, page_shikigami_records
 from time import sleep
 
-class ScriptTask(
-    GameUi, GeneralBattle, GeneralRoom, GeneralInvite, SwitchSoul, EternitySeaAssets
-):
+from module.exception import RequestHumanTakeover, TaskEnd
+from module.logger import logger
+from tasks.Component.GeneralBattle.general_battle import GeneralBattle
+from tasks.Component.GeneralInvite.general_invite import GeneralInvite
+from tasks.Component.GeneralRoom.general_room import GeneralRoom
+from tasks.Component.SwitchSoul.switch_soul import SwitchSoul
+from tasks.EternitySea.assets import EternitySeaAssets
+from tasks.EternitySea.config import EternitySea
+from tasks.GameUi.game_ui import GameUi, Page
+from tasks.GameUi.page import page_main, page_shikigami_records, page_soul_zones
+from tasks.Orochi.config import UserStatus
+
+
+class ScriptTask(GameUi, GeneralBattle, GeneralRoom, GeneralInvite, SwitchSoul, EternitySeaAssets):
     @property
     def task_name(self):
         return "EternitySea"
@@ -41,10 +36,14 @@ class ScriptTask(
         self._two_teams_switch_sous(self._task_config.switch_soul_config_1)
         self._two_teams_switch_sous(self._task_config.switch_soul_config_2)
         match self._task_config.eternity_sea_config.user_status:
-            case UserStatus.LEADER: success = self.run_leader()
-            case UserStatus.MEMBER: success = self.run_member()
-            case UserStatus.ALONE: success = self.run_alone()
-            case _: logger.error('Unknown user status')
+            case UserStatus.LEADER:
+                success = self.run_leader()
+            case UserStatus.MEMBER:
+                success = self.run_member()
+            case UserStatus.ALONE:
+                success = self.run_alone()
+            case _:
+                logger.error("Unknown user status")
 
         if success:
             self.set_next_run(self.task_name, finish=True, success=True)
@@ -53,16 +52,15 @@ class ScriptTask(
 
         raise TaskEnd(self.task_name)
 
-
     def run_leader(self):
-        logger.info('Start run leader')
+        logger.info("Start run leader")
         self._navigate_to_soul_zones()
         self._enter_eternity_sea()
         layer = self._task_config.eternity_sea_config.layer
         self.check_layer(layer)
         self.check_lock(self._task_config.general_battle_config.lock_team_enable)
         # 创建队伍
-        logger.info('Create team')
+        logger.info("Create team")
         while 1:
             self.screenshot()
             if self.appear(self.I_CHECK_TEAM):
@@ -85,7 +83,7 @@ class ScriptTask(
             if self.check_and_invite(self._task_config.invite_config.default_invite):
                 continue
 
-            #限制
+            # 限制
             if self.current_count >= self._task_config.eternity_sea_config.limit_count:
                 logger.info("EternitySea count limit out")
                 break
@@ -96,7 +94,7 @@ class ScriptTask(
             # 如果没有进入房间那就不需要后面的邀请
             if not self.is_in_room():
                 if self.is_room_dead():
-                    logger.warning('eternity_sea task failed')
+                    logger.warning("eternity_sea task failed")
                     success = False
                     break
                 continue
@@ -107,14 +105,14 @@ class ScriptTask(
                     self.run_general_battle(config=self._task_config.general_battle_config)
                 else:
                     # 邀请失败，退出任务
-                    logger.warning('Invite failed and exit this eternity_sea task')
+                    logger.warning("Invite failed and exit this eternity_sea task")
                     success = False
                     break
 
             # 第一次会邀请队友
             if is_first:
                 if not self.run_invite(config=self._task_config.invite_config, is_first=True):
-                    logger.warning('Invite failed and exit this eternity_sea task')
+                    logger.warning("Invite failed and exit this eternity_sea task")
                     success = False
                     break
                 else:
@@ -136,20 +134,19 @@ class ScriptTask(
             return False
         return True
 
-
     def run_member(self):
-        logger.info('Start run member')
+        logger.info("Start run member")
         self.ui_get_current_page()
         # self.ui_goto(page_soul_zones)
         # self.orochi_enter()
         # self.check_lock(self.config.orochi.general_battle_config.lock_team_enable)
 
         # 进入战斗流程
-        self.device.stuck_record_add('BATTLE_STATUS_S')
+        self.device.stuck_record_add("BATTLE_STATUS_S")
         while 1:
             self.screenshot()
 
-            #限制
+            # 限制
             if self.current_count >= self._task_config.eternity_sea_config.limit_count:
                 logger.info("EternitySea count limit out")
                 break
@@ -185,14 +182,13 @@ class ScriptTask(
         self.ui_goto(page_main)
         return True
 
-
     def run_alone(self) -> bool:
         logger.info("Start run alone")
         self._navigate_to_soul_zones()
         self._enter_eternity_sea()
 
         if self._task_config.general_battle_config.lock_team_enable == False:
-            logger.critical(f"Only supports lock team mode")
+            logger.critical("Only supports lock team mode")
             raise RequestHumanTakeover
 
         while 1:
@@ -215,9 +211,7 @@ class ScriptTask(
                     pass
 
                 if not self.appear(self.I_ETERNITY_SEA_FIRE):
-                    self.run_general_battle(
-                        config=self._task_config.general_battle_config
-                    )
+                    self.run_general_battle(config=self._task_config.general_battle_config)
                     break
         return True
 
@@ -231,14 +225,13 @@ class ScriptTask(
         return False
 
     def eternitysea_enter(self) -> bool:
-        logger.info('Enter EternitySea')
+        logger.info("Enter EternitySea")
         while True:
             self.screenshot()
             if self.appear(self.I_FORM_TEAM):
                 return True
             if self.appear_then_click(self.I_ETERNITY_SEA, interval=1):
                 continue
-
 
     def _is_in_eternity_sea(self) -> bool:
         self.screenshot()
@@ -259,7 +252,7 @@ class ScriptTask(
                 return True
             if self.appear_then_click(self.I_ETERNITY_SEA, interval=1):
                 continue
-            #有可能点击到录像
+            # 有可能点击到录像
             if self.appear_then_click(self.I_BACK_BOTTOM, interval=1):
                 continue
 
@@ -291,7 +284,7 @@ class ScriptTask(
         :param lock:
         :return:
         """
-        logger.info('Check lock: %s', lock)
+        logger.info("Check lock: %s", lock)
         if lock:
             while 1:
                 self.screenshot()
@@ -306,6 +299,7 @@ class ScriptTask(
                     return True
                 if self.appear_then_click(self.I_NEWETERNITYSEA_LOCK, interval=1):
                     continue
+
 
 if __name__ == "__main__":
     from module.config.config import Config

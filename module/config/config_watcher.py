@@ -1,11 +1,11 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
 import os
 from datetime import datetime
 
-from module.config.utils import filepath_config, DEFAULT_TIME
+from module.config.utils import DEFAULT_TIME, filepath_config
 from module.logger import logger
+
 
 class ConfigWatcher:
     """
@@ -14,7 +14,8 @@ class ConfigWatcher:
     并提供了方法来检查文件是否被修改(should_reload)
     和获取当前修改时间(get_mtime)。
     """
-    config_name = 'script'
+
+    config_name = "script"
     start_mtime = DEFAULT_TIME
 
     def start_watching(self) -> None:
@@ -39,4 +40,3 @@ class ConfigWatcher:
             return True
         else:
             return False
-

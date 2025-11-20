@@ -226,7 +226,9 @@ def area2corner(area):
     Returns:
         np.ndarray: [upper-left, upper-right, bottom-left, bottom-right]
     """
-    return np.array([[area[0], area[1]], [area[2], area[1]], [area[0], area[3]], [area[2], area[3]]])
+    return np.array(
+        [[area[0], area[1]], [area[2], area[1]], [area[0], area[3]], [area[2], area[3]]]
+    )
 
 
 def corner2area(corner):
@@ -304,7 +306,9 @@ def points_to_area_generator(points, shape):
     points = points.reshape(*shape[::-1], 2)
     for y in range(shape[1] - 1):
         for x in range(shape[0] - 1):
-            area = np.array([points[y, x], points[y, x + 1], points[y + 1, x], points[y + 1, x + 1]])
+            area = np.array(
+                [points[y, x], points[y, x + 1], points[y + 1, x], points[y + 1, x + 1]]
+            )
             yield ((x, y), area)
 
 
@@ -355,7 +359,7 @@ def perspective_transform(points, data):
     Returns:
         np.ndarray: 2D array with shape (n, 2)
     """
-    points = np.pad(np.array(points), ((0, 0), (0, 1)), mode='constant', constant_values=1)
+    points = np.pad(np.array(points), ((0, 0), (0, 1)), mode="constant", constant_values=1)
     matrix = data.dot(points.T)
     x, y = matrix[0] / matrix[2], matrix[1] / matrix[2]
     points = np.array([x, y]).T

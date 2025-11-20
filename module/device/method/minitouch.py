@@ -3,19 +3,17 @@ import json
 import re
 import socket
 import time
-import numpy as np
 from functools import wraps
-from typing import List
 
+import numpy as np
 import websockets
 from adbutils.errors import AdbError
-from uiautomator2 import _Service
 
 from module.base.decorator import Config, cached_property, del_cached_property
 from module.base.timer import Timer
 from module.base.utils import random_rectangle_point
 from module.device.connection import Connection
-from module.device.method.utils import RETRY_TRIES, retry_sleep, handle_adb_error
+from module.device.method.utils import RETRY_TRIES, handle_adb_error, retry_sleep
 from module.exception import RequestHumanTakeover, ScriptError
 from module.logger import logger
 
@@ -65,7 +63,7 @@ def insert_swipe(p0, p3, speed=15, min_distance=10):
     segments = max(int(distance / speed) + 1, 5)
     lower = random_normal_distribution(-85, -60)
     upper = random_normal_distribution(80, 90)
-    theta = np.arange(lower + 0., upper + 0.0001, (upper - lower) / segments)
+    theta = np.arange(lower + 0.0, upper + 0.0001, (upper - lower) / segments)
     ts = np.sin(theta / 180 * np.pi)
     ts = np.sign(ts) * abs(ts) ** 0.9
     ts = (ts - min(ts)) / (max(ts) - min(ts))
@@ -74,7 +72,7 @@ def insert_swipe(p0, p3, speed=15, min_distance=10):
     points = []
     prev = (-100, -100)
     for t in ts:
-        point = p0 * (1 - t) ** 3 + 3 * p1 * t * (1 - t) ** 2 + 3 * p2 * t ** 2 * (1 - t) + p3 * t ** 3
+        point = p0 * (1 - t) ** 3 + 3 * p1 * t * (1 - t) ** 2 + 3 * p2 * t**2 * (1 - t) + p3 * t**3
         point = point.astype(int).tolist()
         if np.linalg.norm(np.subtract(point, prev)) < min_distance:
             continue
@@ -91,6 +89,7 @@ def insert_swipe(p0, p3, speed=15, min_distance=10):
         points = [p0, p3]
 
     return points
+
 
 def smooth_path(points: list, min_distance: float = 30.0, offset_range: float = 3.0):
     """
@@ -140,15 +139,16 @@ def smooth_path(points: list, min_distance: float = 30.0, offset_range: float = 
 
     return smooth_points
 
+
 class Command:
     def __init__(
-            self,
-            operation: str,
-            contact: int = 0,
-            x: int = 0,
-            y: int = 0,
-            ms: int = 10,
-            pressure: int = 100
+        self,
+        operation: str,
+        contact: int = 0,
+        x: int = 0,
+        y: int = 0,
+        ms: int = 10,
+        pressure: int = 100,
     ):
         """
         See https://github.com/openstf/minitouch#writable-to-the-socket
@@ -172,20 +172,16 @@ class Command:
         """
         String that write into minitouch socket
         """
-        if self.operation == 'c':
-            return f'{self.operation}\n'
-        elif self.operation == 'r':
-            return f'{self.operation}\n'
-        elif self.operation == 'd':
-            return f'{self.operation} {self.contact} {self.x} {self.y} {self.pressure}\n'
-        elif self.operation == 'm':
-            return f'{self.operation} {self.contact} {self.x} {self.y} {self.pressure}\n'
-        elif self.operation == 'u':
-            return f'{self.operation} {self.contact}\n'
-        elif self.operation == 'w':
-            return f'{self.operation} {self.ms}\n'
+        if self.operation == "c" or self.operation == "r":
+            return f"{self.operation}\n"
+        elif self.operation == "d" or self.operation == "m":
+            return f"{self.operation} {self.contact} {self.x} {self.y} {self.pressure}\n"
+        elif self.operation == "u":
+            return f"{self.operation} {self.contact}\n"
+        elif self.operation == "w":
+            return f"{self.operation} {self.ms}\n"
         else:
-            return ''
+            return ""
 
     def to_atx_agent(self, max_x=1280, max_y=720) -> str:
         """
@@ -193,17 +189,15 @@ class Command:
         See https://github.com/openatx/atx-agent#minitouch%E6%93%8D%E4%BD%9C%E6%96%B9%E6%B3%95
         """
         x, y = self.x / max_x, self.y / max_y
-        if self.operation == 'c':
+        if self.operation == "c" or self.operation == "r":
             out = dict(operation=self.operation)
-        elif self.operation == 'r':
-            out = dict(operation=self.operation)
-        elif self.operation == 'd':
-            out = dict(operation=self.operation, index=self.contact, pressure=self.pressure, xP=x, yP=y)
-        elif self.operation == 'm':
-            out = dict(operation=self.operation, index=self.contact, pressure=self.pressure, xP=x, yP=y)
-        elif self.operation == 'u':
+        elif self.operation == "d" or self.operation == "m":
+            out = dict(
+                operation=self.operation, index=self.contact, pressure=self.pressure, xP=x, yP=y
+            )
+        elif self.operation == "u":
             out = dict(operation=self.operation, index=self.contact)
-        elif self.operation == 'w':
+        elif self.operation == "w":
             out = dict(operation=self.operation, milliseconds=self.ms)
         else:
             out = dict()
@@ -228,6 +222,7 @@ class CommandBuilder:
             builder.publish(connection)
 
     """
+
     DEFAULT_DELAY = 0.05
     max_x = 1280
     max_y = 720
@@ -256,7 +251,7 @@ class CommandBuilder:
             x, y = y, 1280 - x
             max_x, max_y = max_y, max_x
         else:
-            raise ScriptError(f'Invalid device orientation: {orientation}')
+            raise ScriptError(f"Invalid device orientation: {orientation}")
 
         self.max_x, self.max_y = max_x, max_y
         if not self.device.config.DEVICE_OVER_HTTP:
@@ -268,47 +263,47 @@ class CommandBuilder:
         return x, y
 
     def commit(self):
-        """ add minitouch command: 'c\n' """
-        self.commands.append(Command('c'))
+        """add minitouch command: 'c\n'"""
+        self.commands.append(Command("c"))
         return self
 
     def reset(self):
-        """ add minitouch command: 'r\n' """
-        self.commands.append(Command('r'))
+        """add minitouch command: 'r\n'"""
+        self.commands.append(Command("r"))
         return self
 
     def wait(self, ms=10):
-        """ add minitouch command: 'w <ms>\n' """
-        self.commands.append(Command('w', ms=ms))
+        """add minitouch command: 'w <ms>\n'"""
+        self.commands.append(Command("w", ms=ms))
         self.delay += ms
         return self
 
     def up(self, contact=0):
-        """ add minitouch command: 'u <contact>\n' """
-        self.commands.append(Command('u', contact=contact))
+        """add minitouch command: 'u <contact>\n'"""
+        self.commands.append(Command("u", contact=contact))
         return self
 
     def down(self, x, y, contact=0, pressure=100):
-        """ add minitouch command: 'd <contact> <x> <y> <pressure>\n' """
+        """add minitouch command: 'd <contact> <x> <y> <pressure>\n'"""
         x, y = self.convert(x, y)
-        self.commands.append(Command('d', x=x, y=y, contact=contact, pressure=pressure))
+        self.commands.append(Command("d", x=x, y=y, contact=contact, pressure=pressure))
         return self
 
     def move(self, x, y, contact=0, pressure=100):
-        """ add minitouch command: 'm <contact> <x> <y> <pressure>\n' """
+        """add minitouch command: 'm <contact> <x> <y> <pressure>\n'"""
         x, y = self.convert(x, y)
-        self.commands.append(Command('m', x=x, y=y, contact=contact, pressure=pressure))
+        self.commands.append(Command("m", x=x, y=y, contact=contact, pressure=pressure))
         return self
 
     def clear(self):
-        """ clear current commands """
+        """clear current commands"""
         self.commands = []
         self.delay = 0
 
     def to_minitouch(self) -> str:
-        return ''.join([command.to_minitouch() for command in self.commands])
+        return "".join([command.to_minitouch() for command in self.commands])
 
-    def to_atx_agent(self) -> List[str]:
+    def to_atx_agent(self) -> list[str]:
         return [command.to_atx_agent(self.max_x, self.max_y) for command in self.commands]
 
 
@@ -320,11 +315,29 @@ class MinitouchOccupiedError(Exception):
     pass
 
 
-class U2Service(_Service):
+class U2Service:
+    """Simple service manager for uiautomator2 services"""
+
     def __init__(self, name, u2obj):
         self.name = name
         self.u2obj = u2obj
-        self.service_url = self.u2obj.path2url("/services/" + name)
+        self.service_url = None
+
+    def start(self):
+        """Start the service"""
+        self.u2obj.shell(["am", "startservice", "-n", "com.github.uiautomator/.Service"])
+
+    def stop(self):
+        """Stop the service"""
+        self.u2obj.shell(["am", "stopservice", "-n", "com.github.uiautomator/.Service"])
+
+    def running(self):
+        """Check if service is running"""
+        try:
+            response = self.u2obj.shell(["dumpsys", "activity", "services", "|", "grep", self.name])
+            return self.name in response.output.decode() if response.output else False
+        except:
+            return False
 
 
 def retry(func):
@@ -363,8 +376,8 @@ def retry(func):
                 def init():
                     self.install_uiautomator2()
                     if self._minitouch_port:
-                        self.adb_forward_remove(f'tcp:{self._minitouch_port}')
-                    del_cached_property(self, 'minitouch_builder')
+                        self.adb_forward_remove(f"tcp:{self._minitouch_port}")
+                    del_cached_property(self, "minitouch_builder")
             # MinitouchOccupiedError: Timeout when connecting to minitouch
             except MinitouchOccupiedError as e:
                 logger.error(e)
@@ -372,11 +385,12 @@ def retry(func):
                 def init():
                     self.restart_atx()
                     if self._minitouch_port:
-                        self.adb_forward_remove(f'tcp:{self._minitouch_port}')
-                    del_cached_property(self, 'minitouch_builder')
+                        self.adb_forward_remove(f"tcp:{self._minitouch_port}")
+                    del_cached_property(self, "minitouch_builder")
             # AdbError
             except AdbError as e:
                 if handle_adb_error(e):
+
                     def init():
                         self.adb_reconnect()
                 else:
@@ -385,7 +399,7 @@ def retry(func):
                 logger.error(e)
 
                 def init():
-                    del_cached_property(self, 'minitouch_builder')
+                    del_cached_property(self, "minitouch_builder")
             # Unknown, probably a trucked image
             except Exception as e:
                 logger.exception(e)
@@ -393,7 +407,7 @@ def retry(func):
                 def init():
                     pass
 
-        logger.critical(f'Retry {func.__name__}() failed')
+        logger.critical(f"Retry {func.__name__}() failed")
         raise RequestHumanTakeover
 
     return retry_wrapper
@@ -414,7 +428,7 @@ class Minitouch(Connection):
 
     @Config.when(DEVICE_OVER_HTTP=False)
     def minitouch_init(self):
-        logger.hr('MiniTouch init')
+        logger.hr("MiniTouch init")
         max_x, max_y = 1280, 720
         max_contacts = 2
         max_pressure = 50
@@ -429,7 +443,7 @@ class Minitouch(Connection):
         while 1:
             client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             client.settimeout(1)
-            client.connect(('127.0.0.1', self._minitouch_port))
+            client.connect(("127.0.0.1", self._minitouch_port))
             self._minitouch_client = client
 
             # get minitouch server info
@@ -439,11 +453,11 @@ class Minitouch(Connection):
             # protocol version, usually it is 1. needn't use this
             try:
                 out = socket_out.readline().replace("\n", "").replace("\r", "")
-            except socket.timeout:
+            except TimeoutError:
                 client.close()
                 raise MinitouchOccupiedError(
-                    'Timeout when connecting to minitouch, '
-                    'probably because another connection has been established'
+                    "Timeout when connecting to minitouch, "
+                    "probably because another connection has been established"
                 )
             logger.info(out)
 
@@ -457,8 +471,8 @@ class Minitouch(Connection):
                 client.close()
                 if retry_timeout.reached():
                     raise MinitouchNotInstalledError(
-                        'Received empty data from minitouch, '
-                        'probably because minitouch is not installed'
+                        "Received empty data from minitouch, "
+                        "probably because minitouch is not installed"
                     )
                 else:
                     # Minitouch may not start that fast
@@ -477,19 +491,17 @@ class Minitouch(Connection):
         self._minitouch_pid = pid
 
         logger.info(
-            "minitouch running on port: {}, pid: {}".format(self._minitouch_port, self._minitouch_pid)
+            f"minitouch running on port: {self._minitouch_port}, pid: {self._minitouch_pid}"
         )
         logger.info(
-            "max_contact: {}; max_x: {}; max_y: {}; max_pressure: {}".format(
-                max_contacts, max_x, max_y, max_pressure
-            )
+            f"max_contact: {max_contacts}; max_x: {max_x}; max_y: {max_y}; max_pressure: {max_pressure}"
         )
 
     @Config.when(DEVICE_OVER_HTTP=False)
     def minitouch_send(self):
         content = self.minitouch_builder.to_minitouch()
         # logger.info("send operation: {}".format(content.replace("\n", "\\n")))
-        byte_content = content.encode('utf-8')
+        byte_content = content.encode("utf-8")
         self._minitouch_client.sendall(byte_content)
         self._minitouch_client.recv(0)
         time.sleep(self.minitouch_builder.delay / 1000 + self.minitouch_builder.DEFAULT_DELAY)
@@ -514,25 +526,24 @@ class Minitouch(Connection):
             # ConnectionClosedError: sent 1011 (unexpected error) keepalive ping timeout; no close frame received
             logger.error(e)
             raise MinitouchOccupiedError(
-                'ConnectionClosedError, '
-                'probably because another connection has been established'
+                "ConnectionClosedError, probably because another connection has been established"
             )
 
     @Config.when(DEVICE_OVER_HTTP=True)
     def minitouch_init(self):
-        logger.hr('MiniTouch init')
+        logger.hr("MiniTouch init")
         self.max_x, self.max_y = 1280, 720
         self.get_orientation()
 
-        logger.info('Stop minitouch service')
-        s = U2Service('minitouch', self.u2)
+        logger.info("Stop minitouch service")
+        s = U2Service("minitouch", self.u2)
         s.stop()
         while 1:
             if not s.running():
                 break
             self.sleep(0.05)
 
-        logger.info('Start minitouch service')
+        logger.info("Start minitouch service")
         s.start()
         while 1:
             if s.running():
@@ -540,8 +551,8 @@ class Minitouch(Connection):
             self.sleep(0.05)
 
         # 'ws://127.0.0.1:7912/minitouch'
-        url = re.sub(r"^https?://", 'ws://', self.serial) + '/minitouch'
-        logger.attr('Minitouch', url)
+        url = re.sub(r"^https?://", "ws://", self.serial) + "/minitouch"
+        logger.attr("Minitouch", url)
 
         async def connect():
             ws = await websockets.connect(url)
@@ -617,6 +628,7 @@ class Minitouch(Connection):
         builder.up().commit()
         self.minitouch_send()
 
-if __name__ == '__main__':
-    mm = Minitouch(config='oas1')
+
+if __name__ == "__main__":
+    mm = Minitouch(config="oas1")
     mm.click_minitouch(200, 150)

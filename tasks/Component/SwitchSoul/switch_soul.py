@@ -1,29 +1,23 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
 from time import sleep
-from typing import Union
 
 from module.atom.click import RuleClick
 from module.atom.long_click import RuleLongClick
 from module.atom.ocr import RuleOcr
-from module.base.timer import Timer
-from tasks.base_task import BaseTask
-from tasks.Component.GeneralInvite.assets import GeneralInviteAssets
-from tasks.Component.GeneralInvite.config_invite import InviteConfig, InviteNumber, FindMode
-from tasks.Component.SwitchSoul.assets import SwitchSoulAssets
 from module.logger import logger
+from tasks.base_task import BaseTask
+from tasks.Component.SwitchSoul.assets import SwitchSoulAssets
 
 
 def switch_parser(switch_str: str) -> tuple:
-    switch_list = switch_str.split(',')
+    switch_list = switch_str.split(",")
     if len(switch_list) != 2:
-        raise ValueError('Switch_str must be 2 length')
+        raise ValueError("Switch_str must be 2 length")
     return int(switch_list[0]), int(switch_list[1])
 
 
 class SwitchSoul(BaseTask, SwitchSoulAssets):
-
     def run_switch_soul(self, target: tuple | list[tuple] | str):
         """
         保证在式神录的界面
@@ -33,7 +27,7 @@ class SwitchSoul(BaseTask, SwitchSoulAssets):
             try:
                 target = switch_parser(target)
             except ValueError:
-                logger.error('Switch soul config error')
+                logger.error("Switch soul config error")
                 return
         self.click_preset()
         self.switch_souls(target)
@@ -58,7 +52,7 @@ class SwitchSoul(BaseTask, SwitchSoulAssets):
             if self.appear(self.I_SOUL_PRESET):
                 self.click(self.I_SOUL_PRESET, interval=3)
                 continue
-        logger.info('Click preset in switch soul')
+        logger.info("Click preset in switch soul")
 
     def switch_soul_one(self, group: int, team: int) -> None:
         """
@@ -105,9 +99,9 @@ class SwitchSoul(BaseTask, SwitchSoulAssets):
             sleep(0.5)
 
         if group < 1 or group > 7:
-            raise ValueError('Switch soul_one group must be in [1-7]')
+            raise ValueError("Switch soul_one group must be in [1-7]")
         if team < 1 or team > 4:
-            raise ValueError('Switch soul_one team must be in [1-4]')
+            raise ValueError("Switch soul_one team must be in [1-4]")
         # 这一步是选择组
         target_click, target_check = get_group_assets(group)
         # while 1:
@@ -135,10 +129,10 @@ class SwitchSoul(BaseTask, SwitchSoulAssets):
                         break
                 continue
             if not self.appear_then_click(target_team, interval=3):
-                logger.warning(f'Click team {team} failed in group {group}')
+                logger.warning(f"Click team {team} failed in group {group}")
         # 兜底若还出现确认按钮则点击
         self.ui_click_until_disappear(self.I_SOU_SWITCH_SURE)
-        logger.info(f'Switch soul_one group {group} team {team}')
+        logger.info(f"Switch soul_one group {group} team {team}")
 
     def switch_souls(self, target: tuple or list[tuple]) -> None:
         """
@@ -164,7 +158,7 @@ class SwitchSoul(BaseTask, SwitchSoulAssets):
                 break
             if self.appear_then_click(self.I_RECORD_SOUL_BACK, interval=3.5):
                 continue
-        logger.info('Exit shikigami records')
+        logger.info("Exit shikigami records")
 
     def run_switch_soul_by_name(self, groupName, teamName):
         """
@@ -180,9 +174,9 @@ class SwitchSoul(BaseTask, SwitchSoulAssets):
         保证在式神录的界面
         :return:
         """
-        logger.hr('Switch soul by name')
+        logger.hr("Switch soul by name")
         # 滑动至分组最上层
-        last_group_text = ''
+        last_group_text = ""
         while 1:
             self.screenshot()
             compare1 = self.O_SS_GROUP_NAME.detect_and_ocr(self.device.image)
@@ -192,7 +186,7 @@ class SwitchSoul(BaseTask, SwitchSoulAssets):
             self.swipe(self.S_SS_GROUP_SWIPE_UP, 2)
             sleep(2.5)
             last_group_text = now_group_text
-        logger.info('Swipe to top of group')
+        logger.info("Swipe to top of group")
 
         # 判断有无目标分组
         while 1:
@@ -207,7 +201,7 @@ class SwitchSoul(BaseTask, SwitchSoulAssets):
                 break
             self.swipe(self.S_SS_GROUP_SWIPE_DOWN)
             sleep(1.5)
-        logger.info('Swipe down to find target group')
+        logger.info("Swipe down to find target group")
 
         # 选中分组
         while 1:
@@ -215,10 +209,10 @@ class SwitchSoul(BaseTask, SwitchSoulAssets):
             self.O_SS_GROUP_NAME.keyword = groupName
             if self.ocr_appear_click(self.O_SS_GROUP_NAME):
                 break
-        logger.info(f'Select group {groupName}')
+        logger.info(f"Select group {groupName}")
 
         # 滑动至阵容最上层
-        last_team_text = ''
+        last_team_text = ""
         while 1:
             self.screenshot()
             compare1 = self.O_SS_TEAM_NAME.detect_and_ocr(self.device.image)
@@ -229,7 +223,7 @@ class SwitchSoul(BaseTask, SwitchSoulAssets):
             self.swipe(self.S_SS_TEAM_SWIPE_DOWN, 1.5)
             sleep(2)
             last_team_text = now_team_text
-        logger.info('Swipe to top of team')
+        logger.info("Swipe to top of team")
 
         # 判断当前分组有无目标阵容
         while 1:
@@ -243,7 +237,7 @@ class SwitchSoul(BaseTask, SwitchSoulAssets):
             if result and len(result) > 0:
                 break
             self.swipe(self.S_SS_TEAM_SWIPE_UP, 0.3)
-        logger.info('Swipe up to find target team')
+        logger.info("Swipe up to find target team")
 
         # 选中分组
         while 1:
@@ -251,7 +245,7 @@ class SwitchSoul(BaseTask, SwitchSoulAssets):
             self.O_SS_TEAM_NAME.keyword = teamName
             if self.ocr_appear_click(self.O_SS_TEAM_NAME):
                 break
-        logger.info(f'Select team {teamName}')
+        logger.info(f"Select team {teamName}")
         # 切换御魂
         cnt_click: int = 0
         self.O_SS_TEAM_NAME.keyword = teamName
@@ -261,16 +255,20 @@ class SwitchSoul(BaseTask, SwitchSoulAssets):
                 break
             if self.appear_then_click(self.I_SOU_SWITCH_SURE, interval=0.8):
                 continue
-            if self.ocr_appear_click_by_rule(self.O_SS_TEAM_NAME, self.I_SOU_CLICK_PRESENT, interval=1.5):
+            if self.ocr_appear_click_by_rule(
+                self.O_SS_TEAM_NAME, self.I_SOU_CLICK_PRESENT, interval=1.5
+            ):
                 cnt_click += 1
                 continue
-        logger.info(f'Switch soul_one group {groupName} team {teamName}')
+        logger.info(f"Switch soul_one group {groupName} team {teamName}")
 
-    def ocr_appear_click_by_rule(self,
-                                 target: RuleOcr,
-                                 action: Union[RuleClick, RuleLongClick] = None,
-                                 interval: float = None,
-                                 duration: float = None) -> bool:
+    def ocr_appear_click_by_rule(
+        self,
+        target: RuleOcr,
+        action: RuleClick | RuleLongClick = None,
+        interval: float = None,
+        duration: float = None,
+    ) -> bool:
         """
         ocr识别目标，如果目标存在，则触发动作
         :param target:
@@ -291,15 +289,15 @@ class SwitchSoul(BaseTask, SwitchSoulAssets):
         return True
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from module.config.config import Config
     from module.device.device import Device
 
-    c = Config('oas1')
+    c = Config("oas1")
     d = Device(c)
     s = SwitchSoul(c, d)
 
     s.click_preset()
     # s.switch_soul_one(4, 1)
     # s.switch_soul_by_name('契灵', '茨球')
-    s.switch_soul_by_name('默认分组', '队伍5')
+    s.switch_soul_by_name("默认分组", "队伍5")

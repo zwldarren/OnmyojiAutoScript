@@ -1,4 +1,3 @@
-# This Python file uses the following encoding: utf-8
 # Copy from https://github.com/LmeSzinc/AzurLaneAutoScript/gui.py
 
 
@@ -7,32 +6,36 @@
 • Linux/macOS/WSL 及 Win-Py 3.11+ → TZ='Asia/Shanghai' + time.tzset()
 • Win-Py ≤ 3.10            → TZ='CST-8'       + _tzset()（POSIX 语法）
 """
-import os, sys, time
+
+import os
+import sys
+import time
 
 if hasattr(time, "tzset"):
     # Unix 全系  /  Windows 3.11+ 走这条
-    os.environ["TZ"] = "Asia/Shanghai"     # IANA 名称，glibc/Apple libc 都认识
+    os.environ["TZ"] = "Asia/Shanghai"  # IANA 名称，glibc/Apple libc 都认识
     time.tzset()
 else:
     # 只有旧 Windows 才会落到这里
     import ctypes
-    os.environ["TZ"] = "CST-8"             # POSIX 字符串：UTC+8 且无 DST
-    for dll in ("ucrtbase", "msvcrt"):     # 新旧 CRT 都试一遍
+
+    os.environ["TZ"] = "CST-8"  # POSIX 字符串：UTC+8 且无 DST
+    for dll in ("ucrtbase", "msvcrt"):  # 新旧 CRT 都试一遍
         try:
             ctypes.CDLL(dll)._tzset()
             break
         except (OSError, AttributeError):
             continue
-        
+
 import threading
 
 from module.logger import logger
 from module.server.setting import State
 
+
 def fun(ev: threading.Event):
     import argparse
     import asyncio
-    import sys
 
     import uvicorn
 
@@ -54,9 +57,7 @@ def fun(ev: threading.Event):
         type=int,
         help="Port to listen. Default to WebuiPort in deploy setting",
     )
-    parser.add_argument(
-        "-k", "--key", type=str, help="Password of alas. No password by default"
-    )
+    parser.add_argument("-k", "--key", type=str, help="Password of alas. No password by default")
     parser.add_argument(
         "--cdn",
         action="store_true",
@@ -78,13 +79,8 @@ def fun(ev: threading.Event):
     logger.attr("Port", port)
     logger.attr("Reload", ev is not None)
 
-    uvicorn.run("module.server.app:fastapi_app",
-                host=host,
-                port=port,
-                factory=True)
-
+    uvicorn.run("module.server.app:fastapi_app", host=host, port=port, factory=True)
 
 
 if __name__ == "__main__":
     fun(None)
-

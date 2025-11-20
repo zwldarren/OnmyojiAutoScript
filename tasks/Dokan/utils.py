@@ -61,14 +61,26 @@ def detect_safe_area(image, target_gray_value=255, tolerance=0):
                 if is_solid_region:
                     # 记录纯色区块的左上角坐标和右下角坐标
                     start_x, start_y = x, y
-                    while start_y > 0 and abs(img_arr[start_y - 1, x] - target_gray_value) <= tolerance:
+                    while (
+                        start_y > 0
+                        and abs(img_arr[start_y - 1, x] - target_gray_value) <= tolerance
+                    ):
                         start_y -= 1
-                    while start_x > 0 and abs(img_arr[y, start_x - 1] - target_gray_value) <= tolerance:
+                    while (
+                        start_x > 0
+                        and abs(img_arr[y, start_x - 1] - target_gray_value) <= tolerance
+                    ):
                         start_x -= 1
                     end_x, end_y = x, y
-                    while end_y < img_arr.shape[0] - 1 and abs(img_arr[end_y + 1, x] - target_gray_value) <= tolerance:
+                    while (
+                        end_y < img_arr.shape[0] - 1
+                        and abs(img_arr[end_y + 1, x] - target_gray_value) <= tolerance
+                    ):
                         end_y += 1
-                    while end_x < img_arr.shape[1] - 1 and abs(img_arr[y, end_x + 1] - target_gray_value) <= tolerance:
+                    while (
+                        end_x < img_arr.shape[1] - 1
+                        and abs(img_arr[y, end_x + 1] - target_gray_value) <= tolerance
+                    ):
                         end_x += 1
 
                     solid_regions.append(((start_x, start_y), (end_x + 1, end_y + 1)))
@@ -135,11 +147,18 @@ def detect_safe_area2(image, safe_color_lower, safe_color_upper, num_areas=3, de
 
 def test_ocr_locate_dokan_target():
     import cv2
+
     from module.atom.ocr import RuleOcr
 
     logger.info("========================================>>test 2")
-    O_DOKAN_MAP = RuleOcr(roi=(270, 130, 740, 460), area=(270, 130, 740, 460), mode="Full", method="Default",
-                          keyword="万", name="dokan_map")
+    O_DOKAN_MAP = RuleOcr(
+        roi=(270, 130, 740, 460),
+        area=(270, 130, 740, 460),
+        mode="Full",
+        method="Default",
+        keyword="万",
+        name="dokan_map",
+    )
 
     image = cv2.imread("g:/yys/oas/tests/1.png")
     pos = O_DOKAN_MAP.ocr_full(image)
@@ -171,7 +190,7 @@ def test_anti_detect_random_click():
     import cv2
 
     # image_list = ['g:/yys/oas/tests/1.png', 'g:/yys/oas/tests/2.png', 'g:/yys/oas/tests/3.png', 'g:/yys/oas/tests/4.png', 'g:/yys/oas/tests/5.png']
-    image_list = ['g:/yys/oas/tests/a.png', 'g:/yys/oas/tests/b.png', 'g:/yys/oas/tests/c.png']
+    image_list = ["g:/yys/oas/tests/a.png", "g:/yys/oas/tests/b.png", "g:/yys/oas/tests/c.png"]
 
     for item in image_list:
         print(f"item: {item}")
@@ -194,7 +213,7 @@ def test_anti_detect_random_click():
         safe_color_upper = np.array([90, 255, 255])  # HSV颜色空间的绿色上界
 
         # 读取图片
-        image = cv2.imread('c.png')
+        image = cv2.imread("c.png")
         if image is None:
             print("Error: Image not found.")
         else:
@@ -203,6 +222,6 @@ def test_anti_detect_random_click():
             print(f"pos={pos}")
 
             # 显示结果
-            cv2.imshow('Safe Area', image)
+            cv2.imshow("Safe Area", image)
             cv2.waitKey(0)
             cv2.destroyAllWindows()

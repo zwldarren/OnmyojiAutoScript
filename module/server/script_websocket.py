@@ -1,10 +1,9 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import WebSocket
+
 
 class ScriptWSManager:
-
     def __init__(self):
         self.active_connections: list[WebSocket] = []
 
@@ -45,8 +44,3 @@ class ScriptWSManager:
                 await connection.send_text(log)
             except RuntimeError:
                 await self.disconnect(connection)
-
-
-
-
-

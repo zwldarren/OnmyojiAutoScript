@@ -1,26 +1,18 @@
-import cv2
-import time
-import copy
-import numpy as np
-
 from datetime import datetime
-from pathlib import Path
-from numpy import uint8, fromfile
-from cached_property import cached_property
 
-from oashya.tracker import Tracker
+import numpy as np
 from oashya.labels import CLASSINDEX as CI
-from oashya.labels import id2label, id2name
+from oashya.labels import id2name
+
 from module.logger import logger
 from tasks.Hyakkiyakou.agent.focus import Focus
-from tasks.Hyakkiyakou.debugger import Debugger
 
 
 def generate_gaussian_patch(size=(300, 300), mean=0, std_dev=60):
     x = np.linspace(-150, 150, size[1])
     y = np.linspace(-150, 150, size[0])
     x, y = np.meshgrid(x, y)
-    z = np.exp(-(((x - mean) ** 2 + (y - mean) ** 2) / (2 * std_dev ** 2)))
+    z = np.exp(-(((x - mean) ** 2 + (y - mean) ** 2) / (2 * std_dev**2)))
     return z
 
 
@@ -42,7 +34,7 @@ def embed_patch_in_canvas(canvas, patch, position=(0, 0), patch_size=(300, 300))
     embed_w = x2 - x1
     embed_h = y2 - y1
     if embed_w <= 0 or embed_h <= 0:
-        logger.warning(f'Cannot embed patch in canvas: ({position})')
+        logger.warning(f"Cannot embed patch in canvas: ({position})")
         return canvas
     if embed_w < patch_width or embed_h < patch_height:
         _patch = patch[:embed_h, :embed_w]
@@ -61,27 +53,31 @@ class Agent:
     def __init__(self, strategy: dict = None):
         self.z = np.zeros((720, 1280), dtype=np.float32)
         self.focus: Focus = None
-        # 
-        strategy: dict = strategy if strategy is not None else {
-            # 'weights': [1., 1., 1., 0.6, 0.3, 0.3],
-            'priorities': [],
-            'invite_friend': False,
-            'auto_bean': False
-        }
+        #
+        strategy: dict = (
+            strategy
+            if strategy is not None
+            else {
+                # 'weights': [1., 1., 1., 0.6, 0.3, 0.3],
+                "priorities": [],
+                "invite_friend": False,
+                "auto_bean": False,
+            }
+        )
         self.strategy = strategy
-        self.weights: list[float] = strategy.get('weights', [1., 1., 0.7, 0.3, 0., 0.])
-        self.priorities: list[int] = strategy.get('priorities', [])
-        self.invite_friend: bool = strategy.get('invite_friend', False)
-        self.auto_bean: bool = strategy.get('auto_bean', False)
+        self.weights: list[float] = strategy.get("weights", [1.0, 1.0, 0.7, 0.3, 0.0, 0.0])
+        self.priorities: list[int] = strategy.get("priorities", [])
+        self.invite_friend: bool = strategy.get("invite_friend", False)
+        self.auto_bean: bool = strategy.get("auto_bean", False)
         #
         self.last_throw_time = datetime.now()
         self.dbg_throw: int = 0
         self.dbg_throw_n: int = 0
 
     @classmethod
-    def gamma(cls, tracks: list[tuple],
-              weights: list[float],
-              priorities: list[int] = []) -> np.ndarray:
+    def gamma(
+        cls, tracks: list[tuple], weights: list[float], priorities: list[int] = []
+    ) -> np.ndarray:
         """
         @param tracks:
         @param weights: sp, ssr, sr, r, n, g
@@ -90,27 +86,37 @@ class Agent:
         """
         z = np.zeros((720, 1280), dtype=np.float32)
         for _id, _class, _conf, _cx, _cy, _w, _h, _v in tracks:
-            weight = 1.
+            weight = 1.0
             mu = 0.8 + (_cx * 0.2) / 1280
             match _class:
-                case _ if CI.MIN_G <= _class <= CI.MAX_G: weight = weights[5]
-                case _ if CI.MIN_N <= _class <= CI.MAX_N: weight = weights[4]
-                case _ if _class != CI.R_008 and _class != CI.R_007 and (CI.MIN_R <= _class <= CI.MAX_R):
+                case _ if CI.MIN_G <= _class <= CI.MAX_G:
+                    weight = weights[5]
+                case _ if CI.MIN_N <= _class <= CI.MAX_N:
+                    weight = weights[4]
+                case _ if (
+                    _class != CI.R_008 and _class != CI.R_007 and (CI.MIN_R <= _class <= CI.MAX_R)
+                ):
                     weight = weights[3]  # 不要童男童女
-                case _ if CI.MIN_SR <= _class <= CI.MAX_SR: weight = weights[2]
-                case _ if CI.MIN_SSR <= _class <= CI.MAX_SSR: weight = 1.5 * weights[1]
-                case _ if CI.MIN_SP <= _class <= CI.MAX_SP: weight = 1.5 * weights[0]
+                case _ if CI.MIN_SR <= _class <= CI.MAX_SR:
+                    weight = weights[2]
+                case _ if CI.MIN_SSR <= _class <= CI.MAX_SSR:
+                    weight = 1.5 * weights[1]
+                case _ if CI.MIN_SP <= _class <= CI.MAX_SP:
+                    weight = 1.5 * weights[0]
                 case CI.BUFF_005:  # freeze
-                    weight = -1.
+                    weight = -1.0
                     _cy += 100
-                case _: continue
+                case _:
+                    continue
             for priority in priorities:  # 我的代码在你之上
                 if priority == _class:
                     weight = 1.7
                     break
-            if weight == 0.:
+            if weight == 0.0:
                 continue
-            z = embed_patch_in_canvas(canvas=z, patch=(mu * weight) * Agent.GAUSSIAN, position=(_cx, _cy))
+            z = embed_patch_in_canvas(
+                canvas=z, patch=(mu * weight) * Agent.GAUSSIAN, position=(_cx, _cy)
+            )
         return z
 
     @classmethod
@@ -120,7 +126,7 @@ class Agent:
         max_index = -1
         for index, track in enumerate(tracks):
             _id, _class, _conf, _cx, _cy, _w, _h, _v = track
-            variance = (max_x - _cx)**2 + (max_y - _cy)**2
+            variance = (max_x - _cx) ** 2 + (max_y - _cy) ** 2
             if variance < max_variance:
                 max_index = index
                 max_variance = variance
@@ -136,7 +142,9 @@ class Agent:
         self.check_observe(tracks=tracks)
         if self.focus is None:
             return not_decision
-        result = self.focus.decision(tracks=tracks, strategy=self.strategy, state=[delta_time] + state)
+        result = self.focus.decision(
+            tracks=tracks, strategy=self.strategy, state=[delta_time] + state
+        )
         if result[2]:
             self.last_throw_time = new_time
             self.dbg_throw += 1
@@ -150,11 +158,11 @@ class Agent:
         omega = focus.omega(z)
         if omega < self.OBSERVE_THRESHOLD:
             if self.focus is not None:
-                logger.info(f'Focus disappear')
+                logger.info("Focus disappear")
             self.focus = None
             return
         if self.focus is None or self.focus != focus:
-            logger.info(f'Focus changed, now: {id2name(focus._class)}')
+            logger.info(f"Focus changed, now: {id2name(focus._class)}")
             self.focus = focus
             self.focus.set_omega(omega)
         elif self.focus == focus:
@@ -162,4 +170,3 @@ class Agent:
             self.focus.set_omega(omega)
         # if Debugger.info_enable:
         #     self.focus.show()
-

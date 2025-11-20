@@ -1,16 +1,10 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
-import datetime
 import operator
 
-from cached_property import cached_property
-
 from module.base.filter import Filter
-
 from module.config.config_manual import ConfigManual
 from module.logger import logger
-
 from tasks.Script.config_optimization import ScheduleRule
 
 
@@ -26,7 +20,11 @@ class TaskScheduler:
         :param pending:
         :return:
         """
-        if rule != ScheduleRule.FILTER and rule != ScheduleRule.FIFO and rule != ScheduleRule.PRIORITY:
+        if (
+            rule != ScheduleRule.FILTER
+            and rule != ScheduleRule.FIFO
+            and rule != ScheduleRule.PRIORITY
+        ):
             logger.error(f"Invalid rule: {rule}")
             return pending
         if isinstance(pending, list) is False:
@@ -58,7 +56,7 @@ class TaskScheduler:
         tasks_pending = sorted(pending, key=operator.attrgetter("next_run"))
         for task in tasks_pending:
             # 永远保证 Restart 任务在第一个
-            if task.command == 'Restart':
+            if task.command == "Restart":
                 tasks_pending.remove(task)
                 tasks_pending.insert(0, task)
                 break
@@ -91,6 +89,5 @@ class TaskScheduler:
 
 
 # 测试代码
-if __name__ == '__main__':
+if __name__ == "__main__":
     pass
-

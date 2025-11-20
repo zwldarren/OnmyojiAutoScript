@@ -1,16 +1,13 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
 
 import json
 
+from pydantic import ValidationError
+
 from module.config.config import Config
 from module.config.utils import convert_to_underscore
-from module.config.config_model import ConfigModel
-
 from module.logger import logger
-from pydantic import BaseModel, ValidationError
-
 
 
 class ConfigModify(Config):
@@ -26,7 +23,6 @@ class ConfigModify(Config):
 
     def __init__(self, config: str) -> None:
         super().__init__(config)
-
 
     def gui_args(self, task: str) -> str:
         """
@@ -51,19 +47,19 @@ class ConfigModify(Config):
         group = convert_to_underscore(group)
         argument = convert_to_underscore(argument)
 
-        path = f'{task}.{group}.{argument}'
+        path = f"{task}.{group}.{argument}"
         task_object = getattr(self.model, task, None)
         group_object = getattr(task_object, group, None)
         argument_object = getattr(group_object, argument, None)
 
         if argument_object is None:
-            logger.error(f'gui_set_task {task}.{group}.{argument}.{value} failed')
+            logger.error(f"gui_set_task {task}.{group}.{argument}.{value} failed")
             return False
 
         try:
             setattr(group_object, argument, value)
             argument_object = getattr(group_object, argument, None)
-            logger.info(f'gui_set_task {task}.{group}.{argument}.{argument_object}')
+            logger.info(f"gui_set_task {task}.{group}.{argument}.{argument_object}")
             super().save()  # 我是没有想到什么方法可以使得属性改变自动保存的
             return True
         except ValidationError as e:
@@ -85,8 +81,7 @@ class ConfigModify(Config):
                 continue
 
             scheduler = value["scheduler"]
-            item = {"enable": scheduler["enable"],
-                    "next_run": str(scheduler["next_run"])}
+            item = {"enable": scheduler["enable"], "next_run": str(scheduler["next_run"])}
             key = self.config.model.type(key)
             result[key] = item
         return json.dumps(result)

@@ -1,20 +1,12 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
-import re
-import time
 
 from module.logger import logger
-
-from tasks.GameUi.page import page_main, page_guild
 from tasks.GameUi.game_ui import GameUi
-from tasks.Component.Buy.buy import Buy
 from tasks.RichMan.assets import RichManAssets
 
 
-
 class MallNavbar(GameUi, RichManAssets):
-
     def _enter_consignment(self):
         """
         进入寄售屋
@@ -110,19 +102,19 @@ class MallNavbar(GameUi, RichManAssets):
         # match = re.search(r'\d+', result)
         # result = int(match.group())
         if not isinstance(result, int):
-            logger.warning(f'Get mall resource {index} error, result: {result}')
+            logger.warning(f"Get mall resource {index} error, result: {result}")
         if result == 0:
-            logger.warning(f'Get mall resource {index} error, result: {result}')
+            logger.warning(f"Get mall resource {index} error, result: {result}")
         return result
 
     def mall_check_money(self, index: int, least: int) -> bool:
         return self.mall_resource(index) >= least
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     from module.config.config import Config
     from module.device.device import Device
 
-    c = Config('oas1')
+    c = Config("oas1")
     d = Device(c)
     t = MallNavbar(c, d)
-

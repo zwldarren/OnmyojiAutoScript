@@ -1,28 +1,22 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
-import time
 
-import cv2
-import numpy as np
 import random
 import re
+
 from module.atom.click import RuleClick
-from tasks.base_task import BaseTask
-from tasks.Component.GeneralBattle.general_battle import GeneralBattle
-from tasks.GameUi.game_ui import GameUi
-from tasks.GameUi.page import page_area_boss, page_shikigami_records
-from tasks.Component.SwitchSoul.switch_soul import SwitchSoul
+from module.atom.image import RuleImage
+from module.exception import TaskEnd
+from module.logger import logger
 from tasks.AreaBoss.assets import AreaBossAssets
 from tasks.AreaBoss.config_boss import AreaBossFloor
-from module.logger import logger
-from module.exception import TaskEnd
-from module.atom.image import RuleImage
-from typing import List
+from tasks.Component.GeneralBattle.general_battle import GeneralBattle
+from tasks.Component.SwitchSoul.switch_soul import SwitchSoul
+from tasks.GameUi.game_ui import GameUi
+from tasks.GameUi.page import page_area_boss, page_shikigami_records
 
 
 class ScriptTask(GeneralBattle, GameUi, SwitchSoul, AreaBossAssets):
-
     def run(self) -> bool:
         """
         运行脚本
@@ -40,8 +34,10 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, AreaBossAssets):
         if self.config.area_boss.switch_soul.enable_switch_by_name:
             self.ui_get_current_page()
             self.ui_goto(page_shikigami_records)
-            self.run_switch_soul_by_name(self.config.area_boss.switch_soul.group_name,
-                                         self.config.area_boss.switch_soul.team_name)
+            self.run_switch_soul_by_name(
+                self.config.area_boss.switch_soul.group_name,
+                self.config.area_boss.switch_soul.team_name,
+            )
 
         self.ui_get_current_page()
         self.ui_goto(page_area_boss)
@@ -70,7 +66,7 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, AreaBossAssets):
             self.boss_fight(self.I_BATTLE_1)
         # 退出
         self.go_back()
-        self.set_next_run(task='AreaBoss', success=True, finish=False)
+        self.set_next_run(task="AreaBoss", success=True, finish=False)
 
         # 以抛出异常的形式结束
         raise TaskEnd
@@ -90,7 +86,6 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, AreaBossAssets):
                 break
 
     def boss(self, battle: RuleImage, collect: bool = False):
-
         # 点击右上角的鬼王选择
         logger.info("Script filter")
         while 1:
@@ -105,11 +100,15 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, AreaBossAssets):
         if collect:
             self.switch_to_collect()
         # 页面没有可挑战的BOSS
-        if not (self.appear(self.I_BATTLE_1) or self.appear(self.I_BATTLE_2) or self.appear(self.I_BATTLE_3)):
+        if not (
+            self.appear(self.I_BATTLE_1)
+            or self.appear(self.I_BATTLE_2)
+            or self.appear(self.I_BATTLE_3)
+        ):
             logger.error("There is no boss could be challenged")
             return
         # 点击第几个鬼王
-        logger.info(f'Script area boss {battle}')
+        logger.info(f"Script area boss {battle}")
         self.ui_click(battle, self.I_AB_CLOSE_RED)
         # 点击挑战
         logger.info("Script fire ")
@@ -153,7 +152,10 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, AreaBossAssets):
         if ultra:
             if not self.get_difficulty():
                 # 判断是否能切换到极地鬼
-                if not self.appear(self.I_AB_DIFFICULTY_NORMAL) and self.config.area_boss.boss.Attack_60:
+                if (
+                    not self.appear(self.I_AB_DIFFICULTY_NORMAL)
+                    and self.config.area_boss.boss.Attack_60
+                ):
                     self.switch_to_level_60()
                     if not self.start_fight():
                         logger.warning("you are so weakness!")
@@ -168,9 +170,12 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, AreaBossAssets):
 
             # 调整悬赏层数
             match reward_floor:
-                case AreaBossFloor.ONE: self.switch_to_floor_1()
-                case AreaBossFloor.TEN: self.switch_to_floor_10()
-                case AreaBossFloor.DEFAULT: logger.info("Not change floor")
+                case AreaBossFloor.ONE:
+                    self.switch_to_floor_1()
+                case AreaBossFloor.TEN:
+                    self.switch_to_floor_10()
+                case AreaBossFloor.DEFAULT:
+                    logger.info("Not change floor")
         result = True
         if not self.start_fight():
             result = False
@@ -188,7 +193,7 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, AreaBossAssets):
                 break
 
         return self.run_general_battle(self.config.area_boss.general_battle)
-    
+
     def switch_to_level_60(self):
         while 1:
             self.screenshot()
@@ -228,7 +233,7 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, AreaBossAssets):
 
     def switch_to_floor_1(self):
         """
-            更改层数为一层
+        更改层数为一层
         """
         # _Floor = ["壹星", "贰星", "叁星", "肆星", "伍星", "陆星", "柒星", "捌星", "玖星", "拾星"]
         # 打开选择列表
@@ -245,7 +250,7 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, AreaBossAssets):
 
     def switch_to_floor_10(self):
         """
-            更改层数为十层
+        更改层数为十层
         """
         # 打开选择列表
         self.ui_click(self.C_AB_JI_FLOOR_SELECTED, self.I_AB_JI_FLOOR_LIST_CHECK, interval=3)
@@ -258,10 +263,19 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, AreaBossAssets):
             self.wait_until_appear(self.I_AB_JI_FLOOR_TEN, False, 1)
 
     def fight_reward_boss(self):
-        BOSS_REWARD_PHOTO1 = [self.C_AB_BOSS_REWARD_PHOTO_1, self.C_AB_BOSS_REWARD_PHOTO_2, self.C_AB_BOSS_REWARD_PHOTO_3]
-        BOSS_REWARD_PHOTO2 = [self.C_AB_BOSS_REWARD_PHOTO_MINUS_2, self.C_AB_BOSS_REWARD_PHOTO_MINUS_1]
-        need_open_filter, boss_name, photo = self.get_hot_in_reward()  # 获取挑战人数最多的Boss的名字
-        if photo is None or boss_name == '声望不够':
+        BOSS_REWARD_PHOTO1 = [
+            self.C_AB_BOSS_REWARD_PHOTO_1,
+            self.C_AB_BOSS_REWARD_PHOTO_2,
+            self.C_AB_BOSS_REWARD_PHOTO_3,
+        ]
+        BOSS_REWARD_PHOTO2 = [
+            self.C_AB_BOSS_REWARD_PHOTO_MINUS_2,
+            self.C_AB_BOSS_REWARD_PHOTO_MINUS_1,
+        ]
+        need_open_filter, boss_name, photo = (
+            self.get_hot_in_reward()
+        )  # 获取挑战人数最多的Boss的名字
+        if photo is None or boss_name == "声望不够":
             return False
         # 不需要打开筛选界面说明直接找到了目标boss, 直接挑战
         if not need_open_filter:
@@ -312,7 +326,7 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, AreaBossAssets):
             self.open_filter()
             num = self.get_num_challenge(photo) or 0
             if not num:
-                name = '声望不够'
+                name = "声望不够"
             else:
                 name = self.get_bossName(photo)
                 if num >= 20000 and not self.appear(self.I_AB_NUM_CHALLENGE_RAIL):
@@ -338,9 +352,13 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, AreaBossAssets):
             if challenge_num > mx_challenge_num:
                 mx_challenge_num = challenge_num
                 mx_challenge_boss_name = boss_name
-                photo = cfg['photo']
-                logger.attr(mx_challenge_num, f'Select:{boss_name},{photo.name}')
-        return True, mx_challenge_boss_name if mx_challenge_boss_name else '声望不够', photo if mx_challenge_boss_name else None
+                photo = cfg["photo"]
+                logger.attr(mx_challenge_num, f"Select:{boss_name},{photo.name}")
+        return (
+            True,
+            mx_challenge_boss_name if mx_challenge_boss_name else "声望不够",
+            photo if mx_challenge_boss_name else None,
+        )
 
     def get_num_challenge(self, click_area):
         """
@@ -398,7 +416,7 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, AreaBossAssets):
 
     def is_group_ranked(self):
         """
-            判断该鬼王是否已经获取到小组排名
+        判断该鬼王是否已经获取到小组排名
         """
         return not self.appear(self.I_AB_GROUP_RANK_NONE)
         pass
@@ -448,11 +466,13 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, AreaBossAssets):
             return 1
         else:
             return 0  # 如果交集的字符少于2个，可以根据需要返回其他值
-if __name__ == '__main__':
+
+
+if __name__ == "__main__":
     from module.config.config import Config
     from module.device.device import Device
 
-    c = Config('oas1')
+    c = Config("oas1")
     d = Device(c)
     t = ScriptTask(c, d)
     # time.sleep(3)

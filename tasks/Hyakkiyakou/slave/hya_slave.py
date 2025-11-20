@@ -1,16 +1,16 @@
-import cv2
-
-from cached_property import cached_property
-from pathlib import Path
 from enum import Enum
+from pathlib import Path
 
-from module.logger import logger
-from module.base.timer import Timer
+import cv2
+from functools import cached_property
+
 from module.atom.image import RuleImage
+from module.base.timer import Timer
 from module.exception import RequestHumanTakeover
-from tasks.Hyakkiyakou.slave.hya_device import HyaDevice
-from tasks.Hyakkiyakou.slave.hya_color import HyaColor
+from module.logger import logger
 from tasks.Hyakkiyakou.assets import HyakkiyakouAssets
+from tasks.Hyakkiyakou.slave.hya_color import HyaColor
+from tasks.Hyakkiyakou.slave.hya_device import HyaDevice
 
 
 class HyaBuff(int, Enum):
@@ -29,11 +29,11 @@ class HyaBuff(int, Enum):
         raise ValueError(f"No HyaBuff member with value {index}")
 
 
-
 class HyaSlave(HyaDevice, HyaColor, HyakkiyakouAssets):
     """
     主要是用来跟游戏进行交互的
     """
+
     # x, y, w, h
     HUNDRED0HUNDRED: list[int] = [117, 647, 18, 25]
     DECADE0HUNDRED: list[int] = [131, 647, 18, 25]
@@ -48,8 +48,15 @@ class HyaSlave(HyaDevice, HyaColor, HyakkiyakouAssets):
     BUFF_ROI4: list[int] = [1100, 1, 140, 50]
 
     # 剩余豆子数量， 剩余式神数量， 一次砸豆子的数量， 第一个格子， 第二个格子， 第三个格子， 第四个格子
-    slave_state: tuple = [250, 36, 10,
-                          HyaBuff.BUFF_STATE0, HyaBuff.BUFF_STATE0, HyaBuff.BUFF_STATE0, HyaBuff.BUFF_STATE0]
+    slave_state: tuple = [
+        250,
+        36,
+        10,
+        HyaBuff.BUFF_STATE0,
+        HyaBuff.BUFF_STATE0,
+        HyaBuff.BUFF_STATE0,
+        HyaBuff.BUFF_STATE0,
+    ]
 
     @cached_property
     def res_r(self) -> list[RuleImage]:
@@ -98,12 +105,7 @@ class HyaSlave(HyaDevice, HyaColor, HyakkiyakouAssets):
 
     @cached_property
     def buff_state_rois(self) -> list[list[int]]:
-        return [
-            self.BUFF_ROI1,
-            self.BUFF_ROI2,
-            self.BUFF_ROI3,
-            self.BUFF_ROI4
-        ]
+        return [self.BUFF_ROI1, self.BUFF_ROI2, self.BUFF_ROI3, self.BUFF_ROI4]
 
     @cached_property
     def buff_state_images(self) -> list[RuleImage]:
@@ -116,7 +118,7 @@ class HyaSlave(HyaDevice, HyaColor, HyakkiyakouAssets):
         ]
 
     def predict_res(self, current: int) -> int:
-        for i in range(current, current-5, -1):
+        for i in range(current, current - 5, -1):
             unit = i % 10
             unit_img = self.res_r[unit] if i >= 10 else self.res_f[unit]
             if not self.appear(unit_img):
@@ -128,7 +130,7 @@ class HyaSlave(HyaDevice, HyaColor, HyakkiyakouAssets):
             if not self.appear(decade_img):
                 continue
             return i
-        logger.warning(f'Cannot predict result, current: {current}')
+        logger.warning(f"Cannot predict result, current: {current}")
         return current
 
     def predict_bean(self, current: int):
@@ -179,7 +181,7 @@ class HyaSlave(HyaDevice, HyaColor, HyakkiyakouAssets):
         if isinstance(num, int) and num >= 0:
             return num
 
-        logger.warning(f'Cannot predict bean, current: {current}')
+        logger.warning(f"Cannot predict bean, current: {current}")
         return current
 
     def predict_buff_state(self, pos: int, current: HyaBuff = None) -> HyaBuff:
@@ -215,16 +217,22 @@ class HyaSlave(HyaDevice, HyaColor, HyakkiyakouAssets):
     # ------------------------------------------------------------------------------------------------------------------
 
     def invite_friend(self):
-        logger.hr('Invite friend', 2)
+        logger.hr("Invite friend", 2)
         self.ui_click(self.I_HINVITE, self.I_CHECK_INVITATION, interval=4)
-        logger.info('Entry check invitation')
+        logger.info("Entry check invitation")
 
         # 是否有召回活动(星重聚阴阳师)
         if self.appear(self.I_ENSURE_RECALL):
             hya_recall_activity = True
             # 应该动态改roi而不是新开一个图
-            friend_buttons1 = [self.I_FRIEND_SAME_1_RECALL, self.I_FRIEND_REMOTE_1_RECALL, ]
-            friend_buttons2 = [self.I_FRIEND_SAME_2_RECALL, self.I_FRIEND_REMOTE_2_RECALL, ]
+            friend_buttons1 = [
+                self.I_FRIEND_SAME_1_RECALL,
+                self.I_FRIEND_REMOTE_1_RECALL,
+            ]
+            friend_buttons2 = [
+                self.I_FRIEND_SAME_2_RECALL,
+                self.I_FRIEND_REMOTE_2_RECALL,
+            ]
         else:
             hya_recall_activity = False
             friend_buttons1 = [self.I_FRIEND_SAME_1, self.I_FRIEND_REMOTE_1, self.I_FRIEND_RYOU_1]
@@ -234,27 +242,41 @@ class HyaSlave(HyaDevice, HyaColor, HyakkiyakouAssets):
         while self.friend_state < 3:
             match self.friend_state:
                 case 0:
-                    logger.info('Invite same server friend')
-                    if not self._invite_friend(button1=friend_buttons1[0], button2=friend_buttons2[0], hya_recall_activity=hya_recall_activity):
+                    logger.info("Invite same server friend")
+                    if not self._invite_friend(
+                        button1=friend_buttons1[0],
+                        button2=friend_buttons2[0],
+                        hya_recall_activity=hya_recall_activity,
+                    ):
                         self.friend_state += 1
                     else:
                         return True
                 case 1:
-                    logger.info('Invite remote friend')
-                    if not self._invite_friend(button1=friend_buttons1[1], button2=friend_buttons2[1], hya_recall_activity=hya_recall_activity):
+                    logger.info("Invite remote friend")
+                    if not self._invite_friend(
+                        button1=friend_buttons1[1],
+                        button2=friend_buttons2[1],
+                        hya_recall_activity=hya_recall_activity,
+                    ):
                         self.friend_state += 1
                     else:
                         return True
                 case 2:
-                    logger.info('Invite guild friend')
-                    if not self._invite_friend(button1=friend_buttons1[2], button2=friend_buttons2[2], hya_recall_activity=hya_recall_activity):
+                    logger.info("Invite guild friend")
+                    if not self._invite_friend(
+                        button1=friend_buttons1[2],
+                        button2=friend_buttons2[2],
+                        hya_recall_activity=hya_recall_activity,
+                    ):
                         self.friend_state += 1
                     else:
                         return True
                 case _:
-                    raise RequestHumanTakeover('Invite friend failed')
+                    raise RequestHumanTakeover("Invite friend failed")
 
-    def _invite_friend(self, button1: RuleImage, button2: RuleImage, hya_recall_activity: bool = False ) -> bool:
+    def _invite_friend(
+        self, button1: RuleImage, button2: RuleImage, hya_recall_activity: bool = False
+    ) -> bool:
         self.ui_click(button1, button2)
         invite_timer = Timer(8)
         invite_timer.start()
@@ -274,9 +296,9 @@ class HyaSlave(HyaDevice, HyaColor, HyakkiyakouAssets):
                 if self.click(self.C_FRIEND_2, interval=3):
                     continue
             if invite_timer.reached():
-                logger.warning('Invite friend timeout, It may be no friend available')
+                logger.warning("Invite friend timeout, It may be no friend available")
                 return False
-        logger.info('Invite friend done')
+        logger.info("Invite friend done")
         return True
 
     def update_state(self):
@@ -287,22 +309,29 @@ class HyaSlave(HyaDevice, HyaColor, HyakkiyakouAssets):
         buff_1 = self.predict_buff_state(pos=1, current=self.slave_state[4])
         buff_2 = self.predict_buff_state(pos=2, current=self.slave_state[5])
         buff_3 = self.predict_buff_state(pos=3, current=self.slave_state[6])
-        self.slave_state = [
-            res_bean, res_shi, num_bean, buff_0, buff_1, buff_2, buff_3
-        ]
+        self.slave_state = [res_bean, res_shi, num_bean, buff_0, buff_1, buff_2, buff_3]
         return self.slave_state
 
     def reset_state(self):
-        self.slave_state = [250, 36, 10,
-                          HyaBuff.BUFF_STATE0, HyaBuff.BUFF_STATE0, HyaBuff.BUFF_STATE0, HyaBuff.BUFF_STATE0]
+        self.slave_state = [
+            250,
+            36,
+            10,
+            HyaBuff.BUFF_STATE0,
+            HyaBuff.BUFF_STATE0,
+            HyaBuff.BUFF_STATE0,
+            HyaBuff.BUFF_STATE0,
+        ]
 
 
 def covert_rgb():
-    images_folders: Path = Path(r'E:\Project\OnmyojiAutoScript\tasks\Hyakkiyakou\temp\20240614T214216')
-    save_folders = images_folders.parent / 'save14'
+    images_folders: Path = Path(
+        r"E:\Project\OnmyojiAutoScript\tasks\Hyakkiyakou\temp\20240614T214216"
+    )
+    save_folders = images_folders.parent / "save14"
     save_folders.mkdir(parents=True, exist_ok=True)
     for file in images_folders.iterdir():
-        if file.suffix != '.png':
+        if file.suffix != ".png":
             continue
         img = cv2.imread(str(file))
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
@@ -310,14 +339,15 @@ def covert_rgb():
 
 
 def test_predict_res():
-    import timeit
     from module.config.config import Config
     from module.device.device import Device
 
-    c = Config('oas1')
+    c = Config("oas1")
     d = Device(c)
     hd = HyaSlave(c, d)
-    img = cv2.imread('D:/Project/OnmyojiAutoScript/tasks/Hyakkiyakou/temp/20240621T221325/all1718979259551.png')
+    img = cv2.imread(
+        "D:/Project/OnmyojiAutoScript/tasks/Hyakkiyakou/temp/20240621T221325/all1718979259551.png"
+    )
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     hd.device.image = img
     print(hd.predict_res(2))
@@ -331,14 +361,13 @@ def test_predict_res():
 
 
 def test_predict_bean():
-    import timeit
     from module.config.config import Config
     from module.device.device import Device
 
-    c = Config('oas1')
+    c = Config("oas1")
     d = Device(c)
     hd = HyaSlave(c, d)
-    img = cv2.imread('./tasks/Hyakkiyakou/temp/20240621T221325/all1718979269677.png')
+    img = cv2.imread("./tasks/Hyakkiyakou/temp/20240621T221325/all1718979269677.png")
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     hd.device.image = img
     print(hd.predict_bean(15))
@@ -350,24 +379,25 @@ def test_predict_bean():
 
 
 def test_predict_buff():
-    import timeit
     from module.config.config import Config
     from module.device.device import Device
 
-    c = Config('oas1')
+    c = Config("oas1")
     d = Device(c)
     hd = HyaSlave(c, d)
-    img = cv2.imread(r'E:\Project\OnmyojiAutoScript\tasks\Hyakkiyakou\temp\save14\all1718372600237.png')
+    img = cv2.imread(
+        r"E:\Project\OnmyojiAutoScript\tasks\Hyakkiyakou\temp\save14\all1718372600237.png"
+    )
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     hd.device.image = img
     print(hd.predict_buff_state(1))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from module.config.config import Config
     from module.device.device import Device
 
-    c = Config('oas1')
+    c = Config("oas1")
     d = Device(c)
     hd = HyaSlave(c, d)
     # hd.invite_friend(False)
@@ -375,4 +405,3 @@ if __name__ == '__main__':
     # test_predict_res()
     test_predict_bean()
     # test_predict_buff()
-

@@ -1,4 +1,3 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
 import time
@@ -17,9 +16,7 @@ from tasks.Restart.assets import RestartAssets
 
 
 class ScriptTask(GeneralBattle, GameUi, SwitchSoul, DyeTrialsAssets):
-
     def run(self):
-
         cfg = self.config.dye_trials
 
         # 自动换御魂
@@ -30,7 +27,9 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, DyeTrialsAssets):
         if cfg.switch_soul_config.enable_switch_by_name:
             self.ui_get_current_page()
             self.ui_goto(page_shikigami_records)
-            self.run_switch_soul_by_name(cfg.switch_soul_config.group_name, cfg.switch_soul_config.team_name)
+            self.run_switch_soul_by_name(
+                cfg.switch_soul_config.group_name, cfg.switch_soul_config.team_name
+            )
 
         self.ui_get_current_page()
         self.ui_goto(page_main)
@@ -40,8 +39,8 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, DyeTrialsAssets):
         self.ui_get_current_page()
         self.ui_goto(page_main)
 
-        self.set_next_run(task='DyeTrials', success=True, finish=True)
-        raise TaskEnd('DyeTrials')
+        self.set_next_run(task="DyeTrials", success=True, finish=True)
+        raise TaskEnd("DyeTrials")
 
     def get_all(self):
         while 1:
@@ -54,7 +53,7 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, DyeTrialsAssets):
                 continue
             if self.appear_then_click(self.I_TOGGLE_BUTTON, interval=3):
                 continue
-        logger.info('Enter DyeTrials')
+        logger.info("Enter DyeTrials")
         boss_timer = Timer(60)
         boss_timer.start()
         battle_num = 0
@@ -62,7 +61,7 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, DyeTrialsAssets):
             self.screenshot()
             time.sleep(0.1)
             if boss_timer.reached():
-                self.config.notifier.push(title='超鬼王', message='识别超时退出')
+                self.config.notifier.push(title="超鬼王", message="识别超时退出")
                 break
             # 获得奖励
             if self.ui_reward_appear_click():
@@ -75,13 +74,13 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, DyeTrialsAssets):
                 if cu == total == 50 and cu + res == total:
                     break
                 if battle_num >= 50:
-                    logger.info(f'Battle {battle_num}, enough battle, break')
+                    logger.info(f"Battle {battle_num}, enough battle, break")
                     break
                 self.ui_click_until_disappear(self.I_FP_CHALLENGE)
                 battle_num += 1
-                logger.info(f'Battle num [{battle_num}]')
+                logger.info(f"Battle num [{battle_num}]")
                 self.device.stuck_record_clear()
-                self.device.stuck_record_add('BATTLE_STATUS_S')
+                self.device.stuck_record_add("BATTLE_STATUS_S")
                 boss_timer.reset()
                 continue
             if self.appear_then_click(self.I_BATTLE_SUCCESS, interval=1):
@@ -89,11 +88,11 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, DyeTrialsAssets):
                 continue
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from module.config.config import Config
     from module.device.device import Device
 
-    c = Config('DU')
+    c = Config("DU")
     d = Device(c)
     t = ScriptTask(c, d)
     t.screenshot()

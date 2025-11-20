@@ -1,31 +1,26 @@
-# This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
-import socket
-import random
-import zerorpc
-import asyncio
-import cv2
-import msgpack
-import numpy as np
 import io
 import json
-
-from typing import Union, Any, Dict
-from cached_property import cached_property
-from PySide6.QtCore import QObject, Slot, Signal, Property
-from PySide6.QtGui import QImage
-from queue import Queue, Empty
-from rich.console import Console
+import random
+import socket
 from multiprocessing.managers import SyncManager
+from queue import Empty, Queue
+
 # from multiprocessing import Queue
 from threading import Thread
 
+import cv2
+import numpy as np
+import zerorpc
+from PySide6.QtCore import QObject, Signal, Slot
+from PySide6.QtGui import QImage
+
 from module.base.log_highlighter import highlight_text
-from module.gui.process.script_process import ScriptProcess
 from module.config.config_menu import ConfigMenu
 from module.config.config_modify import ConfigModify
 from module.gui.context.add import Add
+from module.gui.process.script_process import ScriptProcess
 from module.logger import logger
 
 
@@ -40,19 +35,18 @@ def is_port_in_use(ip, port) -> bool:
     try:
         s.connect((ip, port))
         s.shutdown(2)
-        logger.info(f'Port {port} is in use')
+        logger.info(f"Port {port} is in use")
         return True
     except:
-        logger.info(f'Port {port} is not in use')
+        logger.info(f"Port {port} is not in use")
         return False
-
-
 
 
 class ProcessManager(QObject):
     """
     进程管理
     """
+
     log_signal = Signal(str, str)  # 日志信号
     sig_update_task = Signal(str, str)  # 更新当前运行的任务任务信号
     sig_update_pending = Signal(str, str)  # 更新等待运行的任务信号
@@ -63,23 +57,21 @@ class ProcessManager(QObject):
         init
         """
         super().__init__()
-        self.processes: Dict[str, ScriptProcess] = {}  # 持有所有的进程
-        self.configs: Dict[str, ConfigModify] = {}  # 持有所有的配置, 权宜之计
-        self.ports: Dict[str, int] = {}  # 持有所有的端口
+        self.processes: dict[str, ScriptProcess] = {}  # 持有所有的进程
+        self.configs: dict[str, ConfigModify] = {}  # 持有所有的配置, 权宜之计
+        self.ports: dict[str, int] = {}  # 持有所有的端口
         self.clients = {}  # zerorpc连接的客户端
 
         self.manager = SyncManager()  # 管理器
         self.manager.start()
-        self.log_queue: Dict[str, Queue] = {}  # 日志队列
-        self.log_thread: Dict[str, Thread] = {}  # 日志线程
+        self.log_queue: dict[str, Queue] = {}  # 日志队列
+        self.log_thread: dict[str, Thread] = {}  # 日志线程
 
         self.update_queue: Queue = None  # 每次更新任务的时候push进来给gui显示
         self.update_thread: Thread = None  # 更新线程
         self.start_update_tasks()  # 启动更新线程
 
         # self.event_loop = asyncio.get_event_loop()  # 事件循环
-
-
 
     @Slot()
     def create_all(self) -> None:
@@ -101,7 +93,7 @@ class ProcessManager(QObject):
         if config not in self.processes:
             # 初始化端口
             port = 40000 + random.randint(0, 200)
-            while is_port_in_use('127.0.0.1', port):
+            while is_port_in_use("127.0.0.1", port):
                 port = 40000 + random.randint(0, 200)
             self.ports[config] = port
             # 初始化日志队列
@@ -112,17 +104,17 @@ class ProcessManager(QObject):
             self.log_thread[config].start()
 
             # 下面是启动 zerorpc 客户端
-            logger.info(f'Create script {config} on port {port}')
+            logger.info(f"Create script {config} on port {port}")
             try:
                 self.clients[config] = zerorpc.Client()
-                self.clients[config].connect(f'tcp://127.0.0.1:{self.ports[config]}')
+                self.clients[config].connect(f"tcp://127.0.0.1:{self.ports[config]}")
             except:
-                logger.exception(f'Connect to script {config} error')
+                logger.exception(f"Connect to script {config} error")
                 raise
             self.processes[config].start()
-            logger.info(f'Add script {config}')
+            logger.info(f"Add script {config}")
         else:
-            logger.info(f'Script {config} is already running')
+            logger.info(f"Script {config} is already running")
 
     def remove(self, config: str) -> None:
         """
@@ -135,10 +127,10 @@ class ProcessManager(QObject):
             del self.processes[config]
             del self.ports[config]
             del self.clients[config]
-            logger.info(f'Remove script {config}')
-            logger.info(f'Port {config} is released')
+            logger.info(f"Remove script {config}")
+            logger.info(f"Port {config} is released")
         else:
-            logger.info(f'Script {config} is not running')
+            logger.info(f"Script {config} is not running")
 
     @Slot(str)
     def restart(self, config: str) -> None:
@@ -149,28 +141,29 @@ class ProcessManager(QObject):
         """
         if config in self.processes:
             if not self.processes[config].is_alive():  # 如果进程已经死亡，那么就重新启动
-                logger.info(f'{config} process is dead, restart it')
-
+                logger.info(f"{config} process is dead, restart it")
 
             self.processes[config].terminate()  # 强制结束进程
             if self.ports[config] is None:
-                logger.error(f'{config} port {config} is None')
+                logger.error(f"{config} port {config} is None")
             if self.clients[config] is None:
-                logger.error(f'{config} client {config} is None')
+                logger.error(f"{config} client {config} is None")
             if self.log_queue[config] is None:
-                logger.info(f'{config} log_queue {config} is None')
+                logger.info(f"{config} log_queue {config} is None")
                 self.log_queue[config] = self.manager.Queue()
             if self.log_thread[config] is None or self.log_thread[config].is_alive() is False:
-                logger.info(f'{config} log_thread {config} is None')
+                logger.info(f"{config} log_thread {config} is None")
 
-            self.processes[config] = ScriptProcess(config=config,
-                                                   port=self.ports[config],
-                                                   log_queue=self.log_queue[config],
-                                                   update_queue=self.update_queue)
+            self.processes[config] = ScriptProcess(
+                config=config,
+                port=self.ports[config],
+                log_queue=self.log_queue[config],
+                update_queue=self.update_queue,
+            )
             self.processes[config].start()
-            logger.info(f'Restart script {config}')
+            logger.info(f"Restart script {config}")
         else:
-            logger.info(f'Script {config} is not running')
+            logger.info(f"Script {config} is not running")
 
     def stop_all(self) -> None:
         """
@@ -179,7 +172,7 @@ class ProcessManager(QObject):
         """
         for config in self.processes:
             self.processes[config].stop()
-        logger.info(f'Stop all script')
+        logger.info("Stop all script")
 
     def restart_all(self) -> None:
         """
@@ -188,7 +181,7 @@ class ProcessManager(QObject):
         """
         for config in self.processes:
             self.processes[config].restart()
-        logger.info(f'Restart all script')
+        logger.info("Restart all script")
 
     def get_client(self, config: str) -> zerorpc.Client:
         """
@@ -199,7 +192,7 @@ class ProcessManager(QObject):
         if config in self.clients:
             return self.clients[config]
         else:
-            logger.info(f'Script {config} is not running')
+            logger.info(f"Script {config} is not running")
             return None
 
     @Slot(result="QString")
@@ -236,10 +229,10 @@ class ProcessManager(QObject):
         :return:
         """
         if config in self.clients:
-            logger.info(f'Gui get args of {config} {task}')
+            logger.info(f"Gui get args of {config} {task}")
             return self.check_script(config).gui_args(task)
         else:
-            logger.info(f'Script {config} is not running')
+            logger.info(f"Script {config} is not running")
             return None
 
     @Slot(str, str, result="QString")
@@ -251,10 +244,10 @@ class ProcessManager(QObject):
         :return:
         """
         if config in self.clients:
-            logger.info(f'Gui get value of {config} {task}')
+            logger.info(f"Gui get value of {config} {task}")
             return self.check_script(config).gui_task(task)
         else:
-            logger.info(f'Script {config} is not running')
+            logger.info(f"Script {config} is not running")
             return None
 
     @Slot(str, str, str, str, str, result="bool")
@@ -269,13 +262,13 @@ class ProcessManager(QObject):
         :return:
         """
         if config in self.clients:
-            logger.info(f'Gui set value of {config} {task}')
+            logger.info(f"Gui set value of {config} {task}")
             if self.check_script(config).gui_set_task(task, group, arg, value):
                 return True
             else:
                 return False
         else:
-            logger.info(f'Script {config} is not running')
+            logger.info(f"Script {config} is not running")
             return False
 
     @Slot(str, str, str, str, bool, result="bool")
@@ -290,13 +283,13 @@ class ProcessManager(QObject):
         :return:
         """
         if config in self.clients:
-            logger.info(f'Gui set value of {config} {task}')
+            logger.info(f"Gui set value of {config} {task}")
             if self.check_script(config).gui_set_task(task, group, arg, value):
                 return True
             else:
                 return False
         else:
-            logger.info(f'Script {config} is not running')
+            logger.info(f"Script {config} is not running")
             return False
 
     @Slot(str, str, str, str, float, result="bool")
@@ -311,13 +304,13 @@ class ProcessManager(QObject):
         :return:
         """
         if config in self.clients:
-            logger.info(f'Gui set value of {config} {task}')
+            logger.info(f"Gui set value of {config} {task}")
             if self.check_script(config).gui_set_task(task, group, arg, value):
                 return True
             else:
                 return False
         else:
-            logger.info(f'Script {config} is not running')
+            logger.info(f"Script {config} is not running")
             return False
 
     @Slot(str, result="QImage")
@@ -327,7 +320,7 @@ class ProcessManager(QObject):
         :return:
         """
         if config in self.clients:
-            logger.info(f'Gui get mirror image of {config}')
+            logger.info(f"Gui get mirror image of {config}")
             # 接收流对象
             stream = self.clients[config].gui_mirror_image()
             # 创建 BytesIO 对象来存储图像数据
@@ -343,25 +336,18 @@ class ProcessManager(QObject):
             image_qt = QImage(image.data, width, height, QImage.Format_RGB888).rgbSwapped()
             return image_qt
 
-
-
         else:
-            logger.info(f'Script {config} is not running')
+            logger.info(f"Script {config} is not running")
             return None
-
-
 
     @Slot(str, result="QString")
     def gui_task_list(self, config: str) -> str:
         if config in self.clients:
-            logger.info(f'Gui get {config} task list')
+            logger.info(f"Gui get {config} task list")
             return self.check_script(config).gui_task_list()
         else:
-            logger.info(f'Script {config} is not running')
+            logger.info(f"Script {config} is not running")
             return None
-
-
-
 
     def start_log(self, config_name: str) -> Queue:
         """
@@ -377,9 +363,10 @@ class ProcessManager(QObject):
         if config_name not in self.log_queue:
             self.log_queue[config_name] = self.manager.Queue()
 
-
         if config_name not in self.log_thread:
-            self.log_thread[config_name] = Thread(target=self.log_thread_func, args=(config_name,), daemon=True)
+            self.log_thread[config_name] = Thread(
+                target=self.log_thread_func, args=(config_name,), daemon=True
+            )
 
         return self.log_queue[config_name]
 
@@ -391,8 +378,8 @@ class ProcessManager(QObject):
         """
         q = self.log_queue[config_name] if config_name in self.log_queue else None
         if q is None:
-            logger.error(f'Process manager has no config {config_name}')
-            logger.info(f'Script {config_name} is not running')
+            logger.error(f"Process manager has no config {config_name}")
+            logger.info(f"Script {config_name} is not running")
             return
 
         while self.log_thread[config_name].is_alive():
@@ -406,7 +393,7 @@ class ProcessManager(QObject):
             except Empty:
                 continue
             except Exception as e:
-                logger.error(f'Log thread of {config_name} error: {e}')
+                logger.error(f"Log thread of {config_name} error: {e}")
                 break
 
     def start_update_tasks(self) -> None:
@@ -415,7 +402,7 @@ class ProcessManager(QObject):
         :return:
         """
         if self.update_queue is not None and self.update_thread is not None:
-            logger.error(f'Update thread has already started')
+            logger.error("Update thread has already started")
 
         self.update_queue = self.manager.Queue()
         self.update_thread = Thread(target=self.update_thread_func, daemon=True)
@@ -427,7 +414,7 @@ class ProcessManager(QObject):
         从self.update_queue中获取信息，然后解析, 推送到gui
         :return:
         """
-        logger.info(f'Update thread start')
+        logger.info("Update thread start")
         while self.update_thread.is_alive():
             try:
                 update = self.update_queue.get(timeout=1)
@@ -436,7 +423,7 @@ class ProcessManager(QObject):
                 if not isinstance(update, dict):
                     continue
 
-                logger.info(f'Update thread get')
+                logger.info("Update thread get")
                 for key, value in update.items():
                     if "task" and "pending" and "waiting" in value:
                         self.sig_update_task.emit(key, json.dumps(value["task"]))
@@ -446,7 +433,7 @@ class ProcessManager(QObject):
             except Empty:
                 continue
             except Exception as e:
-                logger.error(f'Update thread error: {e}')
+                logger.error(f"Update thread error: {e}")
                 break
 
     @Slot(str)
@@ -457,10 +444,10 @@ class ProcessManager(QObject):
         :return:
         """
         if not self.processes[config].is_alive():
-            logger.info(f'Start script {config}')
+            logger.info(f"Start script {config}")
             return self.restart(config)
 
-        logger.info(f'Script {config} is already running')
+        logger.info(f"Script {config} is already running")
 
         self.clients[config].start_loop()
 
@@ -472,8 +459,7 @@ class ProcessManager(QObject):
         :return:
         """
         if config in self.processes:
-            logger.info(f'Stop script {config}')
+            logger.info(f"Stop script {config}")
             self.processes[config].stop()
         else:
-            logger.info(f'Script {config} is not running')
-
+            logger.info(f"Script {config} is not running")
