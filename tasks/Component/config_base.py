@@ -34,8 +34,8 @@ def datadelta_validator(v: Any) -> timedelta:
                 seconds = int(match.group(4))
                 return TimeDelta(days=days, hours=hours, minutes=minutes, seconds=seconds)
             return TimeDelta(days=1, hours=0, minutes=0, seconds=0)
-        except ValueError:
-            raise ValueError("Invalid interval value. Expected format: seconds")
+        except ValueError as err:
+            raise ValueError("Invalid interval value. Expected format: seconds") from err
     return v
 
 

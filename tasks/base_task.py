@@ -330,10 +330,14 @@ class BaseTask(GlobalGameAssets, CostumeBase):
     def wait_until_stable(
         self,
         target: RuleImage,
-        timer=Timer(0.3, count=1),
-        timeout=Timer(5, count=10),
+        timer=None,
+        timeout=None,
         skip_first_screenshot=True,
     ):
+        if timer is None:
+            timer = Timer(0.3, count=1)
+        if timeout is None:
+            timeout = Timer(5, count=10)
         """
         等待目标稳定，即连续多次匹配成功
         :param target:
@@ -691,9 +695,10 @@ class BaseTask(GlobalGameAssets, CostumeBase):
             elif isinstance(click_image, RuleOcr):
                 if self.ocr_appear_click(click_image, interval=click_interval):
                     continue
-            elif isinstance(click_image, RuleClick):
-                if self.click(click_image, interval=click_interval):
-                    continue
+            elif isinstance(click_image, RuleClick) and self.click(
+                click_image, interval=click_interval
+            ):
+                continue
 
         return True
 

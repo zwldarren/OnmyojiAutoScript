@@ -63,7 +63,8 @@ class EmulatorInstance(VirtualBoxEmulator):
         for file in vbox:
             with open(file, encoding="utf-8", errors="ignore") as f:
                 for line in f.readlines():
-                    # <Forwarding name="port2" proto="1" hostip="127.0.0.1" hostport="62026" guestport="5555"/>
+                    # <Forwarding name="port2" proto="1" hostip="127.0.0.1"
+                    # hostport="62026" guestport="5555"/>
                     res = re.search('<*?hostport="(.*?)".*?guestport="5555"/>', line)
                     if res:
                         serial.append(
@@ -229,8 +230,8 @@ class EmulatorManager(Connection):
     def adb_connect(self, serial):
         try:
             return super().adb_connect(serial)
-        except EmulatorNotRunningError:
-            raise RequestHumanTakeover
+        except EmulatorNotRunningError as err:
+            raise RequestHumanTakeover from err
 
     def detect_emulator_status(self, serial):
         devices = self.list_device()

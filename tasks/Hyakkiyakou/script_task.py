@@ -103,7 +103,7 @@ class ScriptTask(GameUi, HyaSlave, SwitchOnmyoji):
             except Exception as e:
                 logger.error(f"Priority error: {str_priorities}")
                 logger.error(e)
-                raise RequestHumanTakeover
+                raise RequestHumanTakeover from e
         strategy: dict = {
             "weights": weights,
             "priorities": priorities,

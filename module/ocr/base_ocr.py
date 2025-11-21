@@ -158,7 +158,8 @@ class BaseCor:
             and self.mode in [OcrMode.DIGIT, OcrMode.DIGITCOUNTER, OcrMode.QUANTITY]
         ):
             logger.warning(
-                f'[{self.name}] Score {score:.2f} is low, but result "{result}" contains a digit. Accepting it.'
+                f'[{self.name}] Score {score:.2f} is low, but result "{result}" '
+                f"contains a digit. Accepting it."
             )
             print("能保留")
         else:

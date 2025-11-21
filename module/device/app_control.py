@@ -46,7 +46,9 @@ class AppControl(Adb, Uiautomator2):
     def dump_hierarchy(self) -> etree._Element:
         """
         Returns:
-            etree._Element: Select elements with `self.hierarchy.xpath('//*[@text="Hermit"]')` for example.
+            etree._Element:
+                Select elements with `self.hierarchy.xpath('//*[@text="Hermit"]')`
+                for example.
         """
         method = self.config.script.device.screenshot_method
         if method in AppControl._app_u2_family:

@@ -19,11 +19,11 @@ def on_message(client, userdata, msg):
         logger.error(f"Get [{msg.topic}]: {msg.payload}")
         return
     logger.info(f"Get {msg.topic}: {data}")
-    for username, data in data.items():
+    for username, user_data in data.items():
         # 反正只有一项
         if username == userdata.username:
             continue
-        userdata.match_topic[msg.topic](username, data)
+        userdata.match_topic[msg.topic](username, user_data)
 
 
 class Host(Mqtt, Player):

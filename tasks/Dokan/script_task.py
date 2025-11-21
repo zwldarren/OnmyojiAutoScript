@@ -442,7 +442,7 @@ class ScriptTask(ExtendGreenMark, GameUi, SwitchSoul, DokanSceneDetector):
         logger.info(f"start select attack priority: {attack_priority}, remain try: {max_try}")
         try:
             target_attack = self._attack_priorities[attack_priority]
-        except:
+        except KeyError:
             target_attack = self._attack_priorities[0]
 
         while 1:
@@ -1069,139 +1069,120 @@ class ScriptTask(ExtendGreenMark, GameUi, SwitchSoul, DokanSceneDetector):
                 continue
         return False
 
-    def dokan_battle(self, cfg: Dokan, battle_count_limit=None):
-        """道馆战斗
-        道馆集结结束后会自动进入战斗，打完一个也会自动进入下一个，因此直接点击右下角的开始
 
-        :return: 战斗成功(True) or 战斗失败(False) or 区域不可用（False）
-        @type battle_count_limit: int 战斗次数限制
-        """
+def dokan_battle(self, cfg: Dokan, battle_count_limit=None):
+    """道馆战斗
+    道馆集结结束后会自动进入战斗，打完一个也会自动进入下一个，因此直接点击右下角的开始
 
-        def anti_wait_long_time():
-            self.device.stuck_record_add("BATTLE_STATUS_S")
+    :return: 战斗成功(True) or 战斗失败(False) or 区域不可用（False）
+    @type battle_count_limit: int 战斗次数限制
+    """
 
-        battle_config: GeneralBattleConfig = cfg.general_battle_config
-        if not battle_count_limit:
-            battle_count_limit = 999
+    def anti_wait_long_time():
+        self.device.stuck_record_add("BATTLE_STATUS_S")
 
-        # 上面可能睡了一觉，重新截图
-        self.screenshot()
-        win = False
+    def is_battle_end(battle_count_limit_local: int) -> (bool, bool):
+        if battle_count_limit_local < 0:
+            logger.info(f"battle_count_limit:{battle_count_limit_local}")
+            win = True
+            return win, True
 
-        # 等待准备按钮的出现
-        self.wait_until_appear(self.I_PREPARE_HIGHLIGHT)
+        # 如果出现赢 就点击
+        if self.appear(GeneralBattle.I_WIN):
+            logger.info("Dokan guards eliminated, boss is on the way")
+            win = True
+            return win, True
 
-        # 战斗刚开始，需要添加绿标
-        need_green_mark = battle_config.green_enable
-        # 绿标区域初始化标识，只初始化一次绿标区域
-        need_init_green_mark_area = battle_config.green_enable
+        # 如果出现打败馆主的赢，就点击
+        if self.appear(self.I_RYOU_DOKAN_WIN):
+            logger.info("We've defeated the boss, and win the final game.")
+            win = True
+            return win, True
 
-        while True:
-            if cfg.general_battle_config.green_enable:
-                self.green_mark_screenshot(anti_wait_long_time)
-            else:
-                self.screenshot()
+        # 如果出现失败 就点击，返回False。 TODO 不知道挑战馆主失败是不是同一个画面？
+        if self.appear(GeneralBattle.I_FALSE):
+            logger.info("Battle failed")
+            win = False
+            return win, True
 
-            def is_battle_end() -> (bool, bool):
-                if battle_count_limit < 0:
-                    logger.info(f"battle_count_limit:{battle_count_limit}")
-                    win = True
-                    return win, True
+        return False, False
 
-                # 如果出现赢 就点击
-                if self.appear(GeneralBattle.I_WIN):
-                    logger.info("Dokan guards eliminated, boss is on the way")
-                    win = True
-                    return win, True
+    battle_config: GeneralBattleConfig = cfg.general_battle_config
+    if not battle_count_limit:
+        battle_count_limit = 999
 
-                # 如果出现打败馆主的赢，就点击
-                if self.appear(self.I_RYOU_DOKAN_WIN):
-                    logger.info("We've defeated the boss, and win the final game.")
-                    win = True
-                    return win, True
+    # 上面可能睡了一觉，重新截图
+    self.screenshot()
+    win = False
 
-                # 如果出现失败 就点击，返回False。 TODO 不知道挑战馆主失败是不是同一个画面？
-                if self.appear(GeneralBattle.I_FALSE):
-                    logger.info("Battle failed")
-                    win = False
-                    return win, True
+    # 等待准备按钮的出现
+    self.wait_until_appear(self.I_PREPARE_HIGHLIGHT)
 
-                # 如果领奖励
-                if self.appear(self.I_RYOU_DOKAN_BATTLE_OVER, threshold=0.6):
-                    logger.info("Battle over")
-                    win = True
-                    return win, True
+    # 战斗刚开始，需要添加绿标
+    need_green_mark = battle_config.green_enable
+    # 绿标区域初始化标识，只初始化一次绿标区域
+    need_init_green_mark_area = battle_config.green_enable
 
-                # 如果领奖励出现金币
-                if self.appear(GeneralBattle.I_REWARD_GOLD):
-                    logger.info("Reward gold")
-                    win = True
-                    return win, True
+    while True:
+        if cfg.general_battle_config.green_enable:
+            self.green_mark_screenshot(anti_wait_long_time)
+        else:
+            self.screenshot()
 
-                # 如果出现 寮境顶部“道馆突破”字样，表示已不再战斗中
-                # 可能是截图时绿标，导致没有检测到战斗结束
-                if self.appear(self.I_RYOU_DOKAN_CENTER_TOP):
-                    logger.info("Exit Battle already")
-                    # 因为不确定战斗成功还是失败，姑且当作成功
-                    win = True
-                    return win, True
+        win, is_battle_end_and_exit = is_battle_end(battle_count_limit)
+        if is_battle_end_and_exit:
+            break
 
-                return False, False
-
-            win, is_battle_end_and_exit = is_battle_end()
-            if is_battle_end_and_exit:
-                break
-
-            # 击败馆主后出现的 带成功失败的 突破排名 列表
-            if self.appear(self.I_RYOU_DOKAN_TOPPA_RANK):
-                logger.info("Dokan challenge success / failed")
-                # 只是点击尝试关闭改弹窗
-                self.click(self.C_DOKAN_TOPPA_RANK_CLOSE_AREA, interval=2)
-                continue
-
-            # 如果开启战斗过程随机滑动-如果启用绿标则禁止滑动
-            if battle_config.random_click_swipt_enable and not battle_config.green_enable:
-                logger.info("random swipt ...")
-                self.random_click_swipt()
-
-            # 打完一个小朋友，自动进入下一个小朋友
-            if self.appear(self.I_RYOU_DOKAN_IN_FIELD):
-                # 在此处判断战斗次数,防止开启额外的战斗
-                if battle_count_limit <= 0:
-                    win = True
-                    break
-                self.device.click_record_clear()
-                self.device.stuck_record_clear()
-
-                logger.info("--------New battle starts---------")
-
-                if need_init_green_mark_area:
-                    need_init_green_mark_area = False
-                    # 初始化 green_mark
-                    self.init_green_mark_from_cfg(
-                        self.config.dokan.dokan_config.green_mark_shikigami_name,
-                        self.config.dokan.general_battle_config.green_mark,
-                    )
-                if need_green_mark:
-                    need_green_mark = False
-                    # 缩短第一次绿标的检测时间，在短时间内触发标记动作
-                    self.set_disappear_count(self.MAX_DISAPPEAR_COUNT - 10)
-
-                # 正式进攻会设定 2s - 10s 的随机延迟，避免攻击间隔及其相近被检测为脚本。
-                if cfg.dokan_config.random_delay:
-                    self.anti_detect(False, False, True)
-
-                self.ui_click_until_disappear(self.I_RYOU_DOKAN_IN_FIELD, interval=0.4)
-                anti_wait_long_time()
-                battle_count_limit -= 1
-                continue
-
-            sleep(0.02)
+        # 击败馆主后出现的 带成功失败的 突破排名 列表
+        if self.appear(self.I_RYOU_DOKAN_TOPPA_RANK):
+            logger.info("Dokan challenge success / failed")
+            # 只是点击尝试关闭改弹窗
+            self.click(self.C_DOKAN_TOPPA_RANK_CLOSE_AREA, interval=2)
             continue
 
-        self.stop_green_mark()
-        logger.info(f"Win: {win}")
-        return win
+        # 如果开启战斗过程随机滑动-如果启用绿标则禁止滑动
+        if battle_config.random_click_swipt_enable and not battle_config.green_enable:
+            logger.info("random swipt ...")
+            self.random_click_swipt()
+
+        # 打完一个小朋友，自动进入下一个小朋友
+        if self.appear(self.I_RYOU_DOKAN_IN_FIELD):
+            # 在此处判断战斗次数,防止开启额外的战斗
+            if battle_count_limit <= 0:
+                win = True
+                break
+            self.device.click_record_clear()
+            self.device.stuck_record_clear()
+
+            logger.info("--------New battle starts---------")
+
+            if need_init_green_mark_area:
+                need_init_green_mark_area = False
+                # 初始化 green_mark
+                self.init_green_mark_from_cfg(
+                    self.config.dokan.dokan_config.green_mark_shikigami_name,
+                    self.config.dokan.general_battle_config.green_mark,
+                )
+            if need_green_mark:
+                need_green_mark = False
+                # 缩短第一次绿标的检测时间，在短时间内触发标记动作
+                self.set_disappear_count(self.MAX_DISAPPEAR_COUNT - 10)
+
+            # 正式进攻会设定 2s - 10s 的随机延迟，避免攻击间隔及其相近被检测为脚本。
+            if cfg.dokan_config.random_delay:
+                self.anti_detect(False, False, True)
+
+            self.ui_click_until_disappear(self.I_RYOU_DOKAN_IN_FIELD, interval=0.4)
+            anti_wait_long_time()
+            battle_count_limit -= 1
+            continue
+
+        sleep(0.02)
+        continue
+
+    self.stop_green_mark()
+    logger.info(f"Win: {win}")
+    return win
 
 
 def test_goto_main():

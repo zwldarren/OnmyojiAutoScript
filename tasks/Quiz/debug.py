@@ -1,7 +1,6 @@
 # @author runhey
 # github https://github.com/runhey
 import re
-from functools import cached_property
 from pathlib import Path
 
 
@@ -10,24 +9,30 @@ def remove_symbols(text):
 
 
 class Debugger:
-    @cached_property
+    def __init__(self):
+        self._file_path = None
+
+    @property
     def fn(self):
-        # 以添加方式打开一个文件
-        file: Path = Path("./log/quiz/supplement.txt")
-        if not file.parent.exists():
-            file.parent.mkdir(parents=True)
-        if not file.exists():
-            file.touch()
-        f = open(str(file), "a", encoding="utf-8")
-        return f
+        if self._file_path is None:
+            # 以添加方式打开一个文件
+            file: Path = Path("./log/quiz/supplement.txt")
+            if not file.parent.exists():
+                file.parent.mkdir(parents=True)
+            if not file.exists():
+                file.touch()
+            self._file_path = file
+        return self._file_path
 
     def append_one(self, question: str, options: list[str]):
         question = remove_symbols(question)
         options = [remove_symbols(option) for option in options]
-        self.fn.write(f"{question},{options[0]},{options[1]},{options[2]},{options[3]}\n")
+        with open(self.fn, "a", encoding="utf-8") as f:
+            f.write(f"{question},{options[0]},{options[1]},{options[2]},{options[3]}\n")
 
     def close_fn(self):
-        self.fn.close()
+        # File is automatically closed when using context manager
+        pass
 
 
 if __name__ == "__main__":

@@ -59,7 +59,8 @@ class Benchmark(DaemonBase):
         logger.info("Benchmark tests done")
         average = float(np.mean(np.sort(record)[: self.TEST_BEST]))
         logger.info(
-            f"Time cost {float2str(average)} ({self.TEST_BEST} best results out of {self.TEST_TOTAL} tests)"
+            f"Time cost {float2str(average)} "
+            f"({self.TEST_BEST} best results out of {self.TEST_TOTAL} tests)"
         )
         return average
 
@@ -181,7 +182,7 @@ class Benchmark(DaemonBase):
         click = ["ADB", "uiautomator2", "minitouch", "window_message"]
 
         def remove(*args):
-            return [l for l in screenshot if l not in args]
+            return [item for item in screenshot if item not in args]
 
         # No ascreencap on Android > 9
         if device in ["emulator_android_12", "android_phone_12"]:
@@ -232,7 +233,7 @@ class Benchmark(DaemonBase):
         ]
 
         def remove(*args):
-            return [l for l in screenshot if l not in args]
+            return [item for item in screenshot if item not in args]
 
         sdk = self.device.sdk_ver
         logger.info(f"sdk_ver: {sdk}")

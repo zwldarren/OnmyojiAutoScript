@@ -23,7 +23,8 @@ class Full(BaseCor):
 
     def ocr_full(self, image, keyword: str = None) -> tuple:
         """
-        检测整个图片的文本,并对结果进行过滤。返回的是匹配到的keyword的左边。如果没有匹配到返回(0, 0, 0, 0)
+        检测整个图片的文本,并对结果进行过滤。返回的是匹配到的keyword的坐标位置。
+        如果没有匹配到返回(0, 0, 0, 0)
         :param image:
         :param keyword:
         :return:

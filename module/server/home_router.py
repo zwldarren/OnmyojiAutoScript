@@ -1,6 +1,6 @@
 # @author runhey
 # github https://github.com/runhey
-from fastapi import APIRouter, Body
+from fastapi import APIRouter
 
 from module.logger import logger
 from module.server.i18n import I18n
@@ -76,7 +76,7 @@ async def execute_update():
 
 
 @home_app.put("/chinese_translate")
-async def chinese_translate(data: dict = Body(...)):
+async def chinese_translate(data: dict = None):
     try:
         I18n.save_zh_cn(data)
     except Exception as e:

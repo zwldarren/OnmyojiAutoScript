@@ -37,7 +37,7 @@ def is_port_in_use(ip, port) -> bool:
         s.shutdown(2)
         logger.info(f"Port {port} is in use")
         return True
-    except:
+    except Exception:
         logger.info(f"Port {port} is not in use")
         return False
 
@@ -342,7 +342,8 @@ class ProcessManager(QObject):
 
     def start_log(self, config_name: str) -> Queue:
         """
-        启动某个脚本实例config_name的log: 具体为创建一个queue信息队列，然后创建一个log线程，将queue传入log线程
+        启动某个脚本实例config_name的log:
+        创建一个queue信息队列，然后创建一个log线程，将queue传入log线程
         :param config_name:
         :return:
         """

@@ -292,12 +292,11 @@ class ExtendGreenMark(GeneralBattle):
             self._state = GreenMarkState.DISAPPEARED
         self._disappear_count += 1
         self._disappear_timer.start()
-        if self.need_green_mark():
-            if self.green_mark_with_area(interval=self.GREEN_MARK_INTERVAL):
-                self._disappear_timer.reset()
-                self._disappear_count = 0
-                if callback is not None:
-                    callback()
+        if self.need_green_mark() and self.green_mark_with_area(interval=self.GREEN_MARK_INTERVAL):
+            self._disappear_timer.reset()
+            self._disappear_count = 0
+            if callback is not None:
+                callback()
         return self.device.image
 
     def need_green_mark(self):

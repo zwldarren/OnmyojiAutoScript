@@ -9,7 +9,7 @@ from functools import wraps
 from adbutils import AdbClient, AdbDevice, AdbTimeout, ForwardItem, ReverseItem
 from adbutils.errors import AdbError
 
-from module.base.decorator import Config, cached_property, del_cached_property
+from module.base.decorator import cached_property, del_cached_property
 from module.base.utils import ensure_time
 from module.config.server import set_server
 from module.device.connection_attr import ConnectionAttr
@@ -119,7 +119,6 @@ class Connection(ConnectionAttr):
         logger.attr("PackageName", self.package)
         # logger.attr('Server', self.config.SERVER)
 
-    @Config.when(DEVICE_OVER_HTTP=False)
     def adb_command(self, cmd, timeout=10):
         """
         Execute ADB commands in a subprocess,
@@ -132,6 +131,12 @@ class Connection(ConnectionAttr):
         Returns:
             str:
         """
+        if self.is_over_http:
+            logger.warning(
+                f"adb_command() is not available when connecting over http: {self.serial}, "
+            )
+            raise RequestHumanTakeover
+
         cmd = list(map(str, cmd))
         cmd = [self.adb_binary, "-s", self.serial] + cmd
         logger.info(f"Execute: {cmd}")
@@ -150,12 +155,6 @@ class Connection(ConnectionAttr):
             logger.warning(f"TimeoutExpired when calling {cmd}, stdout={stdout}, stderr={stderr}")
         return stdout
 
-    @Config.when(DEVICE_OVER_HTTP=True)
-    def adb_command(self, cmd, timeout=10):
-        logger.warning(f"adb_command() is not available when connecting over http: {self.serial}, ")
-        raise RequestHumanTakeover
-
-    @Config.when(DEVICE_OVER_HTTP=False)
     def adb_shell(self, cmd, stream=False, recvall=True, timeout=10, rstrip=True):
         """
         Equivalent to `adb -s <serial> shell <*cmd>`
@@ -175,57 +174,41 @@ class Connection(ConnectionAttr):
         if not isinstance(cmd, str):
             cmd = list(map(str, cmd))
 
-        if stream:
-            result = self.adb.shell(cmd, stream=stream, timeout=timeout, rstrip=rstrip)
-            if recvall:
-                # bytes
-                return recv_all(result)
+        if self.is_over_http:
+            # HTTP connection path
+            if stream:
+                # uiautomator2 3.x: shell() no longer has stream parameter
+                # Use adb.shell for stream operations
+                result = self.adb.shell(cmd, stream=stream, timeout=timeout, rstrip=rstrip)
+                if recvall:
+                    # bytes
+                    return recv_all(result)
+                else:
+                    # socket
+                    return result
             else:
-                # socket
+                # uiautomator2 3.x: use u2.shell() without stream parameter
+                result = self.u2.shell(cmd, timeout=timeout).output
+                if rstrip:
+                    result = result.rstrip()
+                result = remove_shell_warning(result)
+                # str
                 return result
         else:
-            result = self.adb.shell(cmd, stream=stream, timeout=timeout, rstrip=rstrip)
-            result = remove_shell_warning(result)
-            # str
-            return result
-
-    @Config.when(DEVICE_OVER_HTTP=True)
-    def adb_shell(self, cmd, stream=False, recvall=True, timeout=10, rstrip=True):
-        """
-        Equivalent to http://127.0.0.1:7912/shell?command={command}
-
-        Args:
-            cmd (list, str):
-            stream (bool): Return stream instead of string output (Default: False)
-            recvall (bool): Receive all data when stream=True (Default: True)
-            timeout (int): (Default: 10)
-            rstrip (bool): Strip the last empty line (Default: True)
-
-        Returns:
-            str if stream=False
-            bytes if stream=True
-        """
-        if not isinstance(cmd, str):
-            cmd = list(map(str, cmd))
-
-        if stream:
-            # uiautomator2 3.x: shell() no longer has stream parameter
-            # Use adb.shell for stream operations
-            result = self.adb.shell(cmd, stream=stream, timeout=timeout, rstrip=rstrip)
-            if recvall:
-                # bytes
-                return recv_all(result)
+            # Direct ADB path
+            if stream:
+                result = self.adb.shell(cmd, stream=stream, timeout=timeout, rstrip=rstrip)
+                if recvall:
+                    # bytes
+                    return recv_all(result)
+                else:
+                    # socket
+                    return result
             else:
-                # socket
+                result = self.adb.shell(cmd, stream=stream, timeout=timeout, rstrip=rstrip)
+                result = remove_shell_warning(result)
+                # str
                 return result
-        else:
-            # uiautomator2 3.x: use u2.shell() without stream parameter
-            result = self.u2.shell(cmd, timeout=timeout).output
-            if rstrip:
-                result = result.rstrip()
-            result = remove_shell_warning(result)
-            # str
-            return result
 
     def adb_getprop(self, name):
         """
@@ -359,18 +342,7 @@ class Connection(ConnectionAttr):
         """
         sdk = self.sdk_ver
         logger.info(f"sdk_ver: {sdk}")
-        if sdk >= 28:
-            # Android 9 emulators does not have `nc`, try `busybox nc`
-            # BlueStacks Pie (Android 9) has `nc` but cannot send data, try `busybox nc` first
-            trial = [
-                ["busybox", "nc"],
-                ["nc"],
-            ]
-        else:
-            trial = [
-                ["nc"],
-                ["busybox", "nc"],
-            ]
+        trial = [["busybox", "nc"], ["nc"]] if sdk >= 28 else [["nc"], ["busybox", "nc"]]
         for command in trial:
             # About 3ms
             result = self.adb_shell(command)
@@ -409,10 +381,10 @@ class Connection(ConnectionAttr):
         try:
             # Server accept connection
             conn, conn_port = server.accept()
-        except TimeoutError:
+        except TimeoutError as err:
             output = recv_all(stream, chunk_size=chunk_size)
             logger.warning(str(output))
-            raise AdbTimeout("reverse server accept timeout")
+            raise AdbTimeout("reverse server accept timeout") from err
 
         # Server receive data
         data = recv_all(conn, chunk_size=chunk_size, recv_interval=0.001)
@@ -528,12 +500,12 @@ class Connection(ConnectionAttr):
         cmd = ["push", local, remote]
         return self.adb_command(cmd)
 
-    @Config.when(DEVICE_OVER_HTTP=False)
     def adb_connect(self, serial):
         """
         Connect to a serial, try 3 times at max.
-        If there's an old ADB server running while Alas is using a newer one, which happens on Chinese emulators,
-        the first connection is used to kill the other one, and the second is the real connect.
+        If there's an old ADB server running while Alas is using a newer one,
+        which happens on Chinese emulators, the first connection is used to kill
+        the other one, and the second is the real connect.
 
         Args:
             serial (str):
@@ -541,6 +513,10 @@ class Connection(ConnectionAttr):
         Returns:
             bool: If success
         """
+        if self.is_over_http:
+            # No adb connect if over http
+            return True
+
         # Disconnect offline device before connecting
         for device in self.list_device():
             if device.status == "offline":
@@ -578,7 +554,8 @@ class Connection(ConnectionAttr):
                 raise RequestHumanTakeover
             elif "(10061)" in msg:
                 # cannot connect to 127.0.0.1:55555:
-                # No connection could be made because the target machine actively refused it. (10061)
+                # No connection could be made because the target machine actively
+                # refused it. (10061)
                 logger.info(msg)
                 logger.warning(
                     "No such device exists, please restart the emulator or set a correct serial"
@@ -589,11 +566,6 @@ class Connection(ConnectionAttr):
         logger.warning(f"Failed to connect {serial} after 3 trial, assume connected")
         self.detect_device()
         return False
-
-    @Config.when(DEVICE_OVER_HTTP=True)
-    def adb_connect(self, serial):
-        # No adb connect if over http
-        return True
 
     def adb_disconnect(self, serial):
         msg = self.adb_client.disconnect(serial)
@@ -616,11 +588,17 @@ class Connection(ConnectionAttr):
         del_cached_property(self, "adb_client")
         _ = self.adb_client
 
-    @Config.when(DEVICE_OVER_HTTP=False)
     def adb_reconnect(self):
         """
         Reboot adb client if no device found, otherwise try reconnecting device.
         """
+        if self.is_over_http:
+            logger.warning(
+                f"When connecting a device over http: {self.serial} "
+                f"adb_reconnect() is skipped, you may need to restart ATX manually"
+            )
+            return
+
         # if self.config.Emulator_AdbRestart and len(self.list_device()) == 0:
         if self.config.script.device.adb_restart and len(self.list_device()) == 0:
             # Restart Adb
@@ -632,13 +610,6 @@ class Connection(ConnectionAttr):
             self.adb_disconnect(self.serial)
             self.adb_connect(self.serial)
             self.detect_device()
-
-    @Config.when(DEVICE_OVER_HTTP=True)
-    def adb_reconnect(self):
-        logger.warning(
-            f"When connecting a device over http: {self.serial} "
-            f"adb_reconnect() is skipped, you may need to restart ATX manually"
-        )
 
     def install_uiautomator2(self):
         """
@@ -654,23 +625,22 @@ class Connection(ConnectionAttr):
         self.adb_shell(["rm", "/data/local/tmp/minicap"])
         self.adb_shell(["rm", "/data/local/tmp/minicap.so"])
 
-    @Config.when(DEVICE_OVER_HTTP=False)
     def restart_atx(self):
         """
         Minitouch supports only one connection at a time.
         Restart ATX to kick the existing one.
         """
+        if self.is_over_http:
+            logger.warning(
+                f"When connecting a device over http: {self.serial} "
+                f"restart_atx() is skipped, you may need to restart ATX manually"
+            )
+            return
+
         logger.info("Restart ATX")
         atx_agent_path = "/data/local/tmp/atx-agent"
         self.adb_shell([atx_agent_path, "server", "--stop"])
         self.adb_shell([atx_agent_path, "server", "--nouia", "-d", "--addr", "127.0.0.1:7912"])
-
-    @Config.when(DEVICE_OVER_HTTP=True)
-    def restart_atx(self):
-        logger.warning(
-            f"When connecting a device over http: {self.serial} "
-            f"restart_atx() is skipped, you may need to restart ATX manually"
-        )
 
     @staticmethod
     def sleep(second):
@@ -701,7 +671,8 @@ class Connection(ConnectionAttr):
                 3: 'HOME key on the left'
         """
         _DISPLAY_RE = re.compile(
-            r".*DisplayViewport{.*valid=true, .*orientation=(?P<orientation>\d+), .*deviceWidth=(?P<width>\d+), deviceHeight=(?P<height>\d+).*"
+            r".*DisplayViewport{.*valid=true, .*orientation=(?P<orientation>\d+), "
+            r".*deviceWidth=(?P<width>\d+), deviceHeight=(?P<height>\d+).*"
         )
         output = self.adb_shell(["dumpsys", "display"])
 
@@ -825,13 +796,15 @@ class Connection(ConnectionAttr):
                 # Current serial not found
                 if port_device and not emu_device:
                     logger.info(
-                        f"Current serial {self.serial} not found but paired device {port_serial} found. "
+                        f"Current serial {self.serial} not found but paired device "
+                        f"{port_serial} found. "
                         f"Using serial: {port_serial}"
                     )
                     self.serial = port_serial
                 if not port_device and emu_device:
                     logger.info(
-                        f"Current serial {self.serial} not found but paired device {emu_serial} found. "
+                        f"Current serial {self.serial} not found but paired device "
+                        f"{emu_serial} found. "
                         f"Using serial: {emu_serial}"
                     )
                     self.serial = emu_serial
@@ -879,7 +852,10 @@ class Connection(ConnectionAttr):
     #         list[str]: List of package names
     #     """
     #     packages = self.list_package(show_log=show_log)
-    #     packages = [p for p in packages if p in server_.VALID_PACKAGE or p in server_.VALID_CLOUD_PACKAGE]
+    #     packages = [
+    #         p for p in packages
+    #         if p in server_.VALID_PACKAGE or p in server_.VALID_CLOUD_PACKAGE
+    #     ]
     #     return packages
 
     def detect_package(self, keywords=("onmyoji", "yys"), set_config=True):
@@ -918,7 +894,9 @@ class Connection(ConnectionAttr):
             set_server(self.package)
         else:
             logger.critical(
-                f"Multiple {keywords[0]} packages found, auto package detection cannot decide which to choose, "
-                "please copy one of the available devices listed above to Alas.Emulator.PackageName"
+                f"Multiple {keywords[0]} packages found, auto package detection "
+                f"cannot decide which to choose, "
+                "please copy one of the available devices listed above to "
+                "Alas.Emulator.PackageName"
             )
             raise RequestHumanTakeover

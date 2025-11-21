@@ -2,7 +2,6 @@ from enum import Enum
 
 import numpy as np
 
-from module.exception import *
 from module.logger import logger
 from tasks.GlobalGame.assets import GlobalGameAssets
 from tasks.SoulsTidy.assets import SoulsTidyAssets

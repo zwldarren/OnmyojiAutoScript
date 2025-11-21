@@ -1,9 +1,8 @@
 # @author runhey
 # github https://github.com/runhey
-import json
 from functools import cached_property
 
-from module.config.utils import *
+from module.config.utils import json
 
 
 class ConfigMenu:
@@ -104,5 +103,5 @@ if __name__ == "__main__":
     try:
         m = ConfigMenu()
         print(m.gui_menu)
-    except:
+    except Exception:
         print("weih")

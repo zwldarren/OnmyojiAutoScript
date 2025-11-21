@@ -133,9 +133,11 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, AbyssShadowsAssets):
                         logger.warning(f"Failed to find {enemy_type.name} enemy, exit")
                         break
                 logger.info(
-                    f"Current fight times: boss {self.boss_fight_count} times, general {self.general_fight_count}  times, elite {self.elite_fight_count} times"
+                    f"Current fight times: boss {self.boss_fight_count} times, "
+                    f"general {self.general_fight_count}  times, elite {self.elite_fight_count} times"
                 )
-                # 正常应该打完一个区域了，检查攻打次数，如没打够则切换到下一个区域，默认神龙 -> 孔雀 -> 白藏主 -> 黑豹
+                # 正常应该打完一个区域了，检查攻打次数，如没打够则切换到下一个区域，
+                # 默认神龙 -> 孔雀 -> 白藏主 -> 黑豹
                 if (
                     self.boss_fight_count >= 2
                     and self.general_fight_count >= 4
@@ -159,7 +161,8 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, AbyssShadowsAssets):
                         continue
                     else:
                         logger.warning(
-                            "All enemy types have been defeated, but not enough emeny to fight, exit"
+                            "All enemy types have been defeated, but not enough "
+                            "enemy to fight, exit"
                         )
                         break
 
@@ -186,7 +189,8 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, AbyssShadowsAssets):
 
                 # 检查是否已完成所有任务
                 print(
-                    f"Current fight times: boss {self.boss_fight_count} times, general {self.general_fight_count} times, elite {self.elite_fight_count} times"
+                    f"Current fight times: boss {self.boss_fight_count} times, "
+                    f"general {self.general_fight_count} times, elite {self.elite_fight_count} times"
                 )
                 if (
                     self.boss_fight_count >= 2
@@ -205,7 +209,8 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, AbyssShadowsAssets):
                             logger.warning(f"Failed to find {enemy_type.name} enemy, exit")
                             break
                     logger.info(
-                        f"Current fight times: boss {self.boss_fight_count} times, general {self.general_fight_count}  times, elite {self.elite_fight_count} times"
+                        f"Current fight times: boss {self.boss_fight_count} times, "
+                        f"general {self.general_fight_count}  times, elite {self.elite_fight_count} times"
                     )
                     logger.warning(
                         "All enemy types have been defeated, but not enough emeny to fight, exit"
@@ -261,7 +266,8 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, AbyssShadowsAssets):
                 elif enemy_type == EmemyType.ELITE:
                     fight_count += 3
             logger.info(
-                f"Current fight times: boss {self.boss_fight_count} times, general {self.general_fight_count} times, elite {self.elite_fight_count} times"
+                f"Current fight times: boss {self.boss_fight_count} times, "
+                f"general {self.general_fight_count} times, elite {self.elite_fight_count} times"
             )
 
             # 完成攻打后切换区域

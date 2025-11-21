@@ -196,7 +196,7 @@ class ScriptTask(GameUi, GuildBanquetAssets):
             self.config.save()
         except Exception as e:
             logger.error(f"Error setting banquet config: {e}")
-            raise TaskEnd
+            raise TaskEnd from e
 
 
 if __name__ == "__main__":

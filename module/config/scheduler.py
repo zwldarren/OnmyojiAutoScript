@@ -4,6 +4,7 @@ import operator
 
 from module.base.filter import Filter
 from module.config.config_manual import ConfigManual
+from module.config.function import Function
 from module.logger import logger
 from tasks.Script.config_optimization import ScheduleRule
 

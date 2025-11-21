@@ -181,8 +181,10 @@ class AtomicWriter:
                 with contextlib.suppress(Exception):
                     self.rollback(f)
 
-    def get_fileobject(self, suffix="", prefix=tempfile.gettempprefix(), dir=None, **kwargs):
+    def get_fileobject(self, suffix="", prefix=None, dir=None, **kwargs):
         """Return the temporary file to use."""
+        if prefix is None:
+            prefix = tempfile.gettempprefix()
         if dir is None:
             dir = os.path.normpath(os.path.dirname(self._path))
         descriptor, name = tempfile.mkstemp(suffix=suffix, prefix=prefix, dir=dir)

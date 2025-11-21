@@ -216,7 +216,8 @@ class PlatformWindows(PlatformBase, EmulatorManager):
         if instance == Emulator.MuMuPlayer:
             # MuMu6 does not have multi instance, kill one means kill all
             # Has 4 processes
-            # "C:\Program Files\NemuVbox\Hypervisor\NemuHeadless.exe" --comment nemu-6.0-x64-default --startvm
+            # "C:\Program Files\NemuVbox\Hypervisor\NemuHeadless.exe" --comment
+            # nemu-6.0-x64-default --startvm
             # "E:\ProgramFiles\MuMu\emulator\nemu\EmulatorShell\NemuPlayer.exe"
             # E:\ProgramFiles\MuMu\emulator\nemu\EmulatorShell\NemuService.exe
             # "C:\Program Files\NemuVbox\Hypervisor\NemuSVC.exe" -Embedding
@@ -231,8 +232,10 @@ class PlatformWindows(PlatformBase, EmulatorManager):
             )
         elif instance == Emulator.MuMuPlayerX:
             # MuMu X has 3 processes
-            # "E:\ProgramFiles\MuMu9\emulator\nemu9\EmulatorShell\NemuPlayer.exe" -m nemu-12.0-x64-default -s 0 -l
-            # "C:\Program Files\Muvm6Vbox\Hypervisor\Muvm6Headless.exe" --comment nemu-12.0-x64-default --startvm xxx
+            # "E:\ProgramFiles\MuMu9\emulator\nemu9\EmulatorShell\NemuPlayer.exe"
+            # -m nemu-12.0-x64-default -s 0 -l
+            # "C:\Program Files\Muvm6Vbox\Hypervisor\Muvm6Headless.exe"
+            # --comment nemu-12.0-x64-default --startvm xxx
             # "C:\Program Files\Muvm6Vbox\Hypervisor\Muvm6SVC.exe" --Embedding
             self.kill_process_by_regex(
                 rf"("
@@ -246,7 +249,8 @@ class PlatformWindows(PlatformBase, EmulatorManager):
             if instance.MuMuPlayer12_id is None:
                 logger.warning(f"Cannot get MuMu instance index from name {instance.name}")
             self.execute(
-                f'"{Emulator.single_to_console(exe)}" api -v {instance.MuMuPlayer12_id} shutdown_player'
+                f'"{Emulator.single_to_console(exe)}" api -v {instance.MuMuPlayer12_id} '
+                f"shutdown_player"
             )
         elif instance == Emulator.LDPlayerFamily:
             # ldconsole.exe quit --index 0
@@ -313,12 +317,7 @@ class PlatformWindows(PlatformBase, EmulatorManager):
                 # Connected to 127.0.0.1:59865
                 # Already connected to 127.0.0.1:59865
                 return False
-            elif "(10061)" in m:
-                # cannot connect to 127.0.0.1:55555:
-                # No connection could be made because the target machine actively refused it. (10061)
-                return False
-            else:
-                return True
+            return "(10061)" not in m
 
         @run_once
         def show_online(m):

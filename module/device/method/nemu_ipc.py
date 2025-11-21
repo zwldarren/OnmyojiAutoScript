@@ -297,7 +297,8 @@ class NemuIpcImpl:
         """
         func_wrapped = partial(func, *args, **kwargs)
         # Increased timeout for slow PCs
-        # Default screenshot interval is 0.2s, so a 0.15s timeout would have a fast retry without extra time costs
+        # Default screenshot interval is 0.2s, so a 0.15s timeout would have a
+        # fast retry without extra time costs
         result = await asyncio.wait_for(self._ev.run_in_executor(None, func_wrapped), timeout=0.15)
         return result
 
@@ -486,7 +487,7 @@ class NemuIpc:
         except (NemuIpcIncompatible, NemuIpcError) as e:
             logger.error(e)
             logger.error("Unable to initialize NemuIpc")
-            raise RequestHumanTakeover
+            raise RequestHumanTakeover from None
 
     def nemu_ipc_available(self) -> bool:
         if not self.is_mumu_family:

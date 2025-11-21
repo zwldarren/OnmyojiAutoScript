@@ -173,13 +173,7 @@ class GeneralInvite(BaseTask, GeneralInviteAssets):
         """
         if is_screenshot:
             self.screenshot()
-        if self.appear(self.I_GI_EMOJI_1):
-            return True
-        if self.appear(self.I_GI_EMOJI_2):
-            return True
-        # if self.appear(self.I_MATCHING):
-        #     return False
-        return False
+        return self.appear(self.I_GI_EMOJI_1) or self.appear(self.I_GI_EMOJI_2)
 
     def exit_room(self) -> bool:
         """
@@ -548,16 +542,15 @@ class GeneralInvite(BaseTask, GeneralInviteAssets):
         if not self.appear(self.I_GI_SURE):
             return False
 
-        if default_invite:
+        if default_invite and (self.appear(self.I_I_DEFAULT) or self.appear(self.I_I_NO_DEFAULT)):
             # 有可能是挑战失败的
-            if self.appear(self.I_I_DEFAULT) or self.appear(self.I_I_NO_DEFAULT):
-                logger.info("Click default invite")
-                while 1:
-                    self.screenshot()
-                    if self.appear(self.I_I_DEFAULT):
-                        break
-                    if self.appear_then_click(self.I_I_NO_DEFAULT, interval=1):
-                        continue
+            logger.info("Click default invite")
+            while 1:
+                self.screenshot()
+                if self.appear(self.I_I_DEFAULT):
+                    break
+                if self.appear_then_click(self.I_I_NO_DEFAULT, interval=1):
+                    continue
         # 点击确认
         while 1:
             self.screenshot()

@@ -70,9 +70,8 @@ class WQExplore(BaseExploration, HighLight):
                 #     explore_init = True
                 #     continue
                 # 小纸人
-                if self.appear(self.I_BATTLE_REWARD):
-                    if self.ui_get_reward(self.I_BATTLE_REWARD):
-                        continue
+                if self.appear(self.I_BATTLE_REWARD) and self.ui_get_reward(self.I_BATTLE_REWARD):
+                    continue
                 # boss
                 if self.appear(self.I_BOSS_BATTLE_BUTTON):
                     if self.fire(self.I_BOSS_BATTLE_BUTTON):

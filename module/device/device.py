@@ -1,17 +1,12 @@
 from collections import deque
 from datetime import datetime
 
-# Patch pkg_resources before importing adbutils and uiautomator2
-from module.device.pkg_resources import get_distribution
-
-# Just avoid being removed by import optimization
-_ = get_distribution
-
 from module.base.timer import Timer
 from module.config.utils import get_server_next_update
 from module.device.app_control import AppControl
 from module.device.control import Control
 from module.device.env import IS_WINDOWS
+from module.device.pkg_resources import get_distribution
 from module.device.platform2 import Platform
 from module.device.screenshot import Screenshot
 from module.exception import (
@@ -22,6 +17,9 @@ from module.exception import (
     RequestHumanTakeover,
 )
 from module.logger import logger
+
+# Just avoid being removed by import optimization
+_ = get_distribution
 
 
 class Device(Platform, Screenshot, Control, AppControl):
@@ -37,10 +35,10 @@ class Device(Platform, Screenshot, Control, AppControl):
             try:
                 super().__init__(*args, **kwargs)
                 break
-            except EmulatorNotRunningError:
+            except EmulatorNotRunningError as err:
                 if trial >= 3:
                     logger.critical("Failed to start emulator after 3 trial")
-                    raise RequestHumanTakeover
+                    raise RequestHumanTakeover from err
                 # Try to start emulator
                 if self.emulator_instance is not None:
                     self.emulator_start()
@@ -49,7 +47,7 @@ class Device(Platform, Screenshot, Control, AppControl):
                         f'No emulator with serial "{self.config.Emulator_Serial}" found, '
                         f"please set a correct serial"
                     )
-                    raise RequestHumanTakeover
+                    raise RequestHumanTakeover from err
 
         # Auto-fill emulator info
         if IS_WINDOWS and self.config.script.device.emulatorinfo_type == "auto":
@@ -110,7 +108,7 @@ class Device(Platform, Screenshot, Control, AppControl):
         try:
             super().screenshot()
         except RequestHumanTakeover:
-            raise RequestHumanTakeover
+            raise
 
         if self.handle_night_commission():
             super().screenshot()

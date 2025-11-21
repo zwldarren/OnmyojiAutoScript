@@ -5,7 +5,7 @@ Copy from https://github.com/LmeSzinc/AzurLaneAutoScript
 from filelock import FileLock
 
 from deploy.config import DeployConfig as _DeployConfig
-from deploy.utils import *
+from deploy.utils import DEPLOY_TEMPLATE, os, poor_yaml_read, poor_yaml_write
 
 
 def poor_yaml_read_with_lock(file):

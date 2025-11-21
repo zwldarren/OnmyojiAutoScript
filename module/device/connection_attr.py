@@ -41,7 +41,7 @@ class ConnectionAttr:
         # Remove global proxies, or uiautomator2 will go through it
         count = 0
         d = dict(**os.environ)
-        # ----------------------------------------------------------------------------------下面的是我注释掉的
+        # --------------------------------------------------下面的是我注释掉的
         # d.update(self.config.args)
         for _, v in deep_iter(d, depth=3):
             if not isinstance(v, dict):
@@ -161,7 +161,8 @@ class ConnectionAttr:
         Find dynamic serial of BlueStacks4 Hyper-V Beta.
 
         Args:
-            serial (str): 'bluestacks4-hyperv', 'bluestacks4-hyperv-2' for multi instance, and so on.
+            serial (str): 'bluestacks4-hyperv', 'bluestacks4-hyperv-2'
+                for multi instance, and so on.
 
         Returns:
             str: 127.0.0.1:{port}
@@ -178,18 +179,19 @@ class ConnectionAttr:
                 HKEY_LOCAL_MACHINE, rf"SOFTWARE\BlueStacks_bgp64_hyperv\Guests\{folder_name}\Config"
             ) as key:
                 port = QueryValueEx(key, "BstAdbPort")[0]
-        except FileNotFoundError:
+        except FileNotFoundError as err:
             logger.error(
-                rf"Unable to find registry HKEY_LOCAL_MACHINE\SOFTWARE\BlueStacks_bgp64_hyperv\Guests\{folder_name}\Config"
+                rf"Unable to find registry "
+                rf"HKEY_LOCAL_MACHINE\SOFTWARE\BlueStacks_bgp64_hyperv\Guests\{folder_name}\Config"
             )
             logger.error(
-                "Please confirm that your are using BlueStack 4 hyper-v and not regular BlueStacks 4"
+                "Please confirm that you are using BlueStack 4 hyper-v and not regular BlueStacks 4"
             )
             logger.error(
                 r"Please check if there is any other emulator instances under "
                 r"registry HKEY_LOCAL_MACHINE\SOFTWARE\BlueStacks_bgp64_hyperv\Guests"
             )
-            raise RequestHumanTakeover
+            raise RequestHumanTakeover from err
         logger.info(f"New adb port: {port}")
         return f"127.0.0.1:{port}"
 
@@ -199,7 +201,8 @@ class ConnectionAttr:
         Find dynamic serial of BlueStacks5 Hyper-V.
 
         Args:
-            serial (str): 'bluestacks5-hyperv', 'bluestacks5-hyperv-1' for multi instance, and so on.
+            serial (str): 'bluestacks5-hyperv', 'bluestacks5-hyperv-1'
+                for multi instance, and so on.
 
         Returns:
             str: 127.0.0.1:{port}
@@ -221,15 +224,16 @@ class ConnectionAttr:
             try:
                 with OpenKey(HKEY_LOCAL_MACHINE, r"SOFTWARE\BlueStacks_nxt_cn") as key:
                     directory = QueryValueEx(key, "UserDefinedDir")[0]
-            except FileNotFoundError:
+            except FileNotFoundError as err:
                 logger.error(
-                    "Unable to find registry HKEY_LOCAL_MACHINE\SOFTWARE\BlueStacks_nxt "
-                    "or HKEY_LOCAL_MACHINE\SOFTWARE\BlueStacks_nxt_cn"
+                    r"Unable to find registry HKEY_LOCAL_MACHINE\SOFTWARE\BlueStacks_nxt "
+                    r"or HKEY_LOCAL_MACHINE\SOFTWARE\BlueStacks_nxt_cn"
                 )
                 logger.error(
-                    "Please confirm that you are using BlueStacks 5 hyper-v and not regular BlueStacks 5"
+                    "Please confirm that you are using BlueStacks 5 hyper-v "
+                    "and not regular BlueStacks 5"
                 )
-                raise RequestHumanTakeover
+                raise RequestHumanTakeover from err
         logger.info(f"Configuration file directory: {directory}")
 
         with open(os.path.join(directory, "bluestacks.conf"), encoding="utf-8") as f:

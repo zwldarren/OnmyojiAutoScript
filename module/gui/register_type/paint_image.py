@@ -34,7 +34,7 @@ class PaintImage(QQuickPaintedItem):
         if not image_name.startswith("file:///"):
             logger.error("image path must start with file:///")
             return None
-        image_name = image_name.lstrip("file:///")
+        image_name = image_name[len("file:///") :]
 
         if self._image.load(image_name):
             logger.info("load image success")

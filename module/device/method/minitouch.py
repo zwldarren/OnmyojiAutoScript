@@ -48,8 +48,10 @@ def insert_swipe(p0, p3, speed=15, min_distance=10):
 
     Examples:
         > insert_swipe((400, 400), (600, 600), speed=20)
-        [[400, 400], [406, 406], [416, 415], [429, 428], [444, 442], [462, 459], [481, 478], [504, 500], [527, 522],
-        [545, 540], [560, 557], [573, 570], [584, 582], [592, 590], [597, 596], [600, 600]]
+        [[400, 400], [406, 406], [416, 415], [429, 428], [444, 442],
+         [462, 459], [481, 478], [504, 500], [527, 522],
+         [545, 540], [560, 557], [573, 570], [584, 582], [592, 590],
+         [597, 596], [600, 600]]
     """
     p0 = np.array(p0)
     p3 = np.array(p3)
@@ -258,7 +260,8 @@ class CommandBuilder:
             # Maximum X and Y coordinates may, but usually do not, match the display size.
             x, y = int(x / 1280 * max_x), int(y / 720 * max_y)
         else:
-            # When over http, max_x and max_y are default to 1280 and 720, skip matching display size
+            # When over http, max_x and max_y are default to 1280 and 720,
+            # skip matching display size
             x, y = int(x), int(y)
         return x, y
 
@@ -336,7 +339,7 @@ class U2Service:
         try:
             response = self.u2obj.shell(["dumpsys", "activity", "services", "|", "grep", self.name])
             return self.name in response.output.decode() if response.output else False
-        except:
+        except Exception:
             return False
 
 
@@ -467,7 +470,7 @@ class Minitouch(Connection):
                 raise MinitouchOccupiedError(
                     "Timeout when connecting to minitouch, "
                     "probably because another connection has been established"
-                )
+                ) from None
             logger.info(out)
 
             # ^ <max-contacts> <max-x> <max-y> <max-pressure>
@@ -482,7 +485,7 @@ class Minitouch(Connection):
                     raise MinitouchNotInstalledError(
                         "Received empty data from minitouch, "
                         "probably because minitouch is not installed"
-                    )
+                    ) from None
                 else:
                     # Minitouch may not start that fast
                     self.sleep(1)
@@ -503,7 +506,8 @@ class Minitouch(Connection):
             f"minitouch running on port: {self._minitouch_port}, pid: {self._minitouch_pid}"
         )
         logger.info(
-            f"max_contact: {max_contacts}; max_x: {max_x}; max_y: {max_y}; max_pressure: {max_pressure}"
+            f"max_contact: {max_contacts}; max_x: {max_x}; max_y: {max_y}; "
+            f"max_pressure: {max_pressure}"
         )
 
     @Config.when(DEVICE_OVER_HTTP=False)
@@ -532,14 +536,15 @@ class Minitouch(Connection):
             return self._minitouch_loop.run_until_complete(event)
         except websockets.ConnectionClosedError as e:
             # ConnectionClosedError: no close frame received or sent
-            # ConnectionClosedError: sent 1011 (unexpected error) keepalive ping timeout; no close frame received
+            # ConnectionClosedError: sent 1011 (unexpected error) keepalive ping timeout;
+            # no close frame received
             logger.error(e)
             raise MinitouchOccupiedError(
                 "ConnectionClosedError, probably because another connection has been established"
-            )
+            ) from None
 
     @Config.when(DEVICE_OVER_HTTP=True)
-    def minitouch_init(self):
+    def minitouch_init(self):  # noqa: F811
         logger.hr("MiniTouch init")
         self.max_x, self.max_y = 1280, 720
         self.get_orientation()
@@ -574,7 +579,7 @@ class Minitouch(Connection):
         self._minitouch_ws = self._minitouch_loop_run(connect())
 
     @Config.when(DEVICE_OVER_HTTP=True)
-    def minitouch_send(self):
+    def minitouch_send(self):  # noqa: F811
         content = self.minitouch_builder.to_atx_agent()
 
         async def send():

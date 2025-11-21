@@ -42,9 +42,9 @@ class ScriptTask(KekkaiActivationScriptTask):
                 break
 
         print("--------------------------------------------------------")
-        print("%-20s   %s" % ("Image", "Count"))
+        print(f"{'Image':<20}   {'Count'}")
         for i in images_count:
-            print("%-20s %3d times" % (i[0], i[1]))
+            print(f"{i[0]:<20} {i[1]:3d} times")
         logger.info("Test Done")
 
     def set_costume(self, costume: RealmType = RealmType.COSTUME_REALM_DEFAULT):

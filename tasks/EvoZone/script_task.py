@@ -168,10 +168,9 @@ class ScriptTask(
                 logger.info("EvoZone count limit out")
                 break
 
-            if datetime.now() - self.start_time >= self.limit_time:
-                if self.is_in_room():
-                    logger.info("EvoZone time limit out")
-                    break
+            if datetime.now() - self.start_time >= self.limit_time and self.is_in_room():
+                logger.info("EvoZone time limit out")
+                break
 
             # 如果没有进入房间那就不需要后面的邀请
             if not self.is_in_room():

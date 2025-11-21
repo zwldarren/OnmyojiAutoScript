@@ -3,6 +3,10 @@ import traceback
 from itertools import compress
 
 from module.atom.click import RuleClick
+from tasks.ActivityShikigami.assets import ActivityShikigamiAssets as asa
+from tasks.Component.GeneralBattle.assets import GeneralBattleAssets
+from tasks.DailyTrifles.assets import DailyTriflesAssets
+from tasks.Dokan.assets import DokanAssets
 from tasks.GameUi.assets import GameUiAssets as G
 from tasks.GlobalGame.assets import GlobalGameAssets as GGA
 from tasks.KekkaiUtilize.assets import KekkaiUtilizeAssets
@@ -167,7 +171,6 @@ page_daily = Page(G.I_CHECK_DAILY)
 # page_daily.additional = [G.O_CLICK_CLOSE_1, G.O_CLICK_CLOSE_2]
 page_daily.link(button=G.I_BACK_Y, destination=page_main)
 page_main.link(button=G.I_MAIN_GOTO_DAILY, destination=page_daily)
-from tasks.DailyTrifles.assets import DailyTriflesAssets
 
 # 商店 mall
 page_mall = Page(check_button=[G.I_CHECK_MALL, DailyTriflesAssets.I_ROOM_GIFT])
@@ -198,9 +201,6 @@ page_act_list.link(button=G.I_BACK_ACT_LIST, destination=page_main)
 page_main.link(button=G.I_ACT_LIST_EXPAND, destination=page_act_list)
 
 # 道馆
-from tasks.Component.GeneralBattle.assets import GeneralBattleAssets
-from tasks.Dokan.assets import DokanAssets
-
 page_dokan = Page(DokanAssets.I_RYOU_DOKAN_CHECK)
 page_dokan.additional = [
     GeneralBattleAssets.I_EXIT,
@@ -210,7 +210,6 @@ page_dokan.additional = [
 page_dokan.link(button=G.I_BACK_Y, destination=page_main)
 
 # ************************************* 活动部分 *****************************************#
-from tasks.ActivityShikigami.assets import ActivityShikigamiAssets as asa
 
 # 活动列表页爬塔活动
 page_act_list_climb_act = Page(asa.I_CHECK_ACT_LIST_CLIMB_ACT)

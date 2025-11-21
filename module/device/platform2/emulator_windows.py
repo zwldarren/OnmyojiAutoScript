@@ -108,14 +108,12 @@ class Emulator(EmulatorBase):
             else:
                 return cls.BlueStacks5
         if exe == "dnplayer.exe":
-            if dir1 == "ldplayer":
-                return cls.LDPlayer3
-            elif dir1 == "ldplayer4":
-                return cls.LDPlayer4
-            elif dir1 == "ldplayer9":
-                return cls.LDPlayer9
-            else:
-                return cls.LDPlayer3
+            ldplayer_mapping = {
+                "ldplayer": cls.LDPlayer3,
+                "ldplayer4": cls.LDPlayer4,
+                "ldplayer9": cls.LDPlayer9,
+            }
+            return ldplayer_mapping.get(dir1, cls.LDPlayer3)
         if exe == "nemuplayer.exe":
             if dir2 == "nemu":
                 return cls.MuMuPlayer
@@ -199,7 +197,8 @@ class Emulator(EmulatorBase):
         try:
             with open(file, encoding="utf-8", errors="ignore") as f:
                 for line in f.readlines():
-                    # <Forwarding name="port2" proto="1" hostip="127.0.0.1" hostport="62026" guestport="5555"/>
+                    # <Forwarding name="port2" proto="1" hostip="127.0.0.1"
+                    # hostport="62026" guestport="5555"/>
                     res = regex.search(line)
                     if res:
                         return f"127.0.0.1:{res.group(1)}"
@@ -262,8 +261,8 @@ class Emulator(EmulatorBase):
                 res = regex.match(folder)
                 if not res:
                     continue
-                # Serial from BlueStacks4 are not static, they get increased on every emulator launch
-                # Assume all use 127.0.0.1:5555
+                # Serial from BlueStacks4 are not static, they get increased on every emulator
+                # launch. Assume all use 127.0.0.1:5555
                 yield EmulatorInstance(serial="127.0.0.1:5555", name=folder, path=self.path)
         elif self == Emulator.LDPlayerFamily:
             # ./vms/leidian0
@@ -307,7 +306,8 @@ class Emulator(EmulatorBase):
                             name=name,
                             path=self.path,
                         )
-                    # Fix for MuMu12 v4.0.4, default instance of which has no forward record in vbox config
+                    # Fix for MuMu12 v4.0.4, default instance of which has no forward record
+                    # in vbox config
                     else:
                         instance = EmulatorInstance(
                             serial=serial,

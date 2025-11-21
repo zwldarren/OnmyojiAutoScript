@@ -83,7 +83,8 @@ class ScrcpyCore(Connection):
             # [server] ERROR: ...
             ret += recv_all(self._scrcpy_server_stream)
             logger.error(ret)
-            # java.lang.IllegalArgumentException: The server version (1.25) does not match the client (...)
+            # java.lang.IllegalArgumentException: The server version (1.25) does not match
+            # the client (...)
             if b"does not match the client" in ret:
                 raise ScrcpyError("Server version does not match the client")
             else:
@@ -185,7 +186,7 @@ class ScrcpyCore(Connection):
             logger.error(
                 "You must have `av` installed to use scrcpy screenshot, please update dependencies"
             )
-            raise RequestHumanTakeover
+            raise RequestHumanTakeover from None
 
         codec = CodecContext.create("h264", "r")
         while self._scrcpy_alive:

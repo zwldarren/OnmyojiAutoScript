@@ -108,26 +108,22 @@ class ScriptTask(GameUi, CollectiveMissionsAssets):
         result_1 = ocr_1.ocr(self.device.image)
         result_2 = ocr_2.ocr(self.device.image)
         result_1 = result_1.replace("·", "")
+        result_2_mapping = {
+            "觉醒一": MC.AW1,
+            "觉醒二": MC.AW2,
+            "觉醒三": MC.AW3,
+            "御灵一": MC.GR1,
+            "御灵二": MC.GR2,
+            "御灵三": MC.GR3,
+            "御魂一": MC.SO1,
+            "御魂二": MC.SO2,
+        }
         if result_1 == "结伴同行":
             return MC.FRIEND
         elif result_1 == "契灵探查":
             return MC.BL
-        if result_2 == "觉醒一":
-            return MC.AW1
-        elif result_2 == "觉醒二":
-            return MC.AW2
-        elif result_2 == "觉醒三":
-            return MC.AW3
-        elif result_2 == "御灵一":
-            return MC.GR1
-        elif result_2 == "御灵二":
-            return MC.GR2
-        elif result_2 == "御灵三":
-            return MC.GR3
-        elif result_2 == "御魂一":
-            return MC.SO1
-        elif result_2 == "御魂二":
-            return MC.SO2
+        elif result_2 in result_2_mapping:
+            return result_2_mapping[result_2]
         if result_1 == "远远不够":
             logger.warning(f"Ocr task name: {result_1}")
             return MC.FEED

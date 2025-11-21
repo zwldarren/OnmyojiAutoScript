@@ -61,9 +61,8 @@ class SoloExploration(BaseExploration):
                     explore_init = True
                     continue
                 # 小纸人
-                if self.appear(self.I_BATTLE_REWARD):
-                    if self.ui_get_reward(self.I_BATTLE_REWARD):
-                        continue
+                if self.appear(self.I_BATTLE_REWARD) and self.ui_get_reward(self.I_BATTLE_REWARD):
+                    continue
                 # boss
                 if self.appear(self.I_BOSS_BATTLE_BUTTON):
                     if self.fire(self.I_BOSS_BATTLE_BUTTON):
@@ -185,9 +184,8 @@ class SoloExploration(BaseExploration):
                     explore_init = True
                     continue
                 # 小纸人
-                if self.appear(self.I_BATTLE_REWARD):
-                    if self.ui_get_reward(self.I_BATTLE_REWARD):
-                        continue
+                if self.appear(self.I_BATTLE_REWARD) and self.ui_get_reward(self.I_BATTLE_REWARD):
+                    continue
                 # 中途有人跑路
                 if not self.appear(self.I_TEAM_EMOJI):
                     if not friend_leave_timer.started():
@@ -275,9 +273,8 @@ class SoloExploration(BaseExploration):
                     explore_init = True
                     continue
                 # 小纸人
-                if self.appear(self.I_BATTLE_REWARD):
-                    if self.ui_get_reward(self.I_BATTLE_REWARD):
-                        continue
+                if self.appear(self.I_BATTLE_REWARD) and self.ui_get_reward(self.I_BATTLE_REWARD):
+                    continue
                 #
                 if not self.appear(self.I_TEAM_EMOJI):
                     logger.warning("Team emoji not appear")

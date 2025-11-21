@@ -63,7 +63,8 @@ class Screenshot(Adb, DroidCast, Scrcpy, Window, NemuIpc):
 
             # if self.config.Emulator_ScreenshotDedithering:
             #     # This will take 40-60ms
-            #     cv2.fastNlMeansDenoising(self.image, self.image, h=17, templateWindowSize=1, searchWindowSize=2)
+            #     cv2.fastNlMeansDenoising(self.image, self.image, h=17, templateWindowSize=1,
+            #     searchWindowSize=2)
             # self.image = self._handle_orientated_image(self.image)
 
             # if self.config.Error_SaveError:
@@ -151,7 +152,8 @@ class Screenshot(Adb, DroidCast, Scrcpy, Window, NemuIpc):
         Args:
             interval (int, float, str):
                 Minimum interval between 2 screenshots in seconds.
-                Or None for Optimization_ScreenshotInterval, 'combat' for Optimization_CombatScreenshotInterval
+                Or None for Optimization_ScreenshotInterval, 'combat' for
+                Optimization_CombatScreenshotInterval
         """
         if interval is None:
             origin = self.config.script.optimization.screenshot_interval
@@ -258,7 +260,8 @@ class Screenshot(Adb, DroidCast, Scrcpy, Window, NemuIpc):
                 logger.warning(f"Received pure black screenshots from emulator, color: {color}")
                 logger.warning(
                     f"Screenshot method {self.config.script.device.screenshot_method}"
-                    f"may not work on emulator `{self.serial}`, or the emulator is not fully started"
+                    f"may not work on emulator `{self.serial}`, or the emulator "
+                    f"is not fully started"
                 )
                 if self.is_mumu_family:
                     if self.config.script.device.screenshot_method == "DroidCast":

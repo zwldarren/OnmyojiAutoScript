@@ -128,7 +128,7 @@ class ReplaceShikigami(BaseTask, ReplaceShikigamiAssets):
             if self.appear_then_click(self.I_U_CIRCLE_ALTERNATE, interval=2.5):
                 self.appear_then_click(self.I_U_CONFIRM_ALTERNATE, interval=1.5)
                 continue
-        logger.info("Set shikigami: %d" % shikigami_order)
+        logger.info(f"Set shikigami: {shikigami_order}")
 
     def detect_no_shikigami(self) -> bool:
         self.screenshot()

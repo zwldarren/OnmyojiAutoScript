@@ -6,7 +6,8 @@ from module.base.decorator import cached_property
 from module.logger import logger
 
 """
-Importing pkg_resources is so slow, like 0.4 ~ 1.0s, just google it you will find it indeed really slow.
+Importing pkg_resources is so slow, like 0.4 ~ 1.0s, just google it you will find
+    it indeed really slow.
 Since it was some kind of standard library there is no way to modify it or speed it up.
 So here's a poor but fast implementation of pkg_resources returning the things in need.
 

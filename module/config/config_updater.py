@@ -4,7 +4,7 @@
 from functools import cached_property
 
 from module.base.timer import timer
-from module.config.utils import *
+from module.config.utils import filepath_args, filepath_config, read_file, write_file
 
 
 class ConfigUpdater:

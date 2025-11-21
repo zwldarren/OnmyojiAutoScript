@@ -88,8 +88,8 @@ class Timer:
                 else:
                     confirm_timer.reset()
 
-                Also, It's a good idea to set `count`, to make alas run more stable on slow computers.
-                Expected speed is 0.35 second / screenshot.
+        Also, It's a good idea to set `count`, to make alas run more stable on slow computers.
+                        Expected speed is 0.35 second / screenshot.
         """
         self.limit = limit
         self.count = count
@@ -167,6 +167,9 @@ class Timer:
         return self._current + self.limit - time.time()
 
     def __str__(self):
-        return f"Timer(limit={round(self.current(), 3)}/{self.limit}, count={self._reach_count}/{self.count})"
+        return (
+            f"Timer(limit={round(self.current(), 3)}/{self.limit}, "
+            f"count={self._reach_count}/{self.count})"
+        )
 
     __repr__ = __str__

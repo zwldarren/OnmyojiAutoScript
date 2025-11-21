@@ -100,7 +100,7 @@ class Window(Handle):
                 result.append(self.root_node.children[1].num)
                 result.append(self.root_node.children[1].children[1].num)
                 result.append(self.root_node.children[1].children[1].children[0].num)
-            except:
+            except Exception:
                 result.append(self.root_node.children[2].num)
                 result.append(self.root_node.children[2].children[1].num)
                 result.append(self.root_node.children[2].children[1].children[0].num)
@@ -156,7 +156,8 @@ class Window(Handle):
         if emulator_type == 2:  # mumu模拟器
             SendMessage(self.control_handle_list[0], WM_ACTIVATE, WA_ACTIVE, 0)  # 激活窗口
             # SendMessage(self.control_handle_list[1], WM_ACTIVATE, WA_ACTIVE, 0)  # 激活窗口
-            # SendMessage(self.control_handle_list[0], WM_LBUTTONDOWN, 0, MAKELONG(x, y+self.mumu_head_height))  # 模拟鼠标按下 先是父窗口 上面的框高度是57
+            # SendMessage(self.control_handle_list[0], WM_LBUTTONDOWN, 0,
+            # MAKELONG(x, y+self.mumu_head_height))  # 模拟鼠标按下 先是父窗口 上面的框高度是57
             # mumu12模拟器 V3.5.16 之后后可以用下面的方式
             SendMessage(self.control_handle_list[1], WM_LBUTTONDOWN, 0, MAKELONG(x, y))
             time.sleep(press_time)
@@ -196,7 +197,8 @@ class Window(Handle):
         emulator_type = len(self.control_handle_list)
         if self.emulator_family == EmulatorFamily.FAMILY_MUMU:  # mumu模拟器
             SendMessage(self.control_handle_list[1], WM_ACTIVATE, WA_ACTIVE, 0)  # 激活窗口
-            # SendMessage(self.control_handle_list[0], WM_LBUTTONDOWN, 0, MAKELONG(x, y+self.mumu_head_height))  # 模拟鼠标按下 先是父窗口 上面的框高度是57
+            # SendMessage(self.control_handle_list[0], WM_LBUTTONDOWN, 0,
+            # MAKELONG(x, y+self.mumu_head_height))  # 模拟鼠标按下 先是父窗口 上面的框高度是57
             SendMessage(self.control_handle_list[1], WM_LBUTTONDOWN, 0, MAKELONG(x, y))
             time.sleep(duration)  # 长按时间1000ms-1500ms
             SendMessage(

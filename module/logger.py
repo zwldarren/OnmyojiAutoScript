@@ -8,7 +8,7 @@ from collections.abc import Callable
 from datetime import date, datetime, timedelta
 from io import TextIOBase
 from pathlib import Path
-from typing import Any, Literal, Protocol, TypeVar
+from typing import Any, Literal, Protocol, TypeVar, cast
 
 from rich.console import Console, ConsoleOptions, ConsoleRenderable, NewLine, RenderResult
 from rich.highlighter import NullHighlighter
@@ -103,9 +103,9 @@ flutter_formatter = logging.Formatter(
 )
 
 
-# ======================================================================================================================
+# ==============================================================================
 #            Set console logger
-# ======================================================================================================================
+# ==============================================================================
 console_hdlr = RichHandler(
     console=Console(width=120),
     show_path=False,
@@ -119,9 +119,9 @@ console_hdlr.setFormatter(console_formatter)
 logger.addHandler(console_hdlr)
 
 
-# ======================================================================================================================
+# ==============================================================================
 #            Set file
-# ======================================================================================================================
+# ==============================================================================
 class RichFileHandler(RichHandler):
     """File handler that extends RichHandler for file logging."""
 
@@ -145,18 +145,38 @@ def set_file_logger(name: str | None = None, *, do_cleanup: bool = False) -> Non
     if "_" in name:
         name = name.split("_", 1)[0]
     log_file: str = f"./log/{date.today()}_{name}.txt"
-    try:
-        file = open(log_file, mode="a", encoding="utf-8")
-    except FileNotFoundError:
-        os.mkdir("./log")
-        file = open(log_file, mode="a", encoding="utf-8")
 
-    file_console = Console(
-        file=file,
-        no_color=True,
-        highlight=False,
-        width=160,
-    )
+    # Ensure log directory exists
+    log_dir = os.path.dirname(log_file)
+    if not os.path.exists(log_dir):
+        os.mkdir(log_dir)
+
+    # Open file in append mode with UTF-8 encoding
+    # Use a context manager to ensure proper resource handling
+    class FileWrapper:
+        """Wrapper to keep file open when used in a context manager."""
+
+        def __init__(self, file):
+            self._file = file
+
+        def __enter__(self):
+            return self._file
+
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            # Don't close the file - RichFileHandler needs it
+            # The file will be closed when the handler is removed
+            return False
+
+        def __getattr__(self, name):
+            return getattr(self._file, name)
+
+    with FileWrapper(open(log_file, mode="a", encoding="utf-8")) as file_handle:
+        file_console = Console(
+            file=file_handle,
+            no_color=True,
+            highlight=False,
+            width=160,
+        )
 
     hdlr = RichFileHandler(
         console=file_console,
@@ -183,9 +203,9 @@ def set_file_logger(name: str | None = None, *, do_cleanup: bool = False) -> Non
         logger.info("Log cleanup finished")
 
 
-# ======================================================================================================================
+# ==============================================================================
 #            Set flutter
-# ======================================================================================================================
+# ==============================================================================
 class FlutterHandler(RichHandler):
     """Handler for Flutter logging."""
 
@@ -288,9 +308,9 @@ def set_func_logger(func: Callable[[str], None]) -> None:
     logger.addHandler(hdlr)
 
 
-# ======================================================================================================================
+# ==============================================================================
 #            Set print format
-# ======================================================================================================================
+# ==============================================================================
 
 
 def _get_renderables(
@@ -440,8 +460,6 @@ def attr_align(name: str, text: Any, front: str = "", align: int = 22) -> None:
     logger.info(f"{name_str}: {str(text)}")
 
 
-from typing import Any, Literal, cast
-
 # Type variable for logger
 LoggerT = TypeVar("LoggerT", bound="ExtendedLogger")
 
@@ -486,7 +504,8 @@ def show() -> None:
     logger.info(r"True, False, None")
     logger.info(r"E:/path\\to/alas/alas.exe, /root/alas/, ./relative/path/log.txt")
     logger.info(
-        "Tests very long strings. Tests very long strings. Tests very long strings. Tests very long strings. Tests very long strings."
+        "Tests very long strings. Tests very long strings. Tests very long strings. "
+        "Tests very long strings. Tests very long strings."
     )
     # Line before exception
     raise Exception("Exception")

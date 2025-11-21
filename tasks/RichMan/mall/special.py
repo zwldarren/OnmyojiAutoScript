@@ -169,7 +169,7 @@ class Special(Buy, MallNavbar):
             else:
                 result = re.findall(r"本周剩余数量(\d+)", result)[0]
                 result = int(result)
-        except:
+        except Exception:
             result = 0
         logger.info(f"Remain [{result}]")
         return result

@@ -100,12 +100,13 @@ class ScriptTask(GameUi, GeneralBattle, SwitchSoul, DuelAssets):
                 break
 
             # 不开启名仕战斗,到达名士直接退出
-            if not celeb_con.celeb_battle:
-                if self.appear(self.I_D_CELEB_STAR) or self.appear(self.I_D_CELEB_HONOR):
-                    logger.info("You are already a celeb（名仕）")
-                    current_score = "名仕"
-                    duel_week_over = True
-                    break
+            if not celeb_con.celeb_battle and (
+                self.appear(self.I_D_CELEB_STAR) or self.appear(self.I_D_CELEB_HONOR)
+            ):
+                logger.info("You are already a celeb（名仕）")
+                current_score = "名仕"
+                duel_week_over = True
+                break
             # 练习
             if self.appear(self.I_BATTLE_WITH_TRAIN) or self.appear(self.I_BATTLE_WITH_TRAIN2):
                 break

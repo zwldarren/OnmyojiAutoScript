@@ -51,10 +51,13 @@ def detect_safe_area(image, target_gray_value=255, tolerance=0):
                         if dy == 0 and dx == 0:
                             continue  # 跳过中心点
                         ny, nx = y + dy, x + dx
-                        if 0 <= ny < img_arr.shape[0] and 0 <= nx < img_arr.shape[1]:
-                            if abs(img_arr[ny, nx] - target_gray_value) > tolerance:
-                                is_solid_region = False
-                                break
+                        if (
+                            0 <= ny < img_arr.shape[0]
+                            and 0 <= nx < img_arr.shape[1]
+                            and abs(img_arr[ny, nx] - target_gray_value) > tolerance
+                        ):
+                            is_solid_region = False
+                            break
                     if not is_solid_region:
                         break
 
@@ -124,7 +127,7 @@ def detect_safe_area2(image, safe_color_lower, safe_color_upper, num_areas=3, de
 
     if debug:
         # 绘制面积排名前3的区域
-        for area, contour in areas_sorted[:num_areas]:
+        for _area, contour in areas_sorted[:num_areas]:
             x1, y1, w1, h1 = cv2.boundingRect(contour)
             # 使用蓝色边框，线宽为4
             cv2.rectangle(image, (x1, y1), (x1 + w1, y1 + h1), (255, 0, 0), 4)

@@ -70,7 +70,7 @@ def recv_all(stream, chunk_size=4096, recv_interval=0.000) -> bytes:
                 break
         return remove_shell_warning(b"".join(fragments))
     except TimeoutError:
-        raise AdbTimeout("adb read timeout")
+        raise AdbTimeout("adb read timeout") from None
 
 
 def possible_reasons(*args):
@@ -142,7 +142,8 @@ def handle_adb_error(e):
         return True
     elif "is offline" in text:
         # RuntimeError: USB device 127.0.0.1:7555 is offline
-        # Raised by uiautomator2 when current adb service is killed by another version of adb service.
+        # Raised by uiautomator2 when current adb service is killed by another version
+        # of adb service.
         logger.error(e)
         return True
     elif "unknown host service" in text:
@@ -155,7 +156,8 @@ def handle_adb_error(e):
         # AdbError()
         logger.exception(e)
         possible_reasons(
-            "If you are using BlueStacks or LD player or WSA, please enable ADB in the settings of your emulator",
+            "If you are using BlueStacks or LD player or WSA, please enable ADB in the "
+            "settings of your emulator",
             "Emulator died, please restart emulator",
             "Serial incorrect, no such device exists or emulator is not running",
         )
@@ -212,7 +214,8 @@ def remove_shell_warning(s):
     Returns:
         str, bytes:
     """
-    # WARNING: linker: [vdso]: unused DT entry: type 0x70000001 arg 0x0\n\x89PNG\r\n\x1a\n\x00\x00\x00\rIH
+    # WARNING: linker: [vdso]: unused DT entry: type 0x70000001 arg 0x0
+    # \n\x89PNG\r\n\x1a\n\x00\x00\x00\rIH
     if isinstance(s, bytes):
         if s.startswith(b"WARNING"):
             with contextlib.suppress(IndexError):

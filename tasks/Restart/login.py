@@ -127,10 +127,11 @@ class LoginHandler(BaseTask, RestartAssets):
                 continue
 
             # 登录体验服时，点击“进入游戏”速度过快，可能会出现体验服的弹窗
-            if self.appear(self.I_EARLY_SERVER):
-                if self.appear_then_click(self.I_EARLY_SERVER_CANCEL):
-                    logger.info("Cancel switch from early server to normal server")
-                    continue
+            if self.appear(self.I_EARLY_SERVER) and self.appear_then_click(
+                self.I_EARLY_SERVER_CANCEL
+            ):
+                logger.info("Cancel switch from early server to normal server")
+                continue
             if self.ocr_appear_click(self.O_LOGIN_ENTER_GAME, interval=3):
                 self.wait_until_appear(self.I_LOGIN_SPECIFIC_SERVE, True, wait_time=5)
                 continue
@@ -277,9 +278,12 @@ class LoginHandler(BaseTask, RestartAssets):
         self.O_LOGIN_SPECIFIC_SERVE.keyword = character
 
     def harvest_mail(self) -> bool:
-        if not self.appear(self.I_HARVEST_MAIL) and not self.appear(self.I_HARVEST_MAIL_COPY):
-            if not self.appear(self.I_READ_ALL_MAIL):
-                return False
+        if (
+            not self.appear(self.I_HARVEST_MAIL)
+            and not self.appear(self.I_HARVEST_MAIL_COPY)
+            and not self.appear(self.I_READ_ALL_MAIL)
+        ):
+            return False
         logger.info("Harvest mail")
         while 1:
             self.screenshot()

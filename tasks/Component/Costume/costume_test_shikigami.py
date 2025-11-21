@@ -59,9 +59,9 @@ class ScriptTask(GameUi, SwitchSoul, SwitchSoulAssets, SoulsTidyAssets):
                 break
 
         print("--------------------------------------------------------")
-        print("%-32s   %s" % ("Image", "Count"))
+        print(f"{'Image':<32}   {'Count'}")
         for i in images_count:
-            print("%-32s %3d times" % (i[0], i[1]))
+            print(f"{i[0]:<32} {i[1]:3d} times")
         logger.info("Shikigami Costume Test Done")
 
         # 测试御魂切换功能 (1-7组，每组1-4切换)

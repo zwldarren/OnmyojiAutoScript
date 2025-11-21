@@ -1,7 +1,9 @@
 # from module.base.button import Button
+import numpy as np
+
 from module.base.decorator import cached_property
 from module.base.timer import Timer
-from module.base.utils import *
+from module.base.utils import ensure_int, ensure_time, point2str, random_rectangle_vector_opted
 from module.device.method.adb import Adb
 
 # from module.device.method.hermit import Hermit

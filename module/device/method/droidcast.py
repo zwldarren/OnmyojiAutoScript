@@ -62,8 +62,10 @@ def retry(func):
                 def init():
                     self.detect_package()
             # DroidCast not running
-            # requests.exceptions.ConnectionError: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
-            # ReadTimeout: HTTPConnectionPool(host='127.0.0.1', port=20482): Read timed out. (read timeout=3)
+            # requests.exceptions.ConnectionError: ('Connection aborted.',
+            # RemoteDisconnected('Remote end closed connection without response'))
+            # ReadTimeout: HTTPConnectionPool(host='127.0.0.1', port=20482):
+            # Read timed out. (read timeout=3)
             except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout) as e:
                 logger.error(e)
 
@@ -155,8 +157,10 @@ class DroidCast(Uiautomator2):
 
         logger.info("Starting DroidCast apk")
         # DroidCast_raw-release-1.0.apk
-        # CLASSPATH=/data/local/tmp/DroidCast_raw.apk app_process / ink.mol.droidcast_raw.Main > /dev/null
-        # adb shell CLASSPATH=/data/local/tmp/DroidCast_raw.apk app_process / ink.mol.droidcast_raw.Main
+        # CLASSPATH=/data/local/tmp/DroidCast_raw.apk app_process /
+        # ink.mol.droidcast_raw.Main > /dev/null
+        # adb shell CLASSPATH=/data/local/tmp/DroidCast_raw.apk
+        # app_process / ink.mol.droidcast_raw.Main
         resp = self.u2_shell_background(
             [
                 "CLASSPATH=/data/local/tmp/DroidCast_raw.apk",
@@ -194,9 +198,10 @@ class DroidCast(Uiautomator2):
     def screenshot_droidcast(self):
         self.config.DROIDCAST_VERSION = "DroidCast"
 
-        if self.is_mumu_over_version_356:
-            if not self.droidcast_width or not self.droidcast_height:
-                self._droidcast_update_resolution()
+        if self.is_mumu_over_version_356 and (
+            not self.droidcast_width or not self.droidcast_height
+        ):
+            self._droidcast_update_resolution()
 
         resp = self.droidcast_session.get(self.droidcast_url(), timeout=3)
 
@@ -260,9 +265,9 @@ class DroidCast(Uiautomator2):
                 if image is not None:
                     raise DroidCastVersionIncompatible(
                         "Requesting screenshots from `DroidCast_raw` but server is `DroidCast`"
-                    )
+                    ) from None
             # ValueError: cannot reshape array of size 0 into shape (720,1280)
-            raise ImageTruncated(str(e))
+            raise ImageTruncated(str(e)) from None
 
             # Convert RGB565 to RGB888
             # https://blog.csdn.net/happy08god/article/details/10516871
@@ -279,8 +284,9 @@ class DroidCast(Uiautomator2):
             # image = cv2.merge([r, g, b])
 
             # The same as the code above but costs about 3~4ms instead of 10ms.
-            # Note that cv2.convertScaleAbs is 5x fast as cv2.multiply, cv2.add is 8x fast as cv2.convertScaleAbs
-            # Note that cv2.convertScaleAbs includes rounding
+            # Note that cv2.convertScaleAbs is 5x fast as cv2.multiply,
+        # cv2.add is 8x fast as cv2.convertScaleAbs
+        # Note that cv2.convertScaleAbs includes rounding
         r = cv2.bitwise_and(arr, 0b1111100000000000)
         r = cv2.convertScaleAbs(r, alpha=0.00390625)
         m = cv2.convertScaleAbs(r, alpha=0.03125)

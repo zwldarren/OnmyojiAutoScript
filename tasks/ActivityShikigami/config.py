@@ -136,8 +136,8 @@ class ActivityShikigami(ConfigBase):
             group_team = getattr(self.switch_soul_config, f"{label}_group_team", None)
             try:
                 check_soul_by_number(enable_preset, group_team, label=label.upper())
-            except ValueError:
+            except ValueError as err:
                 raise ValueError(
                     "The switch preset is enabled, but the switch soul is configured incorrectly"
-                )
+                ) from err
         return self

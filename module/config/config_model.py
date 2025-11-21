@@ -8,18 +8,17 @@ from pathlib import Path
 import inflection
 from pydantic import BaseModel, Field, ValidationError
 
-from module.config.utils import *
+from module.config.utils import convert_to_underscore, datetime, json, read_file, write_file
 from module.logger import logger
 from tasks.AbyssShadows.config import AbyssShadows
 
-# 这一部分是活动的配置-----------------------------------------------------------------------------------------------------
+# Activity task configs
 from tasks.ActivityShikigami.config import ActivityShikigami
 
-# 每日任务-----------------------------------------------------------------------------------------------------
+# Daily task configs
 from tasks.AreaBoss.config import AreaBoss
 
-# ----------------------------------------------------------------------------------------------------------------------
-# 肝帝专属---------------------------------------------------------------------------------------------------------------
+# Premium task configs
 from tasks.BondlingFairyland.config import BondlingFairyland
 from tasks.CollectiveMissions.config import CollectiveMissions
 
@@ -55,7 +54,7 @@ from tasks.MetaDemon.config import MetaDemon
 from tasks.MysteryShop.config import MysteryShop
 from tasks.Nian.config import Nian
 
-# ----------------------------------------------------------------------------------------------------------------------
+# Weekly task configs
 from tasks.Orochi.config import Orochi
 from tasks.OrochiMoans.config import OrochiMoans
 from tasks.Pets.config import Pets
@@ -72,13 +71,12 @@ from tasks.SoulsTidy.config import SoulsTidy
 from tasks.Tako.config import Tako
 from tasks.TalismanPass.config import TalismanPass
 
-# ----------------------------------------------------------------------------------------------------------------------
-# 每周任务---------------------------------------------------------------------------------------------------------------
+# Weekly task configs
 from tasks.TrueOrochi.config import TrueOrochi
 from tasks.WantedQuests.config import WantedQuests
 from tasks.WeeklyTrifles.config import WeeklyTrifles
 
-# ----------------------------------------------------------------------------------------------------------------------
+# End of imports
 
 
 class ConfigModel(ConfigBase):
@@ -207,13 +205,16 @@ class ConfigModel(ConfigBase):
 
         schema2 = task_gui.schema()
         # https://github.com/pydantic/pydantic/discussions/5687
-        if "definitions" in schema2 and "Scheduler" in schema2["definitions"]:
-            if "properties" in schema2["definitions"]["Scheduler"]:
-                properties = schema2["definitions"]["Scheduler"]["properties"]
-                if "success_interval" in properties:
-                    properties["success_interval"]["type"] = "string"
-                if "failure_interval" in properties:
-                    properties["failure_interval"]["type"] = "string"
+        if (
+            "definitions" in schema2
+            and "Scheduler" in schema2["definitions"]
+            and "properties" in schema2["definitions"]["Scheduler"]
+        ):
+            properties = schema2["definitions"]["Scheduler"]["properties"]
+            if "success_interval" in properties:
+                properties["success_interval"]["type"] = "string"
+            if "failure_interval" in properties:
+                properties["failure_interval"]["type"] = "string"
         return json.dumps(schema2)
 
     def gui_task(self, task: str) -> str:
@@ -396,7 +397,8 @@ class ConfigModel(ConfigBase):
             logger.error(f"Set arg {task}.{group}.{argument}.{value} failed")
             return False
 
-        # XXX temp implementation to enable oasx control the datetime configuration globally rather than a single task
+        # XXX temp implementation to enable oasx control the datetime configuration
+        # globally rather than a single task
         if (
             task == "restart"
             and group == "task_config"

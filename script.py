@@ -26,7 +26,16 @@ from module.config.config import Config
 from module.config.utils import convert_to_underscore
 from module.device.device import Device
 from module.device.env import IS_WINDOWS
-from module.exception import *
+from module.exception import (
+    GameBugError,
+    GameNotRunningError,
+    GamePageUnknownError,
+    GameStuckError,
+    GameTooManyClickError,
+    RequestHumanTakeover,
+    ScriptError,
+    TaskEnd,
+)
 from module.logger import logger
 from module.server.i18n import I18n
 
@@ -194,7 +203,8 @@ class Script:
     def gui_mirror_image(self):
         """
         获取给gui显示的镜像
-        :return: cv2的对象将 numpy 数组转换为字节串。接下来MsgPack 进行序列化发送方将图像数据转换为字节串
+        :return: cv2的对象将 numpy 数组转换为字节串。接下来MsgPack 进行序列化
+        发送方将图像数据转换为字节串
         """
         # return msgpack.packb(cv2.imencode('.jpg', self.device.screenshot())[1].tobytes())
         img = cv2.cvtColor(self.device.screenshot(), cv2.COLOR_RGB2BGR)
@@ -233,7 +243,8 @@ class Script:
     def _gui_set_status(self, status: str) -> None:
         """
         设置给gui显示的状态
-        :param status: 可以在gui中显示的状态 有 "Init", "Empty"(不显示), "Run"(运行中), "Error", "Free"(空闲)
+        :param status: 可以在gui中显示的状态 有 "Init", "Empty"(不显示),
+        "Run"(运行中), "Error", "Free"(空闲)
         :return:
         """
         data = {"status": status}
@@ -408,7 +419,8 @@ class Script:
             return False
         except GamePageUnknownError as e:
             logger.info(
-                "Game server may be under maintenance or network may be broken, check server status now"
+                "Game server may be under maintenance or network may be broken, "
+                "check server status now"
             )
             # 这个还不重要 留着坑填
             logger.critical("Game page unknown")

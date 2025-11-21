@@ -102,11 +102,12 @@ class EmulatorFamily(Enum):
     FAMILY_OTHER = 60  # 其他模拟器 待定
 
 
-# 各个模拟器的句柄树*******************************************************************************************************
+# 各个模拟器的句柄树
+# ******************************************************************
 """"
 <MuMu>系列
 模拟器的窗口名字
-----MuMuPlayer      (!如果是mumu12是MuMuPlayer, 否则是NemuPlayer)
+----MuMuPlayer (!如果是mumu12是MuMuPlayer, 否则是NemuPlayer)
 --------nemudisplay
 
 <雷电模拟器系列>
@@ -114,7 +115,7 @@ class EmulatorFamily(Enum):
 ----TheRender
 --------sub
 
-<夜神模拟器系列>  =====> 这个模拟器窗口很复杂，而且有的时候还会变化
+<夜神模拟器系列> 这个模拟器窗口很复杂，而且有的时候还会变化
 夜神模拟器的窗口名字
 ----Nox
 ----Nox
@@ -124,14 +125,14 @@ class EmulatorFamily(Enum):
 ----------------sub
 ---Nox
 --------Nox
---------Nox    ==> 妈的太多了自己用spy++看吧
+--------Nox ==> 太多了自己用spy++看吧
 
 <蓝叠模拟器>
 蓝叠模拟器的窗口名字
 ----HD-Player
 --------_ctl.W
 """ ""
-# **********************************************************************************************************************
+# ******************************************************************
 
 
 class Handle:
@@ -265,12 +266,14 @@ class Handle:
             return None
 
         emulator_title = ""
-        # 测试mumu12的时候发现 获取的全部的窗体标题有这样的: 'MuMuPlayer', 'MuMuPlayer', 'MuMuPlayer', 'MuMu模拟器12'
-        # 事实上 我们只需要最后一个 'MuMu模拟器12'，其他的不重要
+        # 测试mumu12时发现获取的全部窗体标题有：
+        # 'MuMuPlayer', 'MuMuPlayer', 'MuMuPlayer', 'MuMu模拟器12'
+        # 事实上我们只需要最后一个 'MuMu模拟器12'，其他不重要
         if "MuMu模拟器12" in emu_list and "MuMuPlayer" in emu_list:
             emulator_title = "MuMu模拟器12"
 
-        # MuMu5.0更新，窗体标题改动: 'MuMu模拟器','MuMuNxDevice','MuMu安卓设备'
+        # MuMu5.0更新，窗体标题改动：
+        # 'MuMu模拟器','MuMuNxDevice','MuMu安卓设备'
         # 如果没有匹配上旧版本，尝试匹配MuMu5.0窗口名
         if emulator_title == "" and "MuMu安卓设备" in emu_list:
             emulator_title = "MuMu安卓设备"
@@ -330,18 +333,16 @@ class Handle:
                 return EmulatorFamily.FAMILY_NOX
 
         # 基于句柄标题的判定
+        emulator_family_map = {
+            "MuMu": EmulatorFamily.FAMILY_MUMU,
+            "雷电": EmulatorFamily.FAMILY_LD,
+            "夜神": EmulatorFamily.FAMILY_NOX,
+            "蓝叠": EmulatorFamily.FAMILY_BLUESTACKS,
+            "逍遥": EmulatorFamily.FAMILY_MEMU,
+        }
         for emu in Handle.emulator_list:
             if self.root_handle_title.find(emu) != -1:
-                if emu == "MuMu":
-                    return EmulatorFamily.FAMILY_MUMU
-                elif emu == "雷电":
-                    return EmulatorFamily.FAMILY_LD
-                elif emu == "夜神":
-                    return EmulatorFamily.FAMILY_NOX
-                elif emu == "蓝叠":
-                    return EmulatorFamily.FAMILY_BLUESTACKS
-                elif emu == "逍遥":
-                    return EmulatorFamily.FAMILY_MEMU
+                return emulator_family_map.get(emu, EmulatorFamily.FAMILY_OTHER)
         return EmulatorFamily.FAMILY_OTHER
 
     @cached_property
@@ -364,7 +365,7 @@ class Handle:
         elif self.emulator_family == EmulatorFamily.FAMILY_NOX:
             try:
                 return self.root_node.children[1].children[1].num
-            except:
+            except Exception:
                 return self.root_node.children[2].children[1].num
 
         elif self.emulator_family == EmulatorFamily.FAMILY_LD:

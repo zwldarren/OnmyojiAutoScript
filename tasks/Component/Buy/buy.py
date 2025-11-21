@@ -32,9 +32,8 @@ class Buy(BaseTask, BuyAssets):
             elif isinstance(start_click, RuleOcr):
                 if self.ocr_appear_click(start_click, interval=1):
                     continue
-            elif isinstance(start_click, RuleClick):
-                if self.click(start_click, interval=1):
-                    continue
+            elif isinstance(start_click, RuleClick) and self.click(start_click, interval=1):
+                continue
         while 1:
             self.screenshot()
 
@@ -97,10 +96,9 @@ class Buy(BaseTask, BuyAssets):
                 if self.ocr_appear_click(start_click, interval=1):
                     try_click_count += 1
                     continue
-            elif isinstance(start_click, RuleClick):
-                if self.click(start_click, interval=1):
-                    try_click_count += 1
-                    continue
+            elif isinstance(start_click, RuleClick) and self.click(start_click, interval=1):
+                try_click_count += 1
+                continue
         # 设置购买的数量
         if number is None:
             self.appear_then_click(self.I_BUY_PLUS, interval=0.4)

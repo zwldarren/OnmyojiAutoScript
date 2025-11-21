@@ -4,7 +4,7 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from module.config.config import Function
+    from module.config.function import Function
 
 
 class ConfigState:

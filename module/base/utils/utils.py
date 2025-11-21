@@ -10,8 +10,8 @@ REGEX_NODE = re.compile(r"(-?[A-Za-z]+)(-?\d+)")
 
 
 def random_normal_distribution_int(a, b, n=3):
-    """Generate a normal distribution int within the interval. Use the average value of several random numbers to
-    simulate normal distribution.
+    """Generate a normal distribution int within the interval.
+    Use the average value of several random numbers to simulate normal distribution.
 
     Args:
         a (int): The minimum of the interval.
@@ -392,10 +392,7 @@ def col2name(col):
     """
 
     col_neg = col < 0
-    if col_neg:
-        col_num = -col
-    else:
-        col_num = col + 1  # Change to 1-index.
+    col_num = -col if col_neg else col + 1  # Change to 1-index.
     col_str = ""
 
     while col_num:
@@ -431,14 +428,12 @@ def name2col(col_str):
         row, col: Zero indexed cell row and column indices.
     """
     # Convert base26 column string to number.
-    expn = 0
     col = 0
     col_neg = col_str.startswith("-")
     col_str = col_str.strip("-").upper()
 
-    for char in reversed(col_str):
+    for expn, char in enumerate(reversed(col_str)):
         col += (ord(char) - 64) * (26**expn)
-        expn += 1
 
     if col_neg:
         return -col

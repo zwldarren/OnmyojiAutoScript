@@ -99,7 +99,7 @@ def load_screencap(data):
         image = image[-int(width * height * channel) :].reshape(height, width, channel)
     except ValueError as e:
         # ValueError: cannot reshape array of size 0 into shape (720,1280,4)
-        raise ImageTruncated(str(e))
+        raise ImageTruncated(str(e)) from e
 
     image = cv2.cvtColor(image, cv2.COLOR_BGRA2BGR)
     if image is None:
@@ -123,9 +123,12 @@ class Adb(Connection):
         else:
             raise ScriptError(f"Unknown method to load screenshots: {method}")
 
-        # fix compatibility issues for adb screencap decode problem when the data is from vmos pro
-        # When use adb screencap for a screenshot from vmos pro, there would be a header more than that from emulator
-        # which would cause image decode problem. So i check and remove the header there.
+        # fix compatibility issues for adb screencap decode problem when the data
+        # is from vmos pro
+        # When use adb screencap for a screenshot from vmos pro, there would be
+        # a header more than that from emulator
+        # which would cause image decode problem. So i check and remove the
+        # header there.
         screenshot = remove_prefix(screenshot, b"long long=8 fun*=10\n")
 
         image = np.frombuffer(screenshot, np.uint8)
@@ -167,7 +170,7 @@ class Adb(Connection):
 
     @retry
     @Config.when(DEVICE_OVER_HTTP=True)
-    def screenshot_adb(self):
+    def screenshot_adb(self):  # noqa: F811
         data = self.adb_shell(["screencap"], stream=True)
         if len(data) < 500:
             logger.warning(f"Unexpected screenshot: {data}")
@@ -223,8 +226,10 @@ class Adb(Connection):
         # Related issue: https://github.com/openatx/uiautomator2/issues/200
         # $ adb shell dumpsys window windows
         # Example output:
-        #   mCurrentFocus=Window{41b37570 u0 com.incall.apps.launcher/com.incall.apps.launcher.Launcher}
-        #   mFocusedApp=AppWindowToken{422df168 token=Token{422def98 ActivityRecord{422dee38 u0 com.example/.UI.play.PlayActivity t14}}}
+        #   mCurrentFocus=Window{41b37570 u0 com.incall.apps.launcher/
+        #   com.incall.apps.launcher.Launcher}
+        #   mFocusedApp=AppWindowToken{422df168 token=Token{422def98
+        #   ActivityRecord{422dee38 u0 com.example/.UI.play.PlayActivity t14}}}
         # Regexp
         #   r'mFocusedApp=.*ActivityRecord{\w+ \w+ (?P<package>.*)/(?P<activity>.*) .*'
         #   r'mCurrentFocus=Window{\w+ \w+ (?P<package>.*)/(?P<activity>.*)\}')

@@ -137,7 +137,9 @@ async def script_task(script_name: str, task: str):
 
 
 @script_app.put("/{script_name}/{task}/{group}/{argument}/value")
-async def script_task(script_name: str, task: str, group: str, argument: str, types: str, value):
+async def script_task_value(
+    script_name: str, task: str, group: str, argument: str, types: str, value
+):
     try:
         match types:
             case "integer":
@@ -147,7 +149,8 @@ async def script_task(script_name: str, task: str, group: str, argument: str, ty
             case "boolean":
                 if isinstance(value, str):
                     logger.warning(
-                        f"[{script_name}] script argument {argument} value is string, try to convert to bool"
+                        f"[{script_name}] script argument {argument} value is string, "
+                        "try to convert to bool"
                     )
                     if value.lower() in ["true", "1"]:
                         value = True
@@ -174,7 +177,7 @@ async def script_task(script_name: str, task: str, group: str, argument: str, ty
                 pass
     except Exception as e:
         # 类型不正确
-        raise HTTPException(status_code=400, detail=f"Argument type error: {e}")
+        raise HTTPException(status_code=400, detail=f"Argument type error: {e}") from e
     return mm.config_cache(script_name).model.script_set_arg(task, group, argument, value)
 
 

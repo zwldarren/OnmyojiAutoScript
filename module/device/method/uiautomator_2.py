@@ -200,9 +200,9 @@ class Uiautomator2(Connection):
         shake_duration=0.1,
     ):
         """Drag and shake, like:
-                     /\
+                     /\\
         +-----------+  +  +
-                        \/
+                        \\/
         A simple swipe or drag don't work well, because it only has two points.
         Add some way point to make it more like swipe.
 
@@ -248,7 +248,7 @@ class Uiautomator2(Connection):
         except u2.exceptions.BaseError as e:
             # BaseError: package "com.bilibili.azurlane" not found
             logger.error(e)
-            raise PackageNotInstalled(package_name)
+            raise PackageNotInstalled(package_name) from None
 
     @retry
     def app_stop_uiautomator2(self, package_name=None):

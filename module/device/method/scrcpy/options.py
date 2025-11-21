@@ -111,7 +111,8 @@ class ScrcpyOptions:
             "1280",  # Max screen width (long side)
             "20000000",  # Bitrate of video
             f"{cls.frame_rate}",  # Max frame per second
-            f"{const.LOCK_SCREEN_ORIENTATION_UNLOCKED}",  # Lock screen orientation: LOCK_SCREEN_ORIENTATION
+            f"{const.LOCK_SCREEN_ORIENTATION_UNLOCKED}",  # Lock screen orientation:
+            # LOCK_SCREEN_ORIENTATION
             "true",  # Tunnel forward
             "-",  # Crop screen
             "false",  # Send frame rate to client

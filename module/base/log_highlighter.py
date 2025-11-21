@@ -27,7 +27,12 @@ def highlight_text(input_text):
 
 
 # 测试
-# input_string = 'The time is 13:20:36.411. Is it True or False? DEBUG: This is a debug message. INFO: This is an info message. WARNING: This is a warning message. ERROR: This is an error message. CRITICAL: This is a critical message.'
+# input_string = 'The time is 13:20:36.411. Is it True or False? ' \
+#                'DEBUG: This is a debug message.\n' \
+#                '# INFO: This is an info message. ' \
+#                'WARNING: This is a warning message. ' \
+#                'ERROR: This is an error message.\n' \
+#                '# CRITICAL: This is a critical message.'
 # highlighted_text = highlight_text(input_string)
 # html_text = f'<html><body>{highlighted_text}</body></html>'
 # print(html_text)
