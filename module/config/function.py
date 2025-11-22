@@ -62,7 +62,7 @@ def name_to_function(name):
     Returns:
         Function:
     """
-    function = Function({})
+    function = Function(name, {})
     function.command = name
     function.enable = True
     return function

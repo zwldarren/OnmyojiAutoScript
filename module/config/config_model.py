@@ -2,13 +2,15 @@
 # github https://github.com/runhey
 
 import contextlib
+import datetime as dt_module
 import re
+from datetime import datetime
 from pathlib import Path
 
 import inflection
 from pydantic import BaseModel, Field, ValidationError
 
-from module.config.utils import convert_to_underscore, datetime, json, read_file, write_file
+from module.config.utils import convert_to_underscore, json, read_file, write_file
 from module.logger import logger
 from tasks.AbyssShadows.config import AbyssShadows
 
@@ -23,7 +25,7 @@ from tasks.BondlingFairyland.config import BondlingFairyland
 from tasks.CollectiveMissions.config import CollectiveMissions
 
 # 导入配置的Python文件
-from tasks.Component.config_base import ConfigBase, TimeDelta
+from tasks.Component.config_base import ConfigBase
 from tasks.DailyTrifles.config import DailyTrifles
 from tasks.Delegation.config import Delegation
 from tasks.DemonEncounter.config import DemonEncounter
@@ -115,7 +117,7 @@ class ConfigModel(ConfigBase):
 
     # 这些是活动的
     activity_shikigami: ActivityShikigami = Field(default_factory=ActivityShikigami)
-    meta_demon: MetaDemon = Field(default_factory=MetaDemon)
+    meta_demon: MetaDemon = Field(default_factory=lambda: MetaDemon())
     frog_boss: FrogBoss = Field(default_factory=FrogBoss)
     float_parade: FloatParade = Field(default_factory=FloatParade)
     quiz: Quiz = Field(default_factory=Quiz)
@@ -128,7 +130,7 @@ class ConfigModel(ConfigBase):
     goryou_realm: GoryouRealm = Field(default_factory=GoryouRealm)
     hyakkiyakou: Hyakkiyakou = Field(default_factory=Hyakkiyakou)
     hero_test: HeroTest = Field(default_factory=HeroTest)
-    find_jade: FindJade = Field(default_factory=FindJade)
+    find_jade: FindJade = Field(default_factory=lambda: FindJade())
     memory_scrolls: MemoryScrolls = Field(default_factory=MemoryScrolls)
 
     # 这些是每周任务
@@ -147,7 +149,7 @@ class ConfigModel(ConfigBase):
     guild_banquet: GuildBanquet = Field(default_factory=GuildBanquet)
     demon_retreat: DemonRetreat = Field(default_factory=DemonRetreat)
 
-    def __init__(self, config_name: str = None) -> None:
+    def __init__(self, config_name: str = "") -> None:
         """
 
         :param config_name:
@@ -156,8 +158,10 @@ class ConfigModel(ConfigBase):
             super().__init__()
             return
         data = self.read_json(config_name)
+        if not isinstance(data, dict):
+            data = {}
         data["config_name"] = config_name
-        super().__init__(**data)
+        super().__init__(**data)  # type: ignore[arg-type]
 
     def __setattr__(self, key, value):
         """
@@ -171,14 +175,14 @@ class ConfigModel(ConfigBase):
         self.save()
 
     @staticmethod
-    def read_json(config_name: str) -> dict:
+    def read_json(config_name: str) -> dict | list:
         """
         读文件 没有额外操作
         :param config_name:  不带后缀
         :return:
         """
         filepath = Path.cwd() / "config" / f"{config_name}.json"
-        return read_file(filepath)
+        return read_file(str(filepath))
 
     @staticmethod
     def write_json(config_name: str, data) -> None:
@@ -189,7 +193,7 @@ class ConfigModel(ConfigBase):
         :return:
         """
         filepath = Path.cwd() / "config" / f"{config_name}.json"
-        write_file(filepath, data)
+        write_file(str(filepath), data)
 
     def gui_args(self, task: str) -> str:
         """
@@ -224,11 +228,11 @@ class ConfigModel(ConfigBase):
         :return:
         """
         task_name = convert_to_underscore(task)
-        task = getattr(self, task_name, None)
-        if task is None:
+        task_obj = getattr(self, task_name, None)
+        if task_obj is None:
             logger.warning(f"{task_name} is no inexistence")
             return ""
-        return task.json()
+        return task_obj.model_dump_json()
 
     def save(self) -> None:
         """
@@ -254,7 +258,7 @@ class ConfigModel(ConfigBase):
             return classname
 
     @staticmethod
-    def deep_get(obj, keys: str, default=None):
+    def deep_get(obj, keys: str | list, default=None):
         """
         递归获取模型的值
         :param obj:
@@ -273,7 +277,7 @@ class ConfigModel(ConfigBase):
         return value
 
     @staticmethod
-    def deep_set(obj, keys: str, value) -> bool:
+    def deep_set(obj, keys: str | list, value) -> bool:
         if not isinstance(keys, list):
             keys = keys.split(".")
         current_obj = obj
@@ -286,6 +290,7 @@ class ConfigModel(ConfigBase):
             return False
 
     # ----------------------------------- fastapi -----------------------------------
+    # script_task函数的问题修复
     def script_task(self, task: str) -> dict:
         """
 
@@ -293,8 +298,8 @@ class ConfigModel(ConfigBase):
         :return:
         """
         task = convert_to_underscore(task)
-        task = getattr(self, task, None)
-        if task is None:
+        task_obj = getattr(self, task, None)
+        if task_obj is None:
             logger.warning(f"{task} is no inexistence")
             return {}
 
@@ -303,19 +308,33 @@ class ConfigModel(ConfigBase):
             # properties = properties_groups(sch)
             results = {}
             properties = {}
+            if not sch or not isinstance(sch, dict):
+                return results
+            if "properties" not in sch:
+                return results
             for key, value in sch["properties"].items():
-                if "items" in value:
-                    properties[key] = re.search(r"/([^/]+)$", value["items"]["$ref"]).group(1)
-                else:
-                    properties[key] = re.search(r"/([^/]+)$", value["$ref"]).group(1)
+                if "items" in value and "$ref" in value.get("items", {}):
+                    items = value["items"]
+                    if isinstance(items, dict) and "$ref" in items:
+                        ref_match = re.search(r"/([^/]+)$", items["$ref"])
+                        if ref_match:
+                            properties[key] = ref_match.group(1)
+                elif "$ref" in value and isinstance(value, dict):
+                    ref_match = re.search(r"/([^/]+)$", value["$ref"])
+                    if ref_match:
+                        properties[key] = ref_match.group(1)
 
-            for key, value in properties.items():
-                results[key] = sch["$defs"][value]
+            for key, value_name in properties.items():
+                if value_name in sch.get("$defs", {}):
+                    results[key] = sch["$defs"][value_name]
             return results
 
         def merge_value(groups, jsons, definitions) -> list[dict]:
             # 将 groups的参数，同导出的json一起合并, 用于前端显示
             result = []
+            if not groups or "properties" not in groups:
+                return result
+
             for key, value in groups["properties"].items():
                 # deal with exclude
                 if key in jsons and jsons[key] == 0xABCDEF:
@@ -323,35 +342,52 @@ class ConfigModel(ConfigBase):
 
                 item = {}
                 item["name"] = key
-                item["title"] = value["title"] if "title" in value else inflection.underscore(key)
-                if "description" in value:
+                item["title"] = (
+                    value.get("title", inflection.underscore(key))
+                    if isinstance(value, dict)
+                    else key
+                )
+                if isinstance(value, dict) and "description" in value:
                     item["description"] = value["description"]
-                item["default"] = value["default"]
-                item["value"] = jsons[key] if key in jsons else value["default"]
-                item["type"] = value.get("type", "enum")
-                if "$ref" in value:  # list
-                    enum_key = re.search(r"/([^/]+)$", value["$ref"]).group(1)
-                    item["enumEnum"] = definitions[enum_key]["enum"]
+                item["default"] = value.get("default", "") if isinstance(value, dict) else ""
+                item["value"] = (
+                    jsons.get(key, value.get("default", ""))
+                    if isinstance(value, dict)
+                    else jsons.get(key, "")
+                )
+                item["type"] = value.get("type", "enum") if isinstance(value, dict) else "enum"
+                if isinstance(value, dict) and "$ref" in value:  # list
+                    enum_key_match = re.search(r"/([^/]+)$", value["$ref"])
+                    if enum_key_match:
+                        enum_key = enum_key_match.group(1)
+                        if enum_key in definitions and "enum" in definitions[enum_key]:
+                            item["enumEnum"] = definitions[enum_key]["enum"]
                 # if 'allOf' in value:
                 #     enum_key = re.search(r"/([^/]+)$", value['allOf'][0]['$ref']).group(1)
                 #     item["enumEnum"] = definitions[enum_key]["enum"]
                 result.append(item)
             return result
 
-        schema = task.model_json_schema()
+        schema = task_obj.model_json_schema()
         groups = extract_groups(schema)
         groups_value = groups.copy()
 
         result: dict[str, list] = {}
-        for key, value in task.model_dump(context={"hide": True}).items():
+        task_data = task_obj.model_dump(context={"hide": True})
+        for key, value in task_data.items():
             if key not in groups:
                 for group_name in groups:
                     if group_name in key:
-                        groups_value[key] = groups[group_name]
-            result[key] = merge_value(groups_value[key], value, schema["$defs"])
+                        groups_value[key] = groups[group_name]  # type: ignore[assignment]
+                        break
+            if key in groups:
+                group_schema = groups_value.get(key, {})
+                if isinstance(group_schema, dict):
+                    result[key] = merge_value(group_schema, value, schema.get("$defs", {}))
 
         return result
 
+    # script_set_arg函数的问题修复
     def script_set_arg(self, task: str, group: str, argument: str, value) -> bool:
         # 验证参数
         task = convert_to_underscore(task)
@@ -365,7 +401,7 @@ class ConfigModel(ConfigBase):
         if isinstance(value, str) and len(value) == 11:
             try:
                 date_time = datetime.strptime(value, "%d %H:%M:%S")
-                value = TimeDelta(
+                value = dt_module.timedelta(
                     days=date_time.day,
                     hours=date_time.hour,
                     minutes=date_time.minute,
@@ -382,15 +418,27 @@ class ConfigModel(ConfigBase):
             value = False
 
         task_object = getattr(self, task, None)
+        if task_object is None:
+            logger.error(f"Task {task} not found")
+            return False
+
         group_object = getattr(task_object, group, None)
-        if group_object is None:  # deal list
+        if group_object is None:  # deal with list
+            # Handle list/group patterns like "invite_info_0"
             matchs = re.findall(r"\d+", group)
             index = int(matchs[-1]) - 1 if matchs else None
-            list(dict(task_object))
-            for k, v in dict(task_object).items():
-                if k not in group:
-                    continue
-                group_object = v[index] if group_object is None else None
+            if index is not None:
+                task_dict = dict(task_object)
+                found_group = None
+                for k, v in task_dict.items():
+                    if group.replace(matchs[-1], "") in k and index < len(v):
+                        found_group = v[index]
+                        break
+                group_object = found_group
+        if group_object is None:
+            logger.error(f"Group {group} not found in task {task}")
+            return False
+
         argument_object = getattr(group_object, argument, None)
 
         if argument_object is None:
@@ -401,13 +449,15 @@ class ConfigModel(ConfigBase):
         # globally rather than a single task
         if (
             task == "restart"
-            and group == "task_config"
+            and group == "tasks_config_reset"
             and argument == "reset_task_datetime_enable"
             and value
         ):
-            date_time = self.restart.task_config.reset_task_datetime
-            logger.info(f"reset_task_datetime={date_time}")
-            self.reset_datetime_for_all_enabled_tasks(date_time)
+            restart_task_config = getattr(self.restart, "tasks_config_reset", None)
+            if restart_task_config:
+                date_time = restart_task_config.reset_task_datetime
+                logger.info(f"reset_task_datetime={date_time}")
+                self.reset_datetime_for_all_enabled_tasks(date_time)
 
         # 设置参数
         try:
@@ -464,9 +514,9 @@ class ConfigModel(ConfigBase):
                     d[k] = dt.strftime("%Y-%m-%d %H:%M:%S")
 
     def reset_datetime_for_all_enabled_tasks(self, task_datetime: datetime):
-        logger.warn(f"trying to reset datetime of all tasks to: {task_datetime}")
+        logger.info(f"trying to reset datetime of all tasks to: {task_datetime}")
         # logger.info(f"current config: {self.dict()}")
-        data = self.dict()
+        data = self.model_dump()
         self.replace_next_run(data, task_datetime)
         # logger.info(f"new config: {data}")
 
@@ -475,7 +525,9 @@ class ConfigModel(ConfigBase):
 
         # reload from the newly modified json config file
         data = self.read_json(self.config_name)
-        super().__init__(**data)
+        if not isinstance(data, dict):
+            data = {}
+        super().__init__(**data)  # type: ignore[arg-type]
 
 
 if __name__ == "__main__":

@@ -148,7 +148,10 @@ def server_time_offset() -> timedelta:
     To convert server time to local time:
         local_time = server_time - server_time_offset()
     """
-    return datetime.now(UTC).astimezone().utcoffset() - server_timezone()
+    utc_offset = datetime.now(UTC).astimezone().utcoffset()
+    if utc_offset is None:
+        return timedelta(hours=8)  # fallback to server timezone
+    return utc_offset - server_timezone()
 
 
 def get_server_next_update(daily_trigger):
@@ -264,9 +267,7 @@ def dict_to_kv(dictionary, allow_none=True):
     )
 
 
-def parse_tomorrow_server(
-    server_update: time, delay_date: int = 1, float_seconds: int = 0
-) -> datetime:
+def parse_tomorrow_server(server_update, delay_date: int = 1, float_seconds: int = 0) -> datetime:
     """
     获取明天的日期，给这个日期加上server_update的时间，返回datetime
     :param server_update:
@@ -275,6 +276,13 @@ def parse_tomorrow_server(
     """
     if isinstance(server_update, str):
         server_update = time.fromisoformat(server_update)
+    elif hasattr(server_update, "hour") and hasattr(server_update, "minute"):
+        # already a time object
+        pass
+    else:
+        # default to 09:00 if invalid
+        server_update = time(hour=9, minute=0)
+
     now = datetime.now()
     tomorrow = now + timedelta(days=delay_date)
     next_run = datetime.combine(tomorrow, server_update)
@@ -350,4 +358,4 @@ def deep_pop(d, keys, default=None):
 
 
 if __name__ == "__main__":
-    print(parse_tomorrow_server("09:01:00"))
+    print(parse_tomorrow_server(time.fromisoformat("09:01:00")))

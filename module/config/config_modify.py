@@ -48,7 +48,15 @@ class ConfigModify(Config):
         argument = convert_to_underscore(argument)
 
         task_object = getattr(self.model, task, None)
+        if task_object is None:
+            logger.error(f"gui_set_task task {task} not found")
+            return False
+
         group_object = getattr(task_object, group, None)
+        if group_object is None:
+            logger.error(f"gui_set_task {task}.{group} not found")
+            return False
+
         argument_object = getattr(group_object, argument, None)
 
         if argument_object is None:
@@ -81,6 +89,6 @@ class ConfigModify(Config):
 
             scheduler = value["scheduler"]
             item = {"enable": scheduler["enable"], "next_run": str(scheduler["next_run"])}
-            key = self.config.model.type(key)
-            result[key] = item
+            key_type = self.model.type(key)
+            result[key_type] = item
         return json.dumps(result)

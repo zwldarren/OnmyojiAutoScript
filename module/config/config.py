@@ -83,7 +83,10 @@ class Config(ConfigState, ConfigManual, ConfigWatcher, ConfigMenu):
         :return: str/int/float
         """
         try:
-            return self.data[task][group][argument]
+            data = self.model.model_dump()
+            if data.get(task) is not None and data[task].get(group) is not None:
+                return data[task][group][argument]
+            return None
         except Exception:
             logger.exception(f"have no arg {task}.{group}.{argument}")
 
@@ -97,7 +100,9 @@ class Config(ConfigState, ConfigManual, ConfigWatcher, ConfigMenu):
         :return:
         """
         try:
-            self.data[task][group][argument] = value
+            data = self.model.model_dump()
+            if data.get(task) is not None and data[task].get(group) is not None:
+                data[task][group][argument] = value
         except Exception:
             logger.exception(f"have no arg {task}.{group}.{argument}")
 
@@ -203,13 +208,15 @@ class Config(ConfigState, ConfigManual, ConfigWatcher, ConfigMenu):
         data = {"running": running, "pending": pending, "waiting": waiting}
         return data
 
-    def task_call(self, task: str = None, force_call=True):
+    def task_call(self, task: str | None = None, force_call: bool = True):
         """
         回调任务，这会是在任务结束后调用
         :param task: 调用的任务的大写名称
         :param force_call:
         :return:
         """
+        if task is None:
+            return False
         task = convert_to_underscore(task)
         if self.model.deep_get(self.model, keys=f"{task}.scheduler.next_run") is None:
             raise ScriptError(f"Task to call: `{task}` does not exist in user config")
@@ -227,11 +234,11 @@ class Config(ConfigState, ConfigManual, ConfigWatcher, ConfigMenu):
 
     def task_delay(
         self,
-        task: str,
-        start_time: datetime = None,
-        success: bool = None,
+        task: str | None,
+        start_time: datetime | None = None,
+        success: bool | None = None,
         server: bool = True,
-        target: datetime = None,
+        target: datetime | None = None,
     ) -> None:
         """
         设置下次运行时间  当然这个也是可以重写的
@@ -246,8 +253,16 @@ class Config(ConfigState, ConfigManual, ConfigWatcher, ConfigMenu):
         self.reload()
         # 任务预处理
         if not task:
-            task = self.task.command
+            task = getattr(self, "task", None)
+            if task and hasattr(task, "command"):
+                task = task.command  # type: ignore[union-attr]
+            else:
+                return
+        if not task:
+            return
         task = convert_to_underscore(task)
+        if not task:
+            return
         task_object = getattr(self.model, task, None)
         if not task_object:
             logger.warning(f"No task named {task}")
@@ -266,16 +281,18 @@ class Config(ConfigState, ConfigManual, ConfigWatcher, ConfigMenu):
         if success is not None:
             interval = scheduler.success_interval if success else scheduler.failure_interval
             if isinstance(interval, str):
-                interval = timedelta(interval)
+                interval = timedelta(seconds=float(interval))
+            elif isinstance(interval, (int, float)):
+                interval = timedelta(seconds=interval)
             run.append(start_time + interval)
         # if server is not None:
         #     if server:
         #         server = scheduler.server_update
         #         run.append(get_server_next_update(server))
         if target is not None:
-            target = [target] if not isinstance(target, list) else target
-            target = nearest_future(target)
-            run.append(target)
+            target_list = [target] if not isinstance(target, list) else target
+            nearest_time = nearest_future(target_list)
+            run.append(nearest_time)
 
         next_run = None
         # 排序

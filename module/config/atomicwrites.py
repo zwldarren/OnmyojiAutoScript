@@ -7,43 +7,29 @@ import contextlib
 import os
 import sys
 import tempfile
+from pathlib import Path
+from typing import IO, Any
 
 try:
     import fcntl
 except ImportError:
     fcntl = None
 
-# `fspath` was added in Python 3.6
-try:
-    from os import fspath
-except ImportError:
-    fspath = None
-
 __version__ = "1.4.1"
 
-PY2 = sys.version_info[0] == 2
-
-text_type = unicode if PY2 else str  # noqa
-
-
-def _path_to_unicode(x):
-    if not isinstance(x, text_type):
-        return x.decode(sys.getfilesystemencoding())
-    return x
-
-
-DEFAULT_MODE = "wb" if PY2 else "w"
+DEFAULT_MODE = "w"
 
 _proper_fsync = os.fsync
 
+
 if sys.platform != "win32":
-    if hasattr(fcntl, "F_FULLFSYNC"):
+    if fcntl is not None and hasattr(fcntl, "F_FULLFSYNC"):
 
         def _proper_fsync(fd):
             # https://lists.apple.com/archives/darwin-dev/2005/Feb/msg00072.html
             # https://developer.apple.com/library/mac/documentation/Darwin/Reference/ManPages/man2/fsync.2.html
             # https://github.com/untitaker/python-atomicwrites/issues/6
-            fcntl.fcntl(fd, fcntl.F_FULLFSYNC)
+            fcntl.fcntl(fd, fcntl.F_FULLFSYNC)  # type: ignore[union-attr]
 
     def _sync_directory(directory):
         # Ensure that filenames are written to disk
@@ -80,18 +66,14 @@ else:
     def _replace_atomic(src, dst):
         _handle_errors(
             windll.kernel32.MoveFileExW(
-                _path_to_unicode(src),
-                _path_to_unicode(dst),
+                str(src),
+                str(dst),
                 _windows_default_flags | _MOVEFILE_REPLACE_EXISTING,
             )
         )
 
     def _move_atomic(src, dst):
-        _handle_errors(
-            windll.kernel32.MoveFileExW(
-                _path_to_unicode(src), _path_to_unicode(dst), _windows_default_flags
-            )
-        )
+        _handle_errors(windll.kernel32.MoveFileExW(str(src), str(dst), _windows_default_flags))
 
 
 def replace_atomic(src, dst):
@@ -125,8 +107,8 @@ class AtomicWriter:
             f.write(...)
 
     :param path: The destination filepath. May or may not exist.
-    :param mode: The filemode for the temporary file. This defaults to `wb` in
-        Python 2 and `w` in Python 3.
+    :param mode: The filemode for the temporary file. This defaults to `w`
+        in Python 3+.
     :param overwrite: If set to false, an error is raised if ``path`` exists.
         Errors are only raised after the file has been written to.  Either way,
         the operation is atomic.
@@ -138,7 +120,13 @@ class AtomicWriter:
     subclass.
     """
 
-    def __init__(self, path, mode=DEFAULT_MODE, overwrite=False, **open_kwargs):
+    def __init__(
+        self,
+        path: str | Path,
+        mode: str = DEFAULT_MODE,
+        overwrite: bool = False,
+        **open_kwargs: Any,
+    ):
         if "a" in mode:
             raise ValueError(
                 "Appending to an existing file is not supported, because that "
@@ -151,16 +139,13 @@ class AtomicWriter:
         if "w" not in mode:
             raise ValueError("AtomicWriters can only be written to.")
 
-        # Attempt to convert `path` to `str` or `bytes`
-        if fspath is not None:
-            path = fspath(path)
-
-        self._path = path
+        # Convert path to string to ensure compatibility with all operations
+        self._path = str(path)
         self._mode = mode
         self._overwrite = overwrite
         self._open_kwargs = open_kwargs
 
-    def open(self):
+    def open(self) -> contextlib.AbstractContextManager[IO]:
         """
         Open the temporary file.
         """
@@ -181,7 +166,9 @@ class AtomicWriter:
                 with contextlib.suppress(Exception):
                     self.rollback(f)
 
-    def get_fileobject(self, suffix="", prefix=None, dir=None, **kwargs):
+    def get_fileobject(
+        self, suffix: str = "", prefix: str | None = None, dir: str | None = None, **kwargs: Any
+    ) -> IO:
         """Return the temporary file to use."""
         if prefix is None:
             prefix = tempfile.gettempprefix()
@@ -196,25 +183,28 @@ class AtomicWriter:
         kwargs["file"] = name
         return open(**kwargs)
 
-    def sync(self, f):
+    def sync(self, f: IO) -> None:
         """responsible for clearing as many file caches as possible before
         commit"""
         f.flush()
         _proper_fsync(f.fileno())
 
-    def commit(self, f):
+    def commit(self, f: IO) -> None:
         """Move the temporary file to the target location."""
         if self._overwrite:
             replace_atomic(f.name, self._path)
         else:
             move_atomic(f.name, self._path)
 
-    def rollback(self, f):
+    def rollback(self, f: IO | None) -> None:
         """Clean up all temporary resources."""
-        os.unlink(f.name)
+        if f is not None:
+            os.unlink(f.name)
 
 
-def atomic_write(path, writer_cls=AtomicWriter, **cls_kwargs):
+def atomic_write(
+    path: str | Path, writer_cls: type[AtomicWriter] = AtomicWriter, **cls_kwargs: Any
+) -> contextlib.AbstractContextManager[IO]:
     """
     Simple atomic writes. This wraps :py:class:`AtomicWriter`::
 
