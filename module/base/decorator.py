@@ -3,7 +3,7 @@ import random
 import re
 from collections.abc import Callable
 from functools import wraps
-from typing import TypeVar
+from typing import TypeVar, cast
 
 T = TypeVar("T")
 
@@ -103,9 +103,9 @@ class cached_property[T]:
     def __init__(self, func: Callable[..., T]):
         self.func = func
 
-    def __get__(self, obj, cls) -> T:
+    def __get__(self, obj, cls):
         if obj is None:
-            return self
+            return cast(T, self)
 
         value = obj.__dict__[self.func.__name__] = self.func(obj)
         return value
@@ -177,7 +177,19 @@ def function_drop(rate=0.5, default=None):
     return decorate
 
 
-def run_once(f):
+class _RunOnceWrapper[T]:
+    def __init__(self, func: Callable[..., T]):
+        self.func = func
+        self.has_run = False
+        wraps(func)(self)
+
+    def __call__(self, *args, **kwargs) -> T | None:
+        if not self.has_run:
+            self.has_run = True
+            return self.func(*args, **kwargs)
+
+
+def run_once[T](f: Callable[..., T]) -> _RunOnceWrapper[T]:
     """
     Run a function only once, no matter how many times it has been called.
 
@@ -197,12 +209,4 @@ def run_once(f):
         while 1:
             action()
     """
-
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        if not wrapper.has_run:
-            wrapper.has_run = True
-            return f(*args, **kwargs)
-
-    wrapper.has_run = False
-    return wrapper
+    return _RunOnceWrapper(f)

@@ -1,11 +1,13 @@
 import numpy as np
-from scipy import optimize
+from scipy import optimize  # type: ignore[import-untyped]
 
 from .utils import area_pad
 
 
 class Points:
     def __init__(self, points):
+        self.points: np.ndarray | None = None
+        self._bool = False
         if points is None or len(points) == 0:
             self._bool = False
             self.points = None
@@ -22,14 +24,18 @@ class Points:
     __repr__ = __str__
 
     def __iter__(self):
+        if self.points is None:
+            return iter([])
         return iter(self.points)
 
     def __getitem__(self, item):
+        if self.points is None:
+            raise IndexError("Cannot index into empty Points")
         return self.points[item]
 
     def __len__(self):
         if self:
-            return len(self.points)
+            return len(self.points) if self.points is not None else 0
         else:
             return 0
 
@@ -37,6 +43,8 @@ class Points:
         return self._bool
 
     def link(self, point, is_horizontal=False):
+        if not self or self.points is None:
+            return Lines(None, is_horizontal=False)
         if is_horizontal:
             lines = [[y, np.pi / 2] for y in self.y]
             return Lines(lines, is_horizontal=True)
@@ -48,13 +56,13 @@ class Points:
             return Lines(lines, is_horizontal=False)
 
     def mean(self):
-        if not self:
+        if not self or self.points is None:
             return None
 
         return np.round(np.mean(self.points, axis=0)).astype(int)
 
     def group(self, threshold=3):
-        if not self:
+        if not self or self.points is None:
             return np.array([])
         groups = []
         points = self.points
@@ -75,6 +83,10 @@ class Lines:
     MID_Y = 360
 
     def __init__(self, lines, is_horizontal):
+        self.lines: np.ndarray | None = None
+        self.rho: np.ndarray | None = None
+        self.theta: np.ndarray | None = None
+        self._bool = False
         if lines is None or len(lines) == 0:
             self._bool = False
             self.lines = None
@@ -92,14 +104,18 @@ class Lines:
     __repr__ = __str__
 
     def __iter__(self):
+        if self.lines is None:
+            return iter([])
         return iter(self.lines)
 
     def __getitem__(self, item):
+        if self.lines is None:
+            raise IndexError("Cannot index into empty Lines")
         return Lines(self.lines[item], is_horizontal=self.is_horizontal)
 
     def __len__(self):
         if self:
-            return len(self.lines)
+            return len(self.lines) if self.lines is not None else 0
         else:
             return 0
 
@@ -108,66 +124,93 @@ class Lines:
 
     @property
     def sin(self):
+        if self.theta is None:
+            return np.array([])
         return np.sin(self.theta)
 
     @property
     def cos(self):
+        if self.theta is None:
+            return np.array([])
         return np.cos(self.theta)
 
     @property
     def mean(self):
-        if not self:
+        if not self or self.lines is None or self.rho is None or self.theta is None:
             return None
         if self.is_horizontal:
             return np.mean(self.lines, axis=0)
         else:
-            x = np.mean(self.mid)
+            mid_val = self.mid
+            if len(mid_val) == 0:
+                return None
+            x = np.mean(mid_val)
             theta = np.mean(self.theta)
             rho = x * np.cos(theta) + self.MID_Y * np.sin(theta)
             return np.array((rho, theta))
 
     @property
     def mid(self):
-        if not self:
+        if not self or self.lines is None or self.rho is None or self.theta is None:
             return np.array([])
         if self.is_horizontal:
             return self.rho
         else:
-            return (self.rho - self.MID_Y * self.sin) / self.cos
+            sin_val = np.sin(self.theta)
+            cos_val = np.cos(self.theta)
+            return (self.rho - self.MID_Y * sin_val) / cos_val
 
     def get_x(self, y):
-        return (self.rho - y * self.sin) / self.cos
+        if self.rho is None or self.theta is None:
+            return np.array([])
+        sin_val = np.sin(self.theta)
+        cos_val = np.cos(self.theta)
+        return (self.rho - y * sin_val) / cos_val
 
     def get_y(self, x):
-        return (self.rho - x * self.cos) / self.sin
+        if self.rho is None or self.theta is None:
+            return np.array([])
+        sin_val = np.sin(self.theta)
+        cos_val = np.cos(self.theta)
+        return (self.rho - x * cos_val) / sin_val
 
     def add(self, other):
         if not other:
             return self
-        if not self:
+        if not self or self.lines is None:
             return other
+        if other.lines is None:
+            return self
         lines = np.append(self.lines, other.lines, axis=0)
         return Lines(lines, is_horizontal=self.is_horizontal)
 
     def move(self, x, y):
-        if not self:
+        if not self or self.lines is None:
             return self
         if self.is_horizontal:
             self.lines[:, 0] += y
         else:
-            self.lines[:, 0] += x * self.cos + y * self.sin
+            if self.lines is not None and self.theta is not None:
+                cos_val = np.cos(self.theta)
+                sin_val = np.sin(self.theta)
+                self.lines[:, 0] += x * cos_val + y * sin_val
         return Lines(self.lines, is_horizontal=self.is_horizontal)
 
     def sort(self):
-        if not self:
+        if not self or self.lines is None or self.mid is None:
             return self
-        lines = self.lines[np.argsort(self.mid)]
+        mid_val = self.mid
+        if len(mid_val) == 0:
+            return self
+        lines = self.lines[np.argsort(mid_val)]
         return Lines(lines, is_horizontal=self.is_horizontal)
 
     def group(self, threshold=3):
-        if not self:
+        if not self or self.lines is None:
             return self
         lines = self.sort()
+        if lines.lines is None or lines.mid is None:
+            return self
         prev = 0
         regrouped = []
         group = []
@@ -184,15 +227,24 @@ class Lines:
                 group.append(line)
             prev = mid
         regrouped += [group]
-        regrouped = np.vstack([Lines(r, is_horizontal=self.is_horizontal).mean for r in regrouped])
-        return Lines(regrouped, is_horizontal=self.is_horizontal)
+        means = []
+        for r in regrouped:
+            line_obj = Lines(r, is_horizontal=self.is_horizontal)
+            if line_obj.mean is not None:
+                means.append(line_obj.mean)
+        regrouped_arr = np.vstack(means) if means else np.array([])
+        return Lines(regrouped_arr, is_horizontal=self.is_horizontal)
 
     def distance_to_point(self, point):
+        if self.rho is None or self.theta is None:
+            return np.array([])
         x, y = point
-        return self.rho - x * self.cos - y * self.sin
+        return self.rho - x * np.cos(self.theta) - y * np.sin(self.theta)
 
     @staticmethod
     def cross_two_lines(lines1, lines2):
+        if lines1.rho is None or lines1.theta is None or lines2.rho is None or lines2.theta is None:
+            return
         for rho1, sin1, cos1 in zip(lines1.rho, lines1.sin, lines1.cos, strict=False):
             for rho2, sin2, cos2 in zip(lines2.rho, lines2.sin, lines2.cos, strict=False):
                 a = np.array([[cos1, sin1], [cos2, sin2]])
@@ -200,15 +252,21 @@ class Lines:
                 yield np.linalg.solve(a, b)
 
     def cross(self, other):
-        points = np.vstack(self.cross_two_lines(self, other))
-        points = Points(points)
-        return points
+        points_gen = self.cross_two_lines(self, other)
+        if points_gen is None:
+            return Points(None)
+        points = np.vstack(list(points_gen))
+        points_obj = Points(points)
+        return points_obj
 
     def delete(self, other, threshold=3):
-        if not self:
+        if not self or self.lines is None or self.mid is None:
             return self
-
+        if not other or other.mid is None:
+            return self
         other_mid = other.mid
+        if len(other_mid) == 0 or len(self.mid) == 0:
+            return self
         lines = []
         for mid, line in zip(self.mid, self.lines, strict=False):
             if np.any(np.abs(other_mid - mid) < threshold):

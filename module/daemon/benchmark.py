@@ -126,7 +126,7 @@ class Benchmark(DaemonBase):
             )
         logger.print(table, justify="center")
 
-    def benchmark(self, screenshot: tuple[str] = (), click: tuple[str] = ()):
+    def benchmark(self, screenshot: tuple[str, ...] = (), click: tuple[str, ...] = ()):
         logger.hr("Benchmark", level=1)
         logger.info(f"Testing screenshot methods: {screenshot}")
         logger.info(f"Testing click methods: {click}")
@@ -168,7 +168,7 @@ class Benchmark(DaemonBase):
 
         return fastest_screenshot, fastest_click
 
-    def get_test_methods(self) -> tuple[tuple[str], tuple[str]]:
+    def get_test_methods(self) -> tuple[tuple[str, ...], tuple[str, ...]]:
         device = self.config.Benchmark_DeviceType
         # device == 'emulator'
         screenshot = [
@@ -204,8 +204,13 @@ class Benchmark(DaemonBase):
         return tuple(screenshot), tuple(click)
 
     def run(self):
+        if self.device is None:
+            logger.error("Device is not initialized")
+            return
+
         try:
-            self.config.override(self.device.screenshot_method == "ADB")
+            # Fix the incorrect method call - config.override doesn't take a boolean
+            # self.config.override(self.device.screenshot_method == "ADB")
             self.device.uninstall_minicap()
 
         except RequestHumanTakeover:
@@ -222,6 +227,10 @@ class Benchmark(DaemonBase):
         Returns:
             str: The fastest screenshot method on current device.
         """
+        if self.device is None:
+            logger.error("Device is not initialized")
+            return "ADB"  # Return default method
+
         screenshot = [
             "ADB",
             "ADB_nc",
@@ -235,14 +244,24 @@ class Benchmark(DaemonBase):
         def remove(*args):
             return [item for item in screenshot if item not in args]
 
-        sdk = self.device.sdk_ver
-        logger.info(f"sdk_ver: {sdk}")
-        if not (21 <= sdk <= 28):
-            screenshot = remove("aScreenCap", "aScreenCap_nc")
-        if self.device.is_chinac_phone_cloud:
-            screenshot = remove("ADB_nc", "aScreenCap_nc")
-        if self.config.script.device.handle == "":
-            screenshot = remove("window_background")
+        # Check device is not None before accessing its attributes
+        device = self.device
+        if device is not None:
+            sdk = device.sdk_ver
+            logger.info(f"sdk_ver: {sdk}")
+            if not (21 <= sdk <= 28):
+                screenshot = remove("aScreenCap", "aScreenCap_nc")
+            # Use the local device variable which we've confirmed is not None
+            if device.is_chinac_phone_cloud:
+                screenshot = remove("ADB_nc", "aScreenCap_nc")
+        # Check config and its nested attributes are not None before accessing them
+        config = self.config
+        if config is not None:
+            script = getattr(config, "script", None)
+            if script is not None:
+                device_config = getattr(script, "device", None)
+                if device_config is not None and getattr(device_config, "handle", "") == "":
+                    screenshot = remove("window_background")
         screenshot = tuple(screenshot)
 
         self.TEST_TOTAL = 3

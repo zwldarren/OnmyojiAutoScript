@@ -1,9 +1,13 @@
 import functools
 import random
 import time
+from collections.abc import Callable
 from functools import partial
+from typing import TypeVar
 
 from module.logger import logger as logging_logger
+
+T = TypeVar("T")
 
 """
 Copied from Alas
@@ -13,16 +17,16 @@ try:
     from decorator import decorator
 except ImportError:
 
-    def decorator(caller):
+    def decorator(caller: Callable) -> Callable[[Callable[..., T]], Callable[..., T]]:
         """Turns caller into a decorator.
         Unlike decorator module, function signature is not preserved.
 
         :param caller: caller(f, *args, **kwargs)
         """
 
-        def decor(f):
+        def decor(f: Callable[..., T]) -> Callable[..., T]:
             @functools.wraps(f)
-            def wrapper(*args, **kwargs):
+            def wrapper(*args, **kwargs) -> T:
                 return caller(f, *args, **kwargs)
 
             return wrapper
@@ -82,7 +86,7 @@ def __retry_internal(
                 _delay = min(_delay, max_delay)
 
 
-def retry(
+def retry[T](
     exceptions=Exception,
     tries=-1,
     delay=0,
@@ -90,7 +94,7 @@ def retry(
     backoff=1,
     jitter=0,
     logger=logging_logger,
-):
+) -> Callable[[Callable[..., T]], Callable[..., T]]:
     """Returns a retry decorator.
 
     :param exceptions: an exception or a tuple of exceptions to catch. default: Exception.

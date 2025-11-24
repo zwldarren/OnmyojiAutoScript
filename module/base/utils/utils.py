@@ -1,4 +1,5 @@
 import importlib
+import importlib.util
 import re
 import sys
 
@@ -56,8 +57,8 @@ def random_rectangle_vector(vector, box, random_range=(0, 0, 0, 0), padding=15):
         tuple(int), tuple(int): start_point, end_point.
     """
     vector = np.array(vector) + random_rectangle_point(random_range)
-    vector = np.round(vector).astype(np.int)
-    half_vector = np.round(vector / 2).astype(np.int)
+    vector = np.round(vector).astype(int)
+    half_vector = np.round(vector / 2).astype(int)
     box = np.array(box) + np.append(np.abs(half_vector) + padding, -np.abs(half_vector) - padding)
     center = random_rectangle_point(box)
     start_point = center - half_vector
@@ -89,8 +90,8 @@ def random_rectangle_vector_opted(
         tuple(int), tuple(int): start_point, end_point.
     """
     vector = np.array(vector) + random_rectangle_point(random_range)
-    vector = np.round(vector).astype(np.int)
-    half_vector = np.round(vector / 2).astype(np.int)
+    vector = np.round(vector).astype(int)
+    half_vector = np.round(vector / 2).astype(int)
     box_pad = np.array(box) + np.append(
         np.abs(half_vector) + padding, -np.abs(half_vector) - padding
     )
@@ -610,9 +611,9 @@ def rgb2gray(image):
         np.ndarray: Shape (height, width)
     """
     r, g, b = cv2.split(image)
-    return cv2.add(
-        cv2.multiply(cv2.max(cv2.max(r, g), b), 0.5), cv2.multiply(cv2.min(cv2.min(r, g), b), 0.5)
-    )
+    max_val = cv2.max(cv2.max(r, g), b)
+    min_val = cv2.min(cv2.min(r, g), b)
+    return cv2.add(max_val * 0.5, min_val * 0.5)
 
 
 def rgb2hsv(image):
@@ -626,7 +627,7 @@ def rgb2hsv(image):
     Returns:
         np.ndarray: Hue (0~360), Saturation (0~100), Value (0~100).
     """
-    image = cv2.cvtColor(image, cv2.COLOR_RGB2HSV).astype(np.float)
+    image = cv2.cvtColor(image, cv2.COLOR_RGB2HSV).astype(np.float64)
     image *= (360 / 180, 100 / 255, 100 / 255)
     return image
 
@@ -750,11 +751,12 @@ def color_similarity_2d(image, color):
     Returns:
         np.ndarray: uint8
     """
-    r, g, b = cv2.split(cv2.subtract(image, (*color, 0)))
+    color_array = np.array((*color, 0), dtype=np.uint8)
+    r, g, b = cv2.split(cv2.subtract(image, color_array))
     positive = cv2.max(cv2.max(r, g), b)
-    r, g, b = cv2.split(cv2.subtract((*color, 0), image))
+    r, g, b = cv2.split(cv2.subtract(color_array, image))
     negative = cv2.max(cv2.max(r, g), b)
-    return cv2.subtract(255, cv2.add(positive, negative))
+    return cv2.subtract(np.array(255, dtype=np.uint8), cv2.add(positive, negative))
 
 
 def extract_letters(image, letter=(255, 255, 255), threshold=128):
@@ -768,11 +770,13 @@ def extract_letters(image, letter=(255, 255, 255), threshold=128):
     Returns:
         np.ndarray: Shape (height, width)
     """
-    r, g, b = cv2.split(cv2.subtract(image, (*letter, 0)))
+    letter_array = np.array((*letter, 0), dtype=np.uint8)
+    r, g, b = cv2.split(cv2.subtract(image, letter_array))
     positive = cv2.max(cv2.max(r, g), b)
-    r, g, b = cv2.split(cv2.subtract((*letter, 0), image))
+    r, g, b = cv2.split(cv2.subtract(letter_array, image))
     negative = cv2.max(cv2.max(r, g), b)
-    return cv2.multiply(cv2.add(positive, negative), 255.0 / threshold)
+    add_result = cv2.add(positive, negative)
+    return add_result * (255.0 / threshold)
 
 
 def extract_white_letters(image, threshold=128):
@@ -786,10 +790,12 @@ def extract_white_letters(image, threshold=128):
     Returns:
         np.ndarray: Shape (height, width)
     """
-    r, g, b = cv2.split(cv2.subtract((255, 255, 255, 0), image))
+    white_array = np.array((255, 255, 255, 0), dtype=np.uint8)
+    r, g, b = cv2.split(cv2.subtract(white_array, image))
     minimum = cv2.min(cv2.min(r, g), b)
     maximum = cv2.max(cv2.max(r, g), b)
-    return cv2.multiply(cv2.add(maximum, cv2.subtract(maximum, minimum)), 255.0 / threshold)
+    add_result = cv2.add(maximum, cv2.subtract(maximum, minimum))
+    return cv2.multiply(add_result, np.array(255.0 / threshold, dtype=np.float64))
 
 
 def color_mapping(image, max_multiply=2):
@@ -804,11 +810,13 @@ def color_mapping(image, max_multiply=2):
     Returns:
         np.ndarray:
     """
-    image = image.astype(float)
+    image = image.astype(np.float64)
     low, high = np.min(image), np.max(image)
     multiply = min(255 / (high - low), max_multiply)
     add = (255 - multiply * (low + high)) / 2
-    image = cv2.add(cv2.multiply(image, multiply), add)
+    image = cv2.add(
+        cv2.multiply(image, np.array(multiply, dtype=np.float64)), np.array(add, dtype=np.float64)
+    )
     image[image > 255] = 255
     image[image < 0] = 0
     return image.astype(np.uint8)
@@ -900,6 +908,8 @@ def load_module(moduleName: str, moduleFile: str):
     :return:
     """
     spec = importlib.util.spec_from_file_location(moduleName, moduleFile)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Cannot load module {moduleName} from {moduleFile}")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     sys.modules[moduleName] = module
