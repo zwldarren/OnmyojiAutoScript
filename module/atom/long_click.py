@@ -6,7 +6,7 @@ from module.atom.click import RuleClick
 
 class RuleLongClick(RuleClick):
     def __init__(
-        self, roi_front: tuple, roi_back: tuple, duration: int = 1000, name: str = None
+        self, roi_front: tuple, roi_back: tuple, duration: int = 1000, name: str | None = None
     ) -> None:
         """
         初始化

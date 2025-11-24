@@ -1,10 +1,11 @@
 # @author runhey
 # github https://github.com/runhey
+
 import numpy as np
 
 
 class RuleClick:
-    def __init__(self, roi_front: tuple, roi_back: tuple, name: str = None) -> None:
+    def __init__(self, roi_front: tuple, roi_back: tuple, name: str | None = None) -> None:
         """
         初始化
         :param roi_front:
@@ -17,7 +18,7 @@ class RuleClick:
         else:
             self.name = "click"
 
-    def coord(self) -> tuple:
+    def coord(self) -> tuple[int, int]:
         """
         获取坐标, 从roi_front随机获取坐标
         :return:
@@ -27,7 +28,7 @@ class RuleClick:
         y = np.random.randint(y, y + h)
         return x, y
 
-    def coord_more(self) -> tuple:
+    def coord_more(self) -> tuple[int, int]:
         """
         从roi_back随机获取坐标
         :return:
@@ -38,7 +39,7 @@ class RuleClick:
         return x, y
 
     @property
-    def center(self) -> tuple:
+    def center(self) -> tuple[int, int]:
         """
         返回roi_front的中心坐标
         :return:
@@ -53,17 +54,17 @@ class RuleClick:
         :param y:
         :return:
         """
-        x, y, w, h = self.roi_front
-        x += x
-        y += y
-        if x <= 0:
-            x = 0
-        elif x >= 1280:
-            x = 1280
+        x_cur, y_cur, w, h = self.roi_front
+        x_new = x_cur + x
+        y_new = y_cur + y
+        if x_new <= 0:
+            x_new = 0
+        elif x_new >= 1280:
+            x_new = 1280
 
-        if y <= 0:
-            y = 0
-        elif y >= 720:
-            y = 720
+        if y_new <= 0:
+            y_new = 0
+        elif y_new >= 720:
+            y_new = 720
 
-        self.roi_front = x, y, w, h
+        self.roi_front = x_new, y_new, w, h

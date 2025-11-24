@@ -9,7 +9,7 @@ class ImageGrid:
     def __init__(self, images: list[RuleImage]):
         self.images = images
 
-    def find_anyone(self, img: np.array) -> RuleImage or None:
+    def find_anyone(self, img: np.ndarray) -> RuleImage | None:
         """
         在这些图片中找到其中一个
         :param img:
@@ -20,7 +20,7 @@ class ImageGrid:
                 return image
         return None
 
-    def find_everyone(self, img: np.array) -> list or None:
+    def find_everyone(self, img: np.ndarray) -> list | None:
         """
         自下而上查找所有匹配项，返回带对应image对象的排序结果
         :param img: 待匹配图像

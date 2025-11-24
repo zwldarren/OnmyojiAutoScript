@@ -15,7 +15,6 @@ dev_tools/debug_tools
 /screenshots
 /campaign/test/
 /toolkit
-*.lock
 config/reloadflag
 config/reloadalas
 test.py

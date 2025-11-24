@@ -41,7 +41,7 @@ class RuleList:
         self.array: list = array
 
         # 以下是需要计算的
-        self.appear_area: list = None  # 出现的区域
+        self.appear_area: list | None = None  # 出现的区域
         self.is_bottom = False  # 表示是否已经滑动到底部了
         self._target = None  # 目标
         self.targets = {}  # 目标列表 只是针对image
@@ -135,8 +135,8 @@ class RuleList:
                 or self._target.name != name
             ):
                 self._target = RuleImage(
-                    roi_front=self.roi_back,
-                    roi_back=self.roi_back,
+                    roi_front=tuple(self.roi_back),
+                    roi_back=tuple(self.roi_back),
                     method="Template matching",
                     threshold=0.8,
                     file=file,
@@ -159,6 +159,7 @@ class RuleList:
         else:
             logger.error(f"Not found {name} in {self.array}")
             return False
+        return True
 
     def targets_check(self, targets: list):
         """
@@ -172,14 +173,14 @@ class RuleList:
             # 如果还没有缓存的话就先缓存
             file = self.folder + "/" + item + ".png"
             self.targets[item] = RuleImage(
-                roi_front=self.roi_back,
-                roi_back=self.roi_back,
+                roi_front=tuple(self.roi_back),
+                roi_back=tuple(self.roi_back),
                 method="Template matching",
                 threshold=0.8,
                 file=file,
             )
 
-    def image_appear(self, image: np.array, name: str) -> bool | tuple:
+    def image_appear(self, image: np.ndarray, name: str) -> bool | tuple[int, int]:
         """
         判断是否出现了某个图片
         :param image: 屏幕的截图
@@ -187,10 +188,12 @@ class RuleList:
         :return: 如果在当前的显示中，返回可以点击的坐标.如果不是出现就是返回False
         """
         if self.is_image and isinstance(name, str):
-            self.target_check(name)
-            appear = self._target.match(image)
-            if appear:
-                return self._target.coord()
+            if self.target_check(name) and self._target is not None:
+                appear = self._target.match(image)  # type: ignore[func-returns-value]
+                if appear:
+                    return self._target.coord()
+                else:
+                    return False
             else:
                 return False
         elif self.is_image and isinstance(name, list):
@@ -205,7 +208,7 @@ class RuleList:
             logger.error("Mode is not image")
             return False
 
-    def ocr_appear(self, image: np.array, name: str):
+    def ocr_appear(self, image: np.ndarray, name: str):
         """
         判断是否出现了某个文字,
         :param image: 屏幕的截图
@@ -217,8 +220,13 @@ class RuleList:
             return False
         self.target_check(name)
 
+        # Ensure _target is not None before calling detect_and_ocr
+        if self._target is None:
+            logger.error("OCR target is None")
+            return 0, 0
+
         # 开始一次ocr的检测
-        boxed_results: list[BoxedResult] = self._target.detect_and_ocr(image)
+        boxed_results: list[BoxedResult] = self._target.detect_and_ocr(image)  # type: ignore[attr-defined]
         if not boxed_results:
             logger.warning("Not angy result in image")
             return 0, 0
@@ -232,12 +240,22 @@ class RuleList:
                 box = item.box
                 break
         if box is not None:
-            rec_x, rec_y, rec_w, rec_h = (
-                box[0, 0],
-                box[0, 1],
-                box[1, 0] - box[0, 0],
-                box[2, 1] - box[0, 1],
-            )
+            # Extract coordinates from box array
+            # box is a list with 8 values: [x1, y1, x2, y2, x3, y3, x4, y4] for 4 corners
+            # or could be a nested list [[x1, y1], [x2, y2], [x3, y3], [x4, y4]]
+            # The code expects the nested format, so we handle both
+            if isinstance(box[0], (list, tuple)):
+                # Nested format: [[x1, y1], [x2, y2], [x3, y3], [x4, y4]]
+                rec_x = int(box[0][0])  # type: ignore[index]
+                rec_y = int(box[0][1])  # type: ignore[index]
+                rec_w = int(box[1][0] - box[0][0])  # type: ignore[index]
+                rec_h = int(box[2][1] - box[0][1])  # type: ignore[index]
+            else:
+                # Flat format: [x1, y1, x2, y2, x3, y3, x4, y4]
+                rec_x = int(box[0])  # type: ignore[index]
+                rec_y = int(box[1])  # type: ignore[index]
+                rec_w = int(box[2] - box[0])  # type: ignore[index]
+                rec_h = int(box[5] - box[1])  # type: ignore[index]
             x = rec_x + rec_w // 2 + self.roi_back[0]
             y = rec_y + rec_h // 2 + self.roi_back[1]
             logger.info(f"Ocr {name} appear in current screen, do not need to scroll")

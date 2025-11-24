@@ -10,7 +10,9 @@ from module.base.decorator import cached_property
 
 
 class RuleSwipe:
-    def __init__(self, roi_front: tuple, roi_back: tuple, mode: str, name: str = None) -> None:
+    def __init__(
+        self, roi_front: tuple, roi_back: tuple, mode: str, name: str | None = None
+    ) -> None:
         """
         初始化
         :param roi_front:

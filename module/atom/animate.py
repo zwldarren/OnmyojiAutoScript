@@ -1,4 +1,6 @@
+from collections.abc import Sequence
 from pathlib import Path
+from typing import Any
 
 from module.atom.click import RuleClick
 from module.atom.image import RuleImage
@@ -12,8 +14,11 @@ class RuleAnimate(RuleImage):
         self,
         rule: RuleImage | RuleClick | RuleLongClick | RuleOcr,
         threshold: float = 0.75,
-        name: str = None,
+        name: str | None = None,
     ):
+        roi_front: Sequence[Any] | None = None
+        roi_back: Sequence[Any] | None = None
+
         if isinstance(rule, RuleImage):
             roi_front = rule.roi_front
             roi_back = rule.roi_back
@@ -33,8 +38,8 @@ class RuleAnimate(RuleImage):
             self._name = "RuleAnimate"
 
         super().__init__(
-            roi_front=list(roi_front),
-            roi_back=list(roi_back),
+            roi_front=tuple(roi_front) if roi_front is not None else (),
+            roi_back=tuple(roi_back) if roi_back is not None else (),
             method="Template matching",
             threshold=threshold,
             file="",
